@@ -153,6 +153,15 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+@keyframes scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-scroll {
+  animation: scroll 28s linear infinite;
+}
+
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

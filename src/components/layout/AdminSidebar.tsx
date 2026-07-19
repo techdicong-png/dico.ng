@@ -7,9 +7,9 @@ import { Shield, Users, FileText, CircleDollarSign, Wallet, LayoutGrid } from 'l
 const links = [
   { href: '/dashboard/admin', label: 'Overview', icon: Shield },
   { href: '/admin/users',     label: 'Users', icon: Users },
-  { href: '/admin/reports',   label: 'Reports', icon: FileText },
-  { href: '/admin/grants',    label: 'CIVICT Grants', icon: CircleDollarSign },
-  { href: '/admin/finance',   label: 'Finance & Pool', icon: Wallet },
+  // { href: '/admin/reports',   label: 'Reports', icon: FileText },
+  // { href: '/admin/grants',    label: 'CIVICT Grants', icon: CircleDollarSign },
+  // { href: '/admin/finance',   label: 'Finance & Pool', icon: Wallet },
 ]
 
 export function AdminSidebar() {

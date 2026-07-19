@@ -1,6 +1,6 @@
 // src/app/(auth)/login/page.tsx
 'use client'
-
+import { supabase } from '@/lib/supabase'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -14,6 +14,8 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+
+
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -59,6 +61,11 @@ export default function LoginPage() {
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-md p-3 mb-4">{error}</div>
         )}
+
+        <div className="relative mb-4">
+          <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-[#D8E4DC]" /></div>
+          <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-[#5A6E62]">or continue with email</span></div>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

@@ -26,10 +26,10 @@ export async function POST(request: Request) {
 
   const { email, password, full_name, role, phone, state, lga, ward, vin } = parsed.data
 
-  // Require VIN for voters
-  if (role === 'voter' && !vin) {
-    return NextResponse.json({ error: 'VIN is required for voter registration' }, { status: 400 })
-  }
+  // // Require VIN for voters
+  // if (role === 'voter' && !vin) {
+  //   return NextResponse.json({ error: 'VIN is required for voter registration' }, { status: 400 })
+  // }
 
   // Check duplicate email
   const { data: existing } = await supabaseAdmin

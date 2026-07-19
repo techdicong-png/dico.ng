@@ -1,4 +1,3 @@
-// src/app/(auth)/verify-email/page.tsx
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
@@ -83,7 +82,15 @@ export default function VerifyEmailPage() {
         <p className="text-xs text-muted-text mt-6">
           <button onClick={sendOtp} className="text-forest font-semibold">Resend code</button>
           {' · '}
-          <Link href="/dashboard" className="text-muted-text underline">Skip for now</Link>
+          <button onClick={() => {
+            const u = JSON.parse(localStorage.getItem('dico_user') || '{}')
+            const map: Record<string, string> = { voter: '/dashboard/voter', candidate: '/dashboard/candidate' }
+            window.location.href = map[u.role] || '/dashboard'
+          }} className="text-xs text-muted-text underline cursor-pointer">
+            Skip for now
+          </button>
+
+
         </p>
       </CardContent>
     </Card>
