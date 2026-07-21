@@ -17,6 +17,7 @@ type NavLink = {
 
 const voterLinks: NavLink[] = [
   { href: '/dashboard/voter', label: 'Dashboard', icon: LayoutGrid },
+  { href: '/feed',            label: 'Feed', icon: FileText }, 
   { href: '/candidates',      label: 'Candidates', icon: Users },
   { href: '/sessions',        label: 'Live Sessions', icon: Video },
   { href: '/polls',           label: 'Polls', icon: Vote },
@@ -27,6 +28,7 @@ const voterLinks: NavLink[] = [
 
 const candidateLinks: NavLink[] = [
   { href: '/dashboard/candidate', label: 'Overview', icon: LayoutGrid },
+  { href: '/candidates/posts',     label: 'My Posts', icon: FileText },  
   { href: '/sessions',            label: 'Live Sessions', icon: Video },
   { href: '/polls',               label: 'Polls', icon: Vote },
   { href: '/reports',             label: 'Reports', icon: FileText },
