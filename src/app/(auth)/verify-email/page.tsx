@@ -46,9 +46,9 @@ export default function VerifyEmailPage() {
       const u = JSON.parse(localStorage.getItem('dico_user') || '{}')
       localStorage.setItem('dico_user', JSON.stringify({ ...u, email_verified: true }))
       const map: Record<string, string> = { voter: '/dashboard/voter', candidate: '/dashboard/candidate', campaign_team: '/dashboard/campaign', admin: '/dashboard/admin' }
-      setTimeout(() => router.push(map[u.role] || '/dashboard'), 1000)
       setMsg(`✅ Verified! +${data.civict_earned} CIVICT`)
-    } else {
+      setTimeout(() => router.push(map[u.role] || '/dashboard'), 1000)
+    }else {
       setMsg('❌ ' + (data.error || 'Invalid code'))
       setOtp(['', '', '', '', '', ''])
       inputs.current[0]?.focus()
@@ -81,17 +81,8 @@ export default function VerifyEmailPage() {
 
         <p className="text-xs text-muted-text mt-6">
           <button onClick={sendOtp} className="text-forest font-semibold">Resend code</button>
-          {' · '}
-          <button onClick={() => {
-            const u = JSON.parse(localStorage.getItem('dico_user') || '{}')
-            const map: Record<string, string> = { voter: '/dashboard/voter', candidate: '/dashboard/candidate' }
-            window.location.href = map[u.role] || '/dashboard'
-          }} className="text-xs text-muted-text underline cursor-pointer">
-            Skip for now
-          </button>
-
-
         </p>
+
       </CardContent>
     </Card>
   )

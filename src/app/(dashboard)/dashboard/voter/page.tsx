@@ -1,13 +1,11 @@
-// src/app/(dashboard)/dashboard/voter/page.tsx
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { verifyToken, getAuthUser } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import Link from 'next/link'
 
 type SessionRow = { id: string; title: string; status: string; scheduled_at: string | null; candidates: { full_name: string }[] | null }
-type PollRow = { id: string; question: string; total_votes: number; closes_at: string; user_vote?: string }
+type PollRow = { id: string; question: string; total_votes: number; closes_at: string }
 type WardRow = { ward: string; lga: string; index_score: number }
 
 export default async function VoterDashboardPage() {
@@ -35,122 +33,125 @@ export default async function VoterDashboardPage() {
   const wards = (wardsData.data ?? []) as WardRow[]
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
       <div>
-        <span className="text-xs font-bold tracking-widest uppercase text-[#0F5438] bg-[#E8F3EE] px-2.5 py-1 rounded inline-block mb-2">
+        <span className="text-[10px] font-bold tracking-widest uppercase text-forest-mid bg-forest-light px-2.5 py-1 rounded inline-block mb-2">
           Voter Dashboard
         </span>
-        <h1 className="font-serif text-2xl font-black text-[#0D1B12]">
+        <h1 className="font-serif text-3xl font-black text-ink">
           Welcome back, {user.full_name?.split(' ')[0]} 👋
         </h1>
-        <p className="text-sm text-[#3D5246] max-w-lg">
-          Your constituency activity at a glance. Participate, earn CIVICT, and make your voice matter.
-        </p>
+        <p className="text-sm text-muted">Your constituency at a glance.</p>
       </div>
 
-      {/* Stats Row */}
+      {/* Stats Row — Premium Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-xs font-bold tracking-widest uppercase text-[#3D5246] mb-2">CIVICT Balance</p>
-            <p className="font-serif text-3xl font-black text-[#C8960A]">₡ {balance.toLocaleString()}</p>
-            <p className="text-xs text-[#3D5246] mt-1 capitalize">{rank.replace(/_/g, ' ')}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-xs font-bold tracking-widest uppercase text-[#3D5246] mb-2">Your Rank</p>
-            <p className="font-serif text-3xl font-black text-[#0A3D2B] capitalize">{rank.replace(/_/g, ' ')}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-xs font-bold tracking-widest uppercase text-[#3D5246] mb-2">Questions Asked</p>
-            <p className="font-serif text-3xl font-black text-[#0A3D2B]">–</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-xs font-bold tracking-widest uppercase text-[#3D5246] mb-2">Reports Filed</p>
-            <p className="font-serif text-3xl font-black text-[#0A3D2B]">–</p>
-          </CardContent>
-        </Card>
+        <div className="bg-white border border-border rounded-xl p-6 hover:border-forest hover:-translate-y-0.5 transition-all shadow-sm">
+          <p className="text-[10px] font-bold tracking-widest uppercase text-muted mb-2">CIVICT Balance</p>
+          <p className="font-serif text-3xl font-black text-gold">₡ {balance.toLocaleString()}</p>
+          <p className="text-xs text-muted mt-1 capitalize">{rank.replace(/_/g, ' ')}</p>
+        </div>
+        <div className="bg-white border border-border rounded-xl p-6 hover:border-forest hover:-translate-y-0.5 transition-all shadow-sm">
+          <p className="text-[10px] font-bold tracking-widest uppercase text-muted mb-2">Your Rank</p>
+          <p className="font-serif text-3xl font-black text-forest capitalize">{rank.replace(/_/g, ' ')}</p>
+        </div>
+        <div className="bg-white border border-border rounded-xl p-6 hover:border-forest hover:-translate-y-0.5 transition-all shadow-sm">
+          <p className="text-[10px] font-bold tracking-widest uppercase text-muted mb-2">Questions Asked</p>
+          <p className="font-serif text-3xl font-black text-forest">–</p>
+        </div>
+        <div className="bg-white border border-border rounded-xl p-6 hover:border-forest hover:-translate-y-0.5 transition-all shadow-sm">
+          <p className="text-[10px] font-bold tracking-widest uppercase text-muted mb-2">Reports Filed</p>
+          <p className="font-serif text-3xl font-black text-forest">–</p>
+        </div>
       </div>
 
-      {/* Sessions + Polls */}
+      {/* Sessions — Designer's Live Card Style */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader><CardTitle className="text-base text-[#0D1B12]">🔴 Live & Upcoming Sessions</CardTitle></CardHeader>
-          <CardContent>
-            {sessions.length === 0 ? (
-              <p className="text-sm text-[#3D5246] text-center py-8">No sessions scheduled yet.</p>
-            ) : (
-              <div className="space-y-3">
-                {sessions.map((s: any) => (
-                  <div key={s.id} className="border-b border-[#EAF0EB] pb-3 last:border-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Badge variant={s.status === 'live' ? 'destructive' : 'secondary'} className="text-[10px]">
-                        {s.status === 'live' ? '● LIVE' : s.status}
-                      </Badge>
-                      <span className="text-sm font-semibold text-[#0D1B12]">{s.title}</span>
-                    </div>
-                    <p className="text-xs text-[#3D5246]">
-                      {s.candidates?.[0]?.full_name ?? 'DICO'} · {s.scheduled_at ? new Date(s.scheduled_at).toLocaleDateString() : ''}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader><CardTitle className="text-base text-[#0D1B12]">🗳️ Active Polls</CardTitle></CardHeader>
-          <CardContent>
-            {polls.length === 0 ? (
-              <p className="text-sm text-[#3D5246] text-center py-8">No active polls right now.</p>
-            ) : (
-              <div className="space-y-3">
-                {polls.map(p => (
-                  <div key={p.id} className="border-b border-[#EAF0EB] pb-3 last:border-0">
-                    <p className="text-sm font-semibold text-[#0D1B12] mb-1">{p.question}</p>
-                    <div className="flex gap-2 items-center">
-                      <Badge variant="secondary" className="bg-green-100 text-green-700 text-[10px]">Active</Badge>
-                      <span className="text-xs text-[#3D5246]">{p.total_votes} votes</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Ward Index */}
-      <Card>
-        <CardHeader><CardTitle className="text-base text-[#0D1B12]">🏆 Ward Civic Index</CardTitle></CardHeader>
-        <CardContent>
-          {wards.length === 0 ? (
-            <p className="text-sm text-[#3D5246] text-center py-8">No ward data yet.</p>
+        <div className="bg-white border border-border rounded-xl overflow-hidden shadow-sm">
+          <div className="p-6 border-b border-border-light flex items-center justify-between">
+            <h3 className="text-sm font-bold text-ink">🔴 Live & Upcoming</h3>
+            <Link href="/sessions" className="text-[11px] font-semibold text-forest-mid hover:text-forest">View all</Link>
+          </div>
+          {sessions.length === 0 ? (
+            <p className="text-sm text-muted text-center py-10">No sessions scheduled yet.</p>
           ) : (
-            <div className="space-y-3">
-              {wards.map((w, i) => (
-                <div key={w.ward} className="flex items-center gap-3">
-                  <span className="font-serif text-sm font-black text-[#5A6E62] w-5 text-center">{i + 1}</span>
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-[#0D1B12]">{w.ward} · {w.lga}</p>
-                    <div className="h-1.5 bg-[#D8E4DC] rounded-full mt-1">
-                      <div className="h-1.5 rounded-full bg-gradient-to-r from-[#0A3D2B] to-[#C8960A]" style={{ width: `${w.index_score}%` }} />
-                    </div>
+            <div className="divide-y divide-border-light">
+              {sessions.map((s: any) => (
+                <div key={s.id} className="p-5 hover:bg-forest-faint/30 transition-colors">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    {s.status === 'live' ? (
+                      <span className="flex items-center gap-1.5 text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" /> LIVE
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-bold text-forest-mid bg-forest-light px-2 py-0.5 rounded uppercase">{s.status}</span>
+                    )}
                   </div>
-                  <span className="font-serif text-base font-black text-[#0A3D2B]">{w.index_score}</span>
+                  <p className="text-sm font-semibold text-ink">{s.title}</p>
+                  <p className="text-xs text-muted mt-1">
+                    {s.candidates?.[0]?.full_name ?? 'DICO'} 
+                    {s.scheduled_at ? <> · {new Date(s.scheduled_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</> : ''}
+                  </p>
                 </div>
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+
+        {/* Polls */}
+        <div className="bg-white border border-border rounded-xl overflow-hidden shadow-sm">
+          <div className="p-6 border-b border-border-light flex items-center justify-between">
+            <h3 className="text-sm font-bold text-ink">🗳️ Active Polls</h3>
+            <Link href="/polls" className="text-[11px] font-semibold text-forest-mid hover:text-forest">View all</Link>
+          </div>
+          {polls.length === 0 ? (
+            <p className="text-sm text-muted text-center py-10">No active polls right now.</p>
+          ) : (
+            <div className="divide-y divide-border-light">
+              {polls.map(p => (
+                <div key={p.id} className="p-5 hover:bg-forest-faint/30 transition-colors">
+                  <p className="text-sm font-semibold text-ink mb-1.5">{p.question}</p>
+                  <div className="flex items-center gap-3 text-xs text-muted">
+                    <span className="flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                      Active
+                    </span>
+                    <span>{p.total_votes} votes</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Ward Index — Designer's Leaderboard Style */}
+      <div className="bg-gradient-to-br from-[#0A3D2B] to-[#0F5438] rounded-xl p-6 md:p-8 shadow-md">
+        <p className="text-[10px] font-bold tracking-widest uppercase text-white/50 mb-5">🏆 Ward Civic Index — Live Leaderboard</p>
+        {wards.length === 0 ? (
+          <p className="text-sm text-white/40 text-center py-8">No ward data yet.</p>
+        ) : (
+          <div className="grid md:grid-cols-3 gap-3">
+            {wards.map((w, i) => (
+              <div key={w.ward} className="bg-white/5 border border-white/10 rounded-lg p-4">
+                <p className="text-xs text-white/70 font-semibold mb-2">
+                  <span className="text-gold font-black mr-1">{i + 1}.</span> {w.ward} · {w.lga}
+                </p>
+                <div className="flex items-end gap-2 mb-2">
+                  <span className="font-serif text-2xl font-black text-white">{w.index_score}</span>
+                  <span className={`text-xs font-bold ${i < 2 ? 'text-green-400' : 'text-white/40'}`}>
+                    {i === 0 ? '+4' : i === 1 ? '+2' : '+1'}
+                  </span>
+                </div>
+                <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                  <div className="h-full rounded-full bg-gradient-to-r from-gold to-gold-hover" style={{ width: `${w.index_score}%` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

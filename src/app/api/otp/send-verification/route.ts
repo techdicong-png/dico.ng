@@ -4,6 +4,7 @@ import { cookies } from 'next/headers'
 import bcrypt from 'bcryptjs'
 import { verifyToken } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
+import {sendOTPEmail} from '@/lib/mail'
 
 export async function POST() {
   const cookieStore = await cookies()
@@ -21,6 +22,7 @@ export async function POST() {
 
   await supabaseAdmin.from('email_otp').update({ used: true }).eq('user_id', payload.userId).eq('purpose', 'verify_email').eq('used', false)
   await supabaseAdmin.from('email_otp').insert({ user_id: payload.userId, email: user.email, otp_hash, purpose: 'verify_email', expires_at })
+  await sendOTPEmail(user.email, otp, user.full_name)
 
   console.log(`[OTP] ${otp} for ${user.email}`) // In dev, logs to terminal
 
