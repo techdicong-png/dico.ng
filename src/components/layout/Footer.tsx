@@ -1,17 +1,18 @@
 "use client"
+import Image from 'next/image'
 import Link from 'next/link'
 
 export function Footer() {
   return (
     <footer className="bg-[#060E08] pt-16 pb-0 px-6 border-t border-white/5">
       <div className="max-w-[1100px] mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 items-center gap-8">
           {/* Brand */}
-          <div className="md:col-span-1">
-            <span className="font-serif text-xl text-white">DICO</span>
-            <p className="text-sm text-white/40 mt-3 max-w-[260px] leading-relaxed">
+          <div className="md:col-span-1 flex flex-col items-center">
+            <Image src="/bigLogo.png" alt="Dico logo" width={250} height={250} className="inline-block ml-2 mt-1"/>
+            {/* <p className="text-sm text-white/40 mt-3 max-w-[260px] leading-relaxed">
               Digital Constituency Office — connecting verified voters directly to their representatives through transparent, token-powered civic engagement.
-            </p>
+            </p> */}
             <div className="flex gap-2 mt-5">
               {[
                 { viewBox: '0 0 24 24', path: 'M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z' },

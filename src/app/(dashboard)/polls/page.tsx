@@ -3,9 +3,6 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { verifyToken } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 
 export default async function PollsPage() {
@@ -32,15 +29,17 @@ export default async function PollsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <span className="text-xs font-bold tracking-widest uppercase text-forest-mid bg-forest-light px-2.5 py-1 rounded inline-block mb-2">
+        <span className="text-[10px] font-bold tracking-widest uppercase text-forest-800 dark:text-white bg-forest-light dark:bg-[#1b3a2b] px-2.5 py-1 rounded inline-block mb-2">
           Civic Polls · +10 CIVICT per vote
         </span>
-        <h1 className="font-serif text-2xl font-black text-ink">Community Polls</h1>
-        <p className="text-sm text-muted-text max-w-lg">Vote on live constituency issues and earn CIVICT.</p>
+        <h1 className="font-serif text-2xl md:text-3xl font-black text-ink dark:text-white">Community Polls</h1>
+        <p className="text-sm text-muted dark:text-[#c0d0c4] max-w-lg">Vote on live constituency issues and earn CIVICT.</p>
       </div>
 
       {list.length === 0 ? (
-        <Card><CardContent className="py-12 text-center text-muted-text">No active polls right now.</CardContent></Card>
+        <div className="bg-card dark:bg-[#11241b] border border-border dark:border-[#1f3a2c] rounded-xl py-12 text-center">
+          <p className="text-sm text-muted dark:text-[#c0d0c4]">No active polls right now.</p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {list.map(poll => {
@@ -48,15 +47,19 @@ export default async function PollsPage() {
             const voted = !!poll.user_vote
             const closed = new Date(poll.closes_at) < new Date()
             return (
-              <Card key={poll.id}>
-                <CardContent className="pt-6">
+              <div key={poll.id} className="bg-card dark:bg-[#11241b] border border-border dark:border-[#1f3a2c] rounded-xl overflow-hidden">
+                <div className="pt-5 px-5 pb-5">
                   <div className="flex gap-2 mb-3">
-                    <Badge variant={closed ? 'destructive' : voted ? 'secondary' : 'default'}>
-                      {closed ? 'Closed' : voted ? 'Voted' : 'Active'}
-                    </Badge>
-                    <Badge variant="outline">{poll.scope}</Badge>
+                    {closed ? (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300">Closed</span>
+                    ) : voted ? (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-forest-light dark:bg-[#1b3a2b] text-forest-800 dark:text-[#d4ebdf]">Voted</span>
+                    ) : (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">Active</span>
+                    )}
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-forest-faint dark:bg-[#1b3a2b] text-muted dark:text-[#c0d0c4]">{poll.scope}</span>
                   </div>
-                  <h3 className="font-serif text-lg font-bold text-ink mb-4">{poll.question}</h3>
+                  <h3 className="font-serif text-lg font-bold text-ink dark:text-white mb-4">{poll.question}</h3>
 
                   {(poll.poll_options || []).map((opt: { id: string; option_text: string; vote_count: number }) => {
                     const pct = total ? Math.round((opt.vote_count / total) * 100) : 0
@@ -64,26 +67,27 @@ export default async function PollsPage() {
                     return (
                       <div key={opt.id} className="mb-2">
                         <div className="flex justify-between text-sm mb-1">
-                          <span className={isVoted ? 'font-bold text-forest' : 'text-ink'}>{opt.option_text}{isVoted ? ' ✓' : ''}</span>
-                          <span className="text-muted-text">{pct}% ({opt.vote_count})</span>
+                          <span className={isVoted ? 'font-bold text-forest dark:text-forest-700' : 'text-ink dark:text-white'}>{opt.option_text}{isVoted ? ' ✓' : ''}</span>
+                          <span className="text-muted dark:text-[#c0d0c4]">{pct}% ({opt.vote_count})</span>
                         </div>
-                        <div className="h-1.5 bg-border rounded-full">
+                        <div className="h-1.5 bg-border dark:bg-[#1f3a2c] rounded-full">
                           <div className={`h-1.5 rounded-full transition-all ${isVoted ? 'bg-forest' : 'bg-gold'}`} style={{ width: `${pct}%` }} />
                         </div>
                       </div>
                     )
                   })}
 
-                  <div className="flex justify-between items-center mt-4 pt-3 border-t border-border-light text-xs text-muted-text">
+                  <div className="flex justify-between items-center mt-4 pt-3 border-t border-border-light dark:border-[#1f3a2c] text-xs text-muted dark:text-[#c0d0c4]">
                     <span>{total.toLocaleString()} votes</span>
                     {!voted && !closed && (
-                      <Link href={`/api/polls/${poll.id}/vote`}>
-                        <Button size="sm" className="bg-forest hover:bg-forest-mid">Vote +10 ₡</Button>
+                      <Link href={`/api/polls/${poll.id}/vote`}
+                        className="bg-forest hover:bg-forest-mid text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-all">
+                        Vote +10 ₡
                       </Link>
                     )}
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             )
           })}
         </div>

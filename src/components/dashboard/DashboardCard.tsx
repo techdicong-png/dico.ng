@@ -6,7 +6,7 @@ export function DashboardCard({
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn('bg-white border border-border rounded-xl shadow-sm p-6', className)} {...props}>
+    <div className={cn('bg-card border border-border rounded-xl shadow-sm p-6', className)} {...props}>
       {children}
     </div>
   )

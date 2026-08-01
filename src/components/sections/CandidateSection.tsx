@@ -20,7 +20,7 @@ export function CandidatesSection() {
             { name: 'Candidate C', party: 'LP', office: 'Governorship · Delta State', followers: '5.8k', qas: 103 },
             { name: 'Candidate D', party: 'NNPP', office: 'House of Reps · Sapele/Okpe', followers: '890', qas: 21 },
           ].map(c => (
-            <div key={c.name} className="bg-white border border-border rounded-xl overflow-hidden hover:border-forest hover:-translate-y-0.5 transition-all">
+            <div key={c.name} className="bg-card border border-border rounded-xl overflow-hidden hover:border-forest hover:-translate-y-0.5 transition-all">
               <div className="h-28 bg-forest-light flex items-center justify-center font-serif text-3xl font-black text-forest-mid relative">
                 {c.name[0]}
                 <span className="absolute bottom-2 right-2 text-[9px] font-bold bg-forest text-white px-1.5 py-0.5 rounded">✓ Verified</span>

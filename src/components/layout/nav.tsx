@@ -30,27 +30,29 @@ const navItems: NavItem[] = [
     label: 'Explore', icon: 'fa-compass', dropdown: true,
     children: [
       { href: '/explorer', label: 'Your Constituency', icon: 'fa-magnifying-glass-location' },
-      { href: '/candidates', label: 'All Candidates', icon: 'fa-users' },
+      { href: '/all-candidates', label: 'All Candidates', icon: 'fa-users' },
     ],
   },
-  // { href: '/sessions', label: 'Live Session', icon: 'fa-video' },
-  // { href: '/civict', label: 'CIVICT', icon: 'fa-coins' },
+  { href: '/live-sessions', label: 'Live Session', icon: 'fa-video' },
+  { href: '/token-civict', label: 'CIVICT', icon: 'fa-coins' },
+   { href: '/active-marketplace', label: 'Marketplace', icon: 'fa-store' },
   { href: '/pricing', label: 'Pricing', icon: 'fa-tag' },
   {
     label: 'Insights', icon: 'fa-chart-simple', dropdown: true,
     children: [
-      { href: '/reports', label: 'Reports', icon: 'fa-file-lines' },
-      { href: '/polls', label: 'Polls', icon: 'fa-square-poll-vertical' },
+      { href: '/live-reports', label: 'Reports', icon: 'fa-file-lines' },
+      { href: '/live-polls', label: 'Polls', icon: 'fa-square-poll-vertical' },
     ],
   },
   { href: '/contact', label: 'Contact', icon: 'fa-envelope' },
-  {
+    {
     label: 'Get Started', icon: 'fa-rocket', dropdown: true, gold: true,
     children: [
-      { href: '/register?role=candidate', label: 'As Candidate', icon: 'fa-chalkboard-user' },
-      { href: '/register?role=voter', label: 'As Voter', icon: 'fa-user-check' },
+      { href: '/register/candidate', label: 'As Candidate', icon: 'fa-chalkboard-user' },
+      { href: '/register/voter', label: 'As Voter', icon: 'fa-user-check' },
     ],
   },
+
   { href: '/login', label: 'Login', icon: 'fa-arrow-right-to-bracket' },
 ]
 

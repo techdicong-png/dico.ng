@@ -16,8 +16,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <>
       <Navbar />
-      <div className="flex pt-14 min-h-screen bg-[#F7F4EE]">
-        <Sidebar role={user.role} />
+      <div className="flex pt-14 min-h-screen bg-background">
+        <Sidebar role={user.role} userInitial={user.full_name?.[0] || 'U'} userName={user.full_name || 'User'} />
         <main className="flex-1 lg:ml-60 p-4 md:p-8 max-w-full overflow-x-hidden">
           {children}
         </main>

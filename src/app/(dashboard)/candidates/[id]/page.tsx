@@ -3,9 +3,6 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { verifyToken } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 
 export default async function CandidateProfilePage({ params }: { params: Promise<{ id: string }> }) {
@@ -18,7 +15,11 @@ export default async function CandidateProfilePage({ params }: { params: Promise
     .select('*, users!inner(email, created_at)')
     .eq('id', (await params).id).single()
 
-  if (!candidate) return <Card><CardContent className="py-12 text-center">Candidate not found.</CardContent></Card>
+  if (!candidate) return (
+    <div className="bg-card dark:bg-[#11241b] border border-border dark:border-[#1f3a2c] rounded-xl py-12 text-center">
+      <p className="text-sm text-muted dark:text-[#c0d0c4]">Candidate not found.</p>
+    </div>
+  )
 
   const [qas, sessions] = await Promise.all([
     supabaseAdmin.from('questions')
@@ -60,75 +61,92 @@ export default async function CandidateProfilePage({ params }: { params: Promise
           { label: 'Reputation', value: (c.reputation_score || 0).toLocaleString() },
           { label: 'Verified', value: c.is_verified ? '✓ Yes' : 'Pending' },
         ].map(s => (
-          <Card key={s.label}>
-            <CardContent className="pt-4 text-center">
-              <p className="font-serif text-xl font-black text-forest">{s.value}</p>
-              <p className="text-[10px] font-bold tracking-wider uppercase text-muted-text">{s.label}</p>
-            </CardContent>
-          </Card>
+          <div key={s.label} className="bg-card dark:bg-[#11241b] border border-border dark:border-[#1f3a2c] rounded-xl">
+            <div className="pt-4 pb-4 text-center">
+              <p className="font-serif text-xl font-black text-forest dark:text-forest-700">{s.value}</p>
+              <p className="text-[10px] font-bold tracking-wider uppercase text-muted dark:text-[#c0d0c4]">{s.label}</p>
+            </div>
+          </div>
         ))}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Bio */}
-        <Card>
-          <CardHeader><CardTitle className="text-base">🧾 About</CardTitle></CardHeader>
-          <CardContent>
-            {c.bio ? <p className="text-sm text-muted-text">{c.bio}</p> : <p className="text-sm text-muted-text">No bio provided.</p>}
+        <div className="bg-card dark:bg-[#11241b] border border-border dark:border-[#1f3a2c] rounded-xl">
+          <div className="px-5 py-4 border-b border-border dark:border-[#1f3a2c]">
+            <h3 className="text-base font-bold text-ink dark:text-white">🧾 About</h3>
+          </div>
+          <div className="px-5 py-4">
+            {c.bio ? (
+              <p className="text-sm text-muted dark:text-[#c0d0c4]">{c.bio}</p>
+            ) : (
+              <p className="text-sm text-muted dark:text-[#c0d0c4]">No bio provided.</p>
+            )}
             {c.manifesto && (
-              <div className="mt-4 p-3 bg-forest-faint rounded-lg text-sm">
-                <strong className="text-forest">Manifesto:</strong> {c.manifesto}
+              <div className="mt-4 p-3 bg-forest-faint dark:bg-[#1b3a2b] rounded-lg text-sm">
+                <strong className="text-forest dark:text-forest-700">Manifesto:</strong>{' '}
+                <span className="text-muted dark:text-[#c0d0c4]">{c.manifesto}</span>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Upcoming sessions */}
-        <Card>
-          <CardHeader><CardTitle className="text-base">📅 Upcoming Sessions</CardTitle></CardHeader>
-          <CardContent>
+        <div className="bg-card dark:bg-[#11241b] border border-border dark:border-[#1f3a2c] rounded-xl">
+          <div className="px-5 py-4 border-b border-border dark:border-[#1f3a2c]">
+            <h3 className="text-base font-bold text-ink dark:text-white">📅 Upcoming Sessions</h3>
+          </div>
+          <div className="px-5 py-4">
             {(!sessions.data || sessions.data.length === 0) ? (
-              <p className="text-sm text-muted-text">No upcoming sessions.</p>
+              <p className="text-sm text-muted dark:text-[#c0d0c4]">No upcoming sessions.</p>
             ) : (
               <div className="space-y-3">
                 {(sessions.data as any[]).map(s => (
-                  <Link key={s.id} href={`/sessions/${s.id}`} className="block border-b border-border-light pb-3 last:border-0">
+                  <Link key={s.id} href={`/sessions/${s.id}`} className="block border-b border-border-light dark:border-[#1f3a2c] pb-3 last:border-0 last:pb-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <Badge variant={s.status === 'live' ? 'destructive' : 'secondary'} className="text-[10px]">{s.status}</Badge>
-                      <span className="text-sm font-semibold text-ink">{s.title}</span>
+                      {s.status === 'live' ? (
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300">{s.status}</span>
+                      ) : (
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-forest-light dark:bg-[#1b3a2b] text-forest-800 dark:text-[#d4ebdf]">{s.status}</span>
+                      )}
+                      <span className="text-sm font-semibold text-ink dark:text-white">{s.title}</span>
                     </div>
-                    <p className="text-xs text-muted-text">{new Date(s.scheduled_at).toLocaleDateString()} · {s.viewer_count || 0} viewers</p>
+                    <p className="text-xs text-muted dark:text-[#c0d0c4]">
+                      {new Date(s.scheduled_at).toLocaleDateString()} · {s.viewer_count || 0} viewers
+                    </p>
                   </Link>
                 ))}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
       {/* Q&As */}
-      <Card>
-        <CardHeader><CardTitle className="text-base">❓ Recent Q&As</CardTitle></CardHeader>
-        <CardContent>
+      <div className="bg-card dark:bg-[#11241b] border border-border dark:border-[#1f3a2c] rounded-xl">
+        <div className="px-5 py-4 border-b border-border dark:border-[#1f3a2c]">
+          <h3 className="text-base font-bold text-ink dark:text-white">❓ Recent Q&As</h3>
+        </div>
+        <div className="px-5 py-4">
           {(!qas.data || qas.data.length === 0) ? (
-            <p className="text-sm text-muted-text">No answered questions yet.</p>
+            <p className="text-sm text-muted dark:text-[#c0d0c4]">No answered questions yet.</p>
           ) : (
             <div className="space-y-4">
               {(qas.data as any[]).map(q => (
-                <div key={q.id} className="border-l-4 border-forest pl-4">
-                  <p className="text-sm font-semibold text-ink">Q: {q.question_text}</p>
+                <div key={q.id} className="border-l-4 border-forest dark:border-forest-700 pl-4">
+                  <p className="text-sm font-semibold text-ink dark:text-white">Q: {q.question_text}</p>
                   {q.answer_text && (
-                    <p className="text-sm text-muted-text bg-forest-faint p-3 rounded mt-2">A: {q.answer_text}</p>
+                    <p className="text-sm text-muted dark:text-[#c0d0c4] bg-forest-faint dark:bg-[#1b3a2b] p-3 rounded mt-2">A: {q.answer_text}</p>
                   )}
-                  <p className="text-xs text-muted-text mt-2">
+                  <p className="text-xs text-muted dark:text-[#c0d0c4] mt-2">
                     by {q.users?.full_name || 'Voter'} {q.users?.ward ? `· ${q.users.ward}` : ''} · ▲ {q.upvote_count || 0}
                   </p>
                 </div>
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   )
 }

@@ -79,7 +79,7 @@ export default function NotificationsPage() {
         {filters.map(f => (
           <button key={f} onClick={() => setFilter(f)}
             className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
-              filter === f ? 'bg-forest text-white border-forest' : 'bg-white text-muted-text border-border hover:border-forest'
+              filter === f ? 'bg-forest text-white border-forest' : 'bg-card text-muted-text border-border hover:border-forest'
             }`}>
             {f.replace(/_/g, ' ')}
           </button>

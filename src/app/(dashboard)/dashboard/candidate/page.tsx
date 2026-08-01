@@ -1,12 +1,9 @@
-// src/app/(dashboard)/dashboard/candidate/page.tsx
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { verifyToken, getAuthUser } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import { ChevronRight, MessageCircle, Video, FileText, Star, Users, BarChart3 } from 'lucide-react'
 
 export default async function CandidateDashboardPage() {
   const cookieStore = await cookies()
@@ -41,123 +38,156 @@ export default async function CandidateDashboardPage() {
   const sList = (sessions.data || []) as any[]
   const rList = (reports.data || []) as any[]
 
+  const stats = [
+    { icon: Star, label: 'Reputation', value: (c?.reputation_score || 0).toLocaleString(), gold: true },
+    { icon: Users, label: 'Followers', value: (c?.follower_count || 0).toLocaleString() },
+    { icon: MessageCircle, label: 'Q&As Answered', value: c?.qa_count || 0 },
+    { icon: Video, label: 'Sessions', value: sList.filter(s => s.status === 'ended').length },
+  ]
+
   return (
     <div className="space-y-6">
+      {/* ==================== HEADER ==================== */}
       <div>
-        <span className="text-xs font-bold tracking-widest uppercase text-forest-mid bg-forest-light px-2.5 py-1 rounded inline-block mb-2">
+        <span className="text-[10px] font-bold tracking-widest uppercase text-forest-800 dark:text-white bg-forest-light dark:bg-[#1b3a2b] px-2.5 py-1 rounded inline-block mb-2">
           Candidate Command Centre
         </span>
-        <h1 className="font-serif text-2xl font-black text-ink">Welcome, {user.full_name?.split(' ')[0]} 🎙️</h1>
+        <h1 className="font-serif text-2xl md:text-3xl font-black text-ink dark:text-white">
+          Welcome, <span className="text-gold">{user.full_name?.split(' ')[0]}</span> 🎙️
+        </h1>
       </div>
 
+      {/* ==================== ACTION BUTTONS ==================== */}
       <div className="flex gap-3 flex-wrap">
-        <Link href="/sessions"><Button className="bg-forest hover:bg-forest-mid">Schedule Live Session</Button></Link>
-        <Link href="/polls"><Button variant="outline">Create Poll</Button></Link>
-        <Link href="/profile"><Button variant="outline">Edit Profile</Button></Link>
+        <Link href="/sessions" className="bg-forest hover:bg-forest-mid text-white font-semibold text-sm px-5 py-2.5 rounded-lg transition-all inline-flex items-center gap-2">
+          <Video className="h-4 w-4" /> Schedule Live Session
+        </Link>
+        <Link href="/polls" className="border border-border dark:border-[#1f3a2c] text-ink dark:text-white hover:bg-sand dark:hover:bg-[#1b3a2b] font-semibold text-sm px-5 py-2.5 rounded-lg transition-all inline-flex items-center gap-2">
+          <BarChart3 className="h-4 w-4" /> Create Poll
+        </Link>
+        <Link href="/profile" className="border border-border dark:border-[#1f3a2c] text-ink dark:text-white hover:bg-sand dark:hover:bg-[#1b3a2b] font-semibold text-sm px-5 py-2.5 rounded-lg transition-all">
+          Edit Profile
+        </Link>
       </div>
 
-      <div className="grid grid-cols-4 gap-4">
-        {[
-          { label: 'Reputation', value: (c?.reputation_score || 0).toLocaleString(), gold: true },
-          { label: 'Followers', value: (c?.follower_count || 0).toLocaleString() },
-          { label: 'Q&As Answered', value: c?.qa_count || 0 },
-          { label: 'Sessions', value: sList.filter(s => s.status === 'ended').length },
-        ].map(stat => (
-          <Card key={stat.label}>
-            <CardContent className="pt-6">
-              <p className="text-[10px] font-bold tracking-wider uppercase text-muted-text mb-2">{stat.label}</p>
-              <p className={`font-serif text-3xl font-black ${stat.gold ? 'text-gold' : 'text-forest'}`}>{stat.value}</p>
-            </CardContent>
-          </Card>
+      {/* ==================== STAT CARDS ==================== */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map(s => (
+          <div key={s.label} className="bg-card dark:bg-[#11241b] border border-border dark:border-[#1f3a2c] rounded-xl p-5 hover:border-forest dark:hover:border-gold/30 hover:-translate-y-0.5 transition-all">
+            <div className={`w-9 h-9 rounded-lg ${s.gold ? 'bg-gold/10' : 'bg-mint dark:bg-[#1b3a2b]'} flex items-center justify-center mb-3`}>
+              <s.icon className={`h-[18px] w-[18px] ${s.gold ? 'text-gold' : 'text-forest dark:text-forest-700'}`} />
+            </div>
+            <p className={`font-serif text-2xl font-black ${s.gold ? 'text-gold' : 'text-ink dark:text-white'}`}>{s.value}</p>
+            <p className="text-[10px] font-bold tracking-wider uppercase text-muted dark:text-[#c0d0c4] mt-1">{s.label}</p>
+          </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle className="text-base">❓ Pending Questions</CardTitle>
-              <Badge variant="secondary">{qList.length}</Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
+      {/* ==================== MAIN GRID ==================== */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {/* PENDING QUESTIONS */}
+        <div className="bg-card dark:bg-[#11241b] border border-border dark:border-[#1f3a2c] rounded-xl overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border dark:border-[#1f3a2c]">
+            <h3 className="font-serif text-base font-bold text-ink dark:text-white flex items-center gap-2">
+              ❓ Pending Questions
+              {qList.length > 0 && (
+                <span className="text-[10px] font-bold bg-forest-light dark:bg-[#1b3a2b] text-forest-800 dark:text-[#d4ebdf] px-2 py-0.5 rounded">{qList.length}</span>
+              )}
+            </h3>
+          </div>
+          <div className="px-5">
             {qList.length === 0 ? (
-              <p className="text-sm text-muted-text text-center py-4">No pending questions. Great work! 🎉</p>
+              <p className="text-sm text-muted dark:text-[#c0d0c4] text-center py-8">No pending questions. Great work! 🎉</p>
             ) : (
-              <div className="space-y-3">
-                {qList.map((q: any) => (
-                  <div key={q.id} className="border-b border-border-light pb-3 last:border-0">
-                    <p className="text-sm text-ink mb-1">{q.question_text}</p>
-                    <p className="text-xs text-muted-text">
-                      by {q.users?.full_name || 'Voter'} · ▲ {q.upvote_count || 0}
-                    </p>
-                    <Link href={`/sessions/${q.session_id || ''}`}>
-                      <Button size="sm" variant="outline" className="mt-2 text-xs">Answer (+20 RP)</Button>
+              qList.map((q: any) => (
+                <div key={q.id} className="py-3.5 border-b border-border-light dark:border-[#1f3a2c] last:border-0">
+                  <p className="text-sm text-ink dark:text-white font-medium mb-1">{q.question_text}</p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-muted dark:text-[#c0d0c4]">by {q.users?.full_name || 'Voter'} · ▲ {q.upvote_count || 0}</p>
+                    <Link href={`/sessions/${q.session_id || ''}`}
+                      className="text-xs font-semibold text-forest-800 dark:text-forest-700 hover:text-forest dark:hover:text-white transition-colors">
+                      Answer (+20 RP)
                     </Link>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card>
-          <CardHeader><CardTitle className="text-base">📅 My Sessions</CardTitle></CardHeader>
-          <CardContent>
+        {/* MY SESSIONS */}
+        <div className="bg-card dark:bg-[#11241b] border border-border dark:border-[#1f3a2c] rounded-xl overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border dark:border-[#1f3a2c]">
+            <h3 className="font-serif text-base font-bold text-ink dark:text-white flex items-center gap-2">📅 My Sessions</h3>
+            <Link href="/sessions" className="text-xs font-semibold text-gold flex items-center gap-0.5">
+              View all <ChevronRight className="h-3 w-3" />
+            </Link>
+          </div>
+          <div className="px-5">
             {sList.length === 0 ? (
-              <p className="text-sm text-muted-text text-center py-4">No sessions yet. Schedule one.</p>
+              <p className="text-sm text-muted dark:text-[#c0d0c4] text-center py-8">No sessions yet. Schedule one.</p>
             ) : (
-              <div className="space-y-3">
-                {sList.slice(0, 5).map((s: any) => (
-                  <div key={s.id} className="flex justify-between items-center border-b border-border-light pb-3 last:border-0">
-                    <div>
-                      <p className="text-sm font-semibold text-ink">{s.title}</p>
-                      <p className="text-xs text-muted-text">{s.scheduled_at ? new Date(s.scheduled_at).toLocaleDateString() : ''} · {s.viewer_count || 0} viewers</p>
-                    </div>
-                    <Badge variant={s.status === 'live' ? 'destructive' : s.status === 'ended' ? 'default' : 'secondary'}>
-                      {s.status}
-                    </Badge>
+              sList.slice(0, 5).map((s: any) => (
+                <div key={s.id} className="flex items-center justify-between py-3.5 border-b border-border-light dark:border-[#1f3a2c] last:border-0">
+                  <div>
+                    <p className="text-sm font-semibold text-ink dark:text-white">{s.title}</p>
+                    <p className="text-xs text-muted dark:text-[#c0d0c4] mt-0.5">
+                      {s.scheduled_at ? new Date(s.scheduled_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : ''}
+                      {' · '}{s.viewer_count || 0} viewers
+                    </p>
                   </div>
-                ))}
-              </div>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded shrink-0 ${
+                    s.status === 'live' ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-300' 
+                    : s.status === 'ended' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                    : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
+                  }`}>{s.status}</span>
+                </div>
+              ))
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
-      <Card>
-        <CardHeader><CardTitle className="text-base">📋 Community Reports — Awaiting Response</CardTitle></CardHeader>
-        <CardContent>
-          {rList.length === 0 ? (
-            <p className="text-sm text-muted-text text-center py-4">No pending reports in your area.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border text-left text-[10px] font-bold tracking-wider uppercase text-muted-text">
-                    <th className="pb-2 pr-4">Title</th>
-                    <th className="pb-2 pr-4">Category</th>
-                    <th className="pb-2 pr-4">Ward</th>
-                    <th className="pb-2 pr-4">Date</th>
-                    <th className="pb-2">Action</th>
+      {/* ==================== REPORTS TABLE ==================== */}
+      <div className="bg-card dark:bg-[#11241b] border border-border dark:border-[#1f3a2c] rounded-xl overflow-hidden">
+        <div className="px-5 py-4 border-b border-border dark:border-[#1f3a2c]">
+          <h3 className="font-serif text-base font-bold text-ink dark:text-white">📋 Community Reports — Awaiting Response</h3>
+        </div>
+        {rList.length === 0 ? (
+          <p className="text-sm text-muted dark:text-[#c0d0c4] text-center py-8">No pending reports in your area.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border dark:border-[#1f3a2c] text-left text-[10px] font-bold tracking-wider uppercase text-muted dark:text-[#c0d0c4]">
+                  <th className="px-5 py-3">Title</th>
+                  <th className="py-3 pr-4">Category</th>
+                  <th className="py-3 pr-4">Ward</th>
+                  <th className="py-3 pr-4">Date</th>
+                  <th className="py-3 pr-5">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rList.map((r: any) => (
+                  <tr key={r.id} className="border-b border-border-light dark:border-[#1f3a2c] last:border-0">
+                    <td className="px-5 py-3 font-medium text-ink dark:text-white">{r.title}</td>
+                    <td className="py-3 pr-4">
+                      <span className="text-[10px] font-bold bg-forest-light dark:bg-[#1b3a2b] text-forest-800 dark:text-[#d4ebdf] px-2 py-0.5 rounded">{r.category}</span>
+                    </td>
+                    <td className="py-3 pr-4 text-xs text-muted dark:text-[#c0d0c4]">{r.ward || '–'}</td>
+                    <td className="py-3 pr-4 text-xs text-muted dark:text-[#c0d0c4]">{new Date(r.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</td>
+                    <td className="py-3 pr-5">
+                      <Link href={`/reports/${r.id}`} className="text-xs font-semibold text-forest-800 dark:text-forest-700 hover:text-forest dark:hover:text-white border border-border dark:border-[#1f3a2c] px-3 py-1.5 rounded-lg transition-all">
+                        Respond
+                      </Link>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {rList.map((r: any) => (
-                    <tr key={r.id} className="border-b border-border-light">
-                      <td className="py-3 pr-4 font-medium text-ink">{r.title}</td>
-                      <td className="py-3 pr-4"><Badge variant="outline">{r.category}</Badge></td>
-                      <td className="py-3 pr-4 text-xs text-muted-text">{r.ward || '–'}</td>
-                      <td className="py-3 pr-4 text-xs text-muted-text">{new Date(r.created_at).toLocaleDateString()}</td>
-                      <td className="py-3"><Button size="sm" variant="outline">Respond</Button></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
