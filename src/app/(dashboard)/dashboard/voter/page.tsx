@@ -53,11 +53,11 @@ export default async function VoterDashboardPage() {
     <div className="space-y-6">
       {/* HEADER */}
       <div>
-        <span className="text-[10px] font-bold tracking-widest uppercase text-forest-800 dark:text-forest-800 bg-forest-light dark:bg-[#1b3a2b] px-2.5 py-1 rounded inline-block mb-2">
+        <span className="text-[10px] font-bold tracking-widest uppercase text-forest-800 dark:text-white bg-forest-light dark:bg-[#1b3a2b] px-2.5 py-1 rounded inline-block mb-2">
           Voter Dashboard
         </span>
         <h1 className="font-serif text-2xl md:text-3xl font-black text-ink dark:text-white">
-          Welcome back, <span className="text-gold dark:text-gold">{user.full_name?.split(' ')[0]}</span> 👋
+          Welcome back, <span className="text-gold">{user.full_name?.split(' ')[0]}</span> 👋
         </h1>
         <p className="text-sm text-muted dark:text-[#c0d0c4]">Your constituency at a glance.</p>
       </div>
@@ -68,7 +68,7 @@ export default async function VoterDashboardPage() {
           <Link key={s.label} href={s.href}
             className="bg-card dark:bg-[#11241b] border border-border dark:border-[#1f3a2c] rounded-xl p-5 hover:border-forest dark:hover:border-gold/30 hover:-translate-y-0.5 transition-all">
             <div className={`w-9 h-9 rounded-lg ${s.gold ? 'bg-gold-light dark:bg-[rgba(212,169,63,0.16)]' : 'bg-mint dark:bg-[#1b3a2b]'} flex items-center justify-center mb-3`}>
-              <s.icon className={`h-[18px] w-[18px] ${s.gold ? 'text-gold dark:text-gold' : 'text-forest dark:text-forest-700'}`} />
+              <s.icon className={`h-[18px] w-[18px] ${s.gold ? 'text-gold' : 'text-forest dark:text-forest-700'}`} />
             </div>
             <p className="font-serif text-2xl font-black text-ink dark:text-white">{s.value}</p>
             <p className="text-[10px] font-bold tracking-wider uppercase text-muted dark:text-[#c0d0c4] mt-1">{s.label}</p>
@@ -83,7 +83,7 @@ export default async function VoterDashboardPage() {
         <div className="bg-card dark:bg-[#11241b] border border-border dark:border-[#1f3a2c] rounded-xl overflow-hidden">
           <div className="flex items-center justify-between px-5 py-4 border-b border-border dark:border-[#1f3a2c]">
             <h3 className="font-serif text-base font-bold text-ink dark:text-white">Recent Activity</h3>
-            <Link href="/feed" className="text-xs font-semibold text-gold dark:text-gold flex items-center gap-0.5">
+            <Link href="/feed" className="text-xs font-semibold text-gold flex items-center gap-0.5">
               View all <ChevronRight className="h-3 w-3" />
             </Link>
           </div>
@@ -104,7 +104,7 @@ export default async function VoterDashboardPage() {
         <div className="bg-card dark:bg-[#11241b] border border-border dark:border-[#1f3a2c] rounded-xl overflow-hidden">
           <div className="flex items-center justify-between px-5 py-4 border-b border-border dark:border-[#1f3a2c]">
             <h3 className="font-serif text-base font-bold text-ink dark:text-white">Sessions</h3>
-            <Link href="/sessions" className="text-xs font-semibold text-gold dark:text-gold flex items-center gap-0.5">
+            <Link href="/sessions" className="text-xs font-semibold text-gold flex items-center gap-0.5">
               View all <ChevronRight className="h-3 w-3" />
             </Link>
           </div>
@@ -121,7 +121,7 @@ export default async function VoterDashboardPage() {
                         <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" /> LIVE
                       </span>
                     ) : (
-                      <span className="text-[10px] font-bold text-forest-800 dark:text-forest-800 bg-forest-light dark:bg-[#1b3a2b] px-2 py-0.5 rounded">Upcoming</span>
+                      <span className="text-[10px] font-bold text-forest-800 dark:text-[#d4ebdf] bg-forest-light dark:bg-[#1b3a2b] px-2 py-0.5 rounded">Upcoming</span>
                     )}
                   </div>
                   <p className="text-sm font-semibold text-ink dark:text-white">{s.title}</p>
@@ -139,7 +139,7 @@ export default async function VoterDashboardPage() {
         <div className="bg-card dark:bg-[#11241b] border border-border dark:border-[#1f3a2c] rounded-xl overflow-hidden">
           <div className="flex items-center justify-between px-5 py-4 border-b border-border dark:border-[#1f3a2c]">
             <h3 className="font-serif text-base font-bold text-ink dark:text-white">Active Polls</h3>
-            <Link href="/polls" className="text-xs font-semibold text-gold dark:text-gold flex items-center gap-0.5">
+            <Link href="/polls" className="text-xs font-semibold text-gold flex items-center gap-0.5">
               View all <ChevronRight className="h-3 w-3" />
             </Link>
           </div>
@@ -165,7 +165,7 @@ export default async function VoterDashboardPage() {
         <div className="bg-card dark:bg-[#11241b] border border-border dark:border-[#1f3a2c] rounded-xl overflow-hidden">
           <div className="flex items-center justify-between px-5 py-4 border-b border-border dark:border-[#1f3a2c]">
             <h3 className="font-serif text-base font-bold text-ink dark:text-white">Your Constituency Reports</h3>
-            <Link href="/reports" className="text-xs font-semibold text-gold dark:text-gold flex items-center gap-0.5">
+            <Link href="/reports" className="text-xs font-semibold text-gold flex items-center gap-0.5">
               View all <ChevronRight className="h-3 w-3" />
             </Link>
           </div>
@@ -185,7 +185,7 @@ export default async function VoterDashboardPage() {
 
       {/* WARD CIVIC INDEX */}
       <div className="bg-gradient-to-br from-[#0A3D2B] to-[#0F5438] rounded-xl p-6 md:p-8 shadow-md">
-        <p className="text-[10px] font-bold tracking-widest uppercase text-white/50 dark:text-white/50 mb-5">🏆 Ward Civic Index — Live Leaderboard</p>
+        <p className="text-[10px] font-bold tracking-widest uppercase text-white/50 mb-5">🏆 Ward Civic Index — Live Leaderboard</p>
         {wards.length === 0 ? (
           <p className="text-sm text-white/40 text-center py-8">No ward data yet.</p>
         ) : (
@@ -193,7 +193,7 @@ export default async function VoterDashboardPage() {
             {wards.map((w: any, i: number) => (
               <div key={w.ward} className="bg-white/5 border border-white/10 rounded-lg p-4">
                 <p className="text-xs text-white/70 font-semibold mb-2">
-                  <span className="text-gold dark:text-gold font-black mr-1">{i + 1}.</span> {w.ward} · {w.lga}
+                  <span className="text-gold font-black mr-1">{i + 1}.</span> {w.ward} · {w.lga}
                 </p>
                 <div className="flex items-end gap-2 mb-2">
                   <span className="font-serif text-2xl font-black text-white">{w.index_score}</span>

@@ -48,8 +48,8 @@ const navItems: NavItem[] = [
     {
     label: 'Get Started', icon: 'fa-rocket', dropdown: true, gold: true,
     children: [
-      { href: '/register/candidate', label: 'As Candidate', icon: 'fa-chalkboard-user' },
-      { href: '/register/voter', label: 'As Voter', icon: 'fa-user-check' },
+      { href: '/register?=candidate', label: 'As Candidate', icon: 'fa-chalkboard-user' },
+      { href: '/register?=voter', label: 'As Voter', icon: 'fa-user-check' },
     ],
   },
 
