@@ -1,10 +1,16 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { verifyToken } from '@/lib/auth'
-import { supabaseAdmin } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+
+const supabaseServer = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  { auth: { autoRefreshToken: false, persistSession: false } }
+)
 
 export default async function AdminDashboardPage() {
   const cookieStore = await cookies()
@@ -13,14 +19,14 @@ export default async function AdminDashboardPage() {
   const payload = await verifyToken(token)
   if (!payload || payload.role !== 'admin') redirect('/dashboard')
 
-  const { data: civictTotal } = await supabaseAdmin.rpc('total_civict_supply')
-  const { count: totalUsers } = await supabaseAdmin.from('users').select('*', { count: 'exact', head: true })
-  const { count: totalCandidates } = await supabaseAdmin.from('candidates').select('*', { count: 'exact', head: true }).eq('is_active', true)
-  const { count: totalSessions } = await supabaseAdmin.from('live_sessions').select('*', { count: 'exact', head: true })
-  const { count: totalReports } = await supabaseAdmin.from('reports').select('*', { count: 'exact', head: true })
-  const { count: totalPolls } = await supabaseAdmin.from('polls').select('*', { count: 'exact', head: true })
+  const { data: civictTotal } = await supabaseServer.rpc('total_civict_supply')
+  const { count: totalUsers } = await supabaseServer.from('users').select('*', { count: 'exact', head: true })
+  const { count: totalCandidates } = await supabaseServer.from('candidates').select('*', { count: 'exact', head: true }).eq('is_active', true)
+  const { count: totalSessions } = await supabaseServer.from('live_sessions').select('*', { count: 'exact', head: true })
+  const { count: totalReports } = await supabaseServer.from('reports').select('*', { count: 'exact', head: true })
+  const { count: totalPolls } = await supabaseServer.from('polls').select('*', { count: 'exact', head: true })
   const thirtyDays = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-  const { count: activeUsers } = await supabaseAdmin.from('users').select('*', { count: 'exact', head: true }).gte('last_seen', thirtyDays)
+  const { count: activeUsers } = await supabaseServer.from('users').select('*', { count: 'exact', head: true }).gte('last_seen', thirtyDays)
 
   return (
     <div className="space-y-6">
@@ -79,8 +85,7 @@ export default async function AdminDashboardPage() {
         <CardContent>
           <div className="flex gap-3 flex-wrap">
             <Link href="/admin/users"><Button variant="outline">Manage Users</Button></Link>
-            <Button variant="outline">View Reports</Button>
-            <Button variant="outline">Grant CIVICT</Button>
+            <Link href="/admin/candidates"><Button variant="outline">Verify Candidates</Button></Link>
             <Link href="/sessions"><Button variant="outline">Sessions</Button></Link>
             <Link href="/candidates"><Button variant="outline">Candidates</Button></Link>
           </div>

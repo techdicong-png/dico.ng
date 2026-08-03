@@ -2,11 +2,13 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { Shield, Users, FileText, CircleDollarSign, Wallet } from 'lucide-react'
+import { Shield, Users, FileText, CircleDollarSign, Wallet, UserCheck } from 'lucide-react'
 
 const links = [
   { href: '/dashboard/admin', label: 'Overview', icon: Shield },
   { href: '/admin/users',     label: 'Users', icon: Users },
+  // NEW: Added the link to the candidate verification page
+  { href: '/admin/candidates', label: 'Candidate Verification', icon: UserCheck },
   // { href: '/admin/reports',   label: 'Reports', icon: FileText },
   // { href: '/admin/grants',    label: 'CIVICT Grants', icon: CircleDollarSign },
   // { href: '/admin/finance',   label: 'Finance & Pool', icon: Wallet },

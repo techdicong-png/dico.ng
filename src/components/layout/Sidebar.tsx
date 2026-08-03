@@ -28,8 +28,9 @@ const voterLinks: NavLink[] = [
 ]
 
 const candidateLinks: NavLink[] = [
-  { href: '/dashboard/candidate', label: 'Overview', icon: LayoutGrid },
-  { href: '/candidates/posts', label: 'My Post', icon: FileText },
+  // Renamed to Media Hub, points to the new unified profile
+  { href: '/dashboard/candidate', label: 'Media Hub', icon: LayoutGrid },
+  // Removed "My Post" since it's now inside the Media Hub
   { href: '/sessions', label: 'Live Sessions', icon: Video },
   { href: '/polls', label: 'Polls', icon: Vote },
   { href: '/reports', label: 'Reports', icon: FileText, count: '15' },

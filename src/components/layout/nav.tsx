@@ -35,7 +35,7 @@ const navItems: NavItem[] = [
   },
   { href: '/live-sessions', label: 'Live Session', icon: 'fa-video' },
   { href: '/token-civict', label: 'CIVICT', icon: 'fa-coins' },
-   { href: '/active-marketplace', label: 'Marketplace', icon: 'fa-store' },
+  { href: '/active-marketplace', label: 'Marketplace', icon: 'fa-store' },
   { href: '/pricing', label: 'Pricing', icon: 'fa-tag' },
   {
     label: 'Insights', icon: 'fa-chart-simple', dropdown: true,
@@ -45,14 +45,14 @@ const navItems: NavItem[] = [
     ],
   },
   { href: '/contact', label: 'Contact', icon: 'fa-envelope' },
-    {
+  {
     label: 'Get Started', icon: 'fa-rocket', dropdown: true, gold: true,
     children: [
-      { href: '/register?=candidate', label: 'As Candidate', icon: 'fa-chalkboard-user' },
-      { href: '/register?=voter', label: 'As Voter', icon: 'fa-user-check' },
+      // Updated URLs for the new dedicated registration routes
+      { href: '/register/candidate', label: 'As Candidate', icon: 'fa-chalkboard-user' },
+      { href: '/register', label: 'As Voter', icon: 'fa-user-check' },
     ],
   },
-
   { href: '/login', label: 'Login', icon: 'fa-arrow-right-to-bracket' },
 ]
 

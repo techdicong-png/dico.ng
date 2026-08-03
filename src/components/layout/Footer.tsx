@@ -9,7 +9,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 items-center gap-8">
           {/* Brand */}
           <div className="md:col-span-1 flex flex-col items-center">
-            <Image src="/bigLogo.png" alt="Dico logo" width={250} height={250} className="inline-block ml-2 mt-1"/>
+            <Image src="/bigLogo.png" alt="Dico logo" width={250} height={250} className="inline-block ml-2 mt-1 border-none bg-transparent"/>
             {/* <p className="text-sm text-white/40 mt-3 max-w-[260px] leading-relaxed">
               Digital Constituency Office — connecting verified voters directly to their representatives through transparent, token-powered civic engagement.
             </p> */}

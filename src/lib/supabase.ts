@@ -5,6 +5,10 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 
+console.log("Supabase URL:", supabaseUrl); // Add this line
+console.log("Supabase Key:", supabaseAnonKey);
+
+
 export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
   auth: { autoRefreshToken: false, persistSession: false }
 })
