@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Download, Eye, CheckCircle, XCircle, X } from 'lucide-react'
+import { toast } from 'sonner'
 
 type Registration = {
   id: string
@@ -53,28 +54,48 @@ export function CandidatesTable({ initialData }: { initialData: Registration[] }
   })
 
   async function updateStatus(id: string, status: 'verified' | 'rejected') {
-    const res = await fetch(`/api/admin/candidates/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status, notes })
-    })
-    if (res.ok) {
-      alert(`Candidate ${status} successfully!`)
-      setSelectedReg(null)
-      window.location.reload()
-    } else {
-      alert('Failed to update status.')
+    const loadingToast = toast.loading(`Updating candidate status to ${status}...`)
+    
+    try {
+      const res = await fetch(`/api/admin/candidates/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status, notes })
+      })
+      
+      if (res.ok) {
+        toast.success(`Candidate ${status} successfully!`, { id: loadingToast })
+        setSelectedReg(null)
+        window.location.reload()
+      } else {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to update status.')
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update status.', { id: loadingToast })
     }
   }
 
   async function viewDoc(path: string | null, label: string) {
-    if (!path) return alert('No document uploaded for this field.')
-    const res = await fetch(`/api/admin/candidate-doc?path=${encodeURIComponent(path)}`)
-    const data = await res.json()
-    if (data.url) {
-      window.open(data.url, '_blank')
-    } else {
-      alert('Failed to generate document link.')
+    if (!path) {
+      toast.error(`No document uploaded for ${label}.`)
+      return
+    }
+
+    const loadingToast = toast.loading(`Generating secure link for ${label}...`)
+    
+    try {
+      const res = await fetch(`/api/admin/candidate-doc?path=${encodeURIComponent(path)}`)
+      const data = await res.json()
+      
+      if (data.url) {
+        toast.success(`${label} ready. Opening in new tab...`, { id: loadingToast })
+        window.open(data.url, '_blank')
+      } else {
+        throw new Error('Failed to generate document link.')
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to generate document link.', { id: loadingToast })
     }
   }
 
@@ -83,7 +104,7 @@ export function CandidatesTable({ initialData }: { initialData: Registration[] }
     const rows = filtered.map(r => [
       r.full_name, r.email, r.phone, r.party, r.position, 
       `${r.lga_constituency}, ${r.state_constituency}`, r.status, 
-      new Date(r.submitted_at).toLocaleDateString()
+      new Date(r.submitted_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
     ])
     
     const csv = [headers, ...rows].map(row => 
@@ -96,28 +117,32 @@ export function CandidatesTable({ initialData }: { initialData: Registration[] }
     a.href = url
     a.download = `dico-candidates-${new Date().toISOString().slice(0,10)}.csv`
     a.click()
+    
+    toast.success('CSV export downloaded successfully.')
   }
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card><CardContent className="pt-6"><p className="text-2xl font-black text-forest">{initialData.length}</p><p className="text-xs text-muted uppercase">Total</p></CardContent></Card>
-        <Card><CardContent className="pt-6"><p className="text-2xl font-black text-gold">{initialData.filter(r => r.status === 'pending').length}</p><p className="text-xs text-muted uppercase">Pending</p></CardContent></Card>
-        <Card><CardContent className="pt-6"><p className="text-2xl font-black text-green-600">{initialData.filter(r => r.status === 'verified').length}</p><p className="text-xs text-muted uppercase">Verified</p></CardContent></Card>
-        <Card><CardContent className="pt-6"><p className="text-2xl font-black text-red-600">{initialData.filter(r => r.status === 'rejected').length}</p><p className="text-xs text-muted uppercase">Rejected</p></CardContent></Card>
+      {/* Responsive Summary Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+        <Card><CardContent className="pt-4 md:pt-6"><p className="text-xl md:text-2xl font-black text-forest">{initialData.length}</p><p className="text-xs text-muted uppercase">Total</p></CardContent></Card>
+        <Card><CardContent className="pt-4 md:pt-6"><p className="text-xl md:text-2xl font-black text-gold">{initialData.filter(r => r.status === 'pending').length}</p><p className="text-xs text-muted uppercase">Pending</p></CardContent></Card>
+        <Card><CardContent className="pt-4 md:pt-6"><p className="text-xl md:text-2xl font-black text-green-600">{initialData.filter(r => r.status === 'verified').length}</p><p className="text-xs text-muted uppercase">Verified</p></CardContent></Card>
+        <Card><CardContent className="pt-4 md:pt-6"><p className="text-xl md:text-2xl font-black text-red-600">{initialData.filter(r => r.status === 'rejected').length}</p><p className="text-xs text-muted uppercase">Rejected</p></CardContent></Card>
       </div>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+        <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between space-y-2 md:space-y-0 pb-4">
           <CardTitle className="text-lg">Candidate Registrations</CardTitle>
-          <Button variant="outline" size="sm" onClick={downloadCSV}>
+          <Button variant="outline" size="sm" onClick={downloadCSV} className="w-full md:w-auto">
             <Download className="h-4 w-4 mr-2" /> Export CSV
           </Button>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4 mb-4">
-            <Input placeholder="Search by name, email, party..." value={search} onChange={e => setSearch(e.target.value)} className="max-w-sm" />
-            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="h-10 px-3 text-sm bg-white border border-border rounded-lg">
+          {/* Responsive Search & Filter */}
+          <div className="flex flex-col md:flex-row gap-3 mb-4">
+            <Input placeholder="Search by name, email, party..." value={search} onChange={e => setSearch(e.target.value)} className="w-full md:max-w-sm" />
+            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="h-10 px-3 text-sm bg-white border border-border rounded-lg w-full md:w-auto">
               <option value="">All Statuses</option>
               <option value="pending">Pending</option>
               <option value="verified">Verified</option>
@@ -125,11 +150,11 @@ export function CandidatesTable({ initialData }: { initialData: Registration[] }
             </select>
           </div>
 
-          <div className="overflow-x-auto">
-            {/* Added min-w-[800px] to force horizontal scroll on mobile */}
+          {/* Responsive Table Container */}
+          <div className="w-full overflow-x-auto pb-2">
             <table className="w-full min-w-[800px] text-sm">
               <thead>
-                <tr className="border-b border-border text-left text-xs uppercase text-muted">
+                <tr className="border-b border-border text-left text-xs uppercase text-muted whitespace-nowrap">
                   <th className="pb-2 pr-4">Candidate</th>
                   <th className="pb-2 pr-4">Party</th>
                   <th className="pb-2 pr-4">Constituency</th>
@@ -142,19 +167,19 @@ export function CandidatesTable({ initialData }: { initialData: Registration[] }
                 {filtered.map((r) => (
                   <tr key={r.id} className="border-b border-border-light hover:bg-forest-faint/30">
                     <td className="py-3 pr-4">
-                      <p className="font-semibold text-ink">{r.full_name}</p>
-                      <p className="text-xs text-muted">{r.email}</p>
+                      <p className="font-semibold text-ink whitespace-nowrap">{r.full_name}</p>
+                      <p className="text-xs text-muted whitespace-nowrap">{r.email}</p>
                     </td>
-                    <td className="py-3 pr-4 font-medium">{r.party}</td>
-                    <td className="py-3 pr-4 text-xs">{r.lga_constituency}, {r.state_constituency}</td>
+                    <td className="py-3 pr-4 font-medium whitespace-nowrap">{r.party}</td>
+                    <td className="py-3 pr-4 text-xs whitespace-nowrap">{r.lga_constituency}, {r.state_constituency}</td>
                     <td className="py-3 pr-4">
-                      <Badge variant={r.status === 'verified' ? 'default' : r.status === 'rejected' ? 'destructive' : 'secondary'}>
+                      <Badge variant={r.status === 'verified' ? 'default' : r.status === 'rejected' ? 'destructive' : 'secondary'} className="whitespace-nowrap">
                         {r.status}
                       </Badge>
                     </td>
-                    <td className="py-3 pr-4 text-xs text-muted">{new Date(r.submitted_at).toLocaleDateString()}</td>
+                    <td className="py-3 pr-4 text-xs text-muted whitespace-nowrap">{new Date(r.submitted_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
                     <td className="py-3">
-                      <Button size="sm" variant="outline" onClick={() => { setSelectedReg(r); setNotes(r.notes || '') }}>
+                      <Button size="sm" variant="outline" onClick={() => { setSelectedReg(r); setNotes(r.notes || '') }} className="whitespace-nowrap">
                         <Eye className="h-4 w-4 mr-1" /> Review
                       </Button>
                     </td>
@@ -172,7 +197,7 @@ export function CandidatesTable({ initialData }: { initialData: Registration[] }
       {/* DETAIL MODAL */}
       {selectedReg && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedReg(null)}>
-          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="bg-forest text-white p-5 flex justify-between items-center sticky top-0 z-10">
               <div>
                 <h3 className="text-xl font-bold">{selectedReg.full_name}</h3>
@@ -183,12 +208,12 @@ export function CandidatesTable({ initialData }: { initialData: Registration[] }
             
             <div className="p-6 space-y-6">
               {/* Details */}
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div><strong className="block text-xs text-muted uppercase mb-1">Email</strong> {selectedReg.email}</div>
                 <div><strong className="block text-xs text-muted uppercase mb-1">Phone</strong> {selectedReg.phone}</div>
                 <div><strong className="block text-xs text-muted uppercase mb-1">Constituency</strong> {selectedReg.lga_constituency}, {selectedReg.state_constituency}</div>
                 <div><strong className="block text-xs text-muted uppercase mb-1">Ward</strong> {selectedReg.ward || 'N/A'}</div>
-                <div className="col-span-2"><strong className="block text-xs text-muted uppercase mb-1">Manifesto</strong> <p className="bg-sand p-3 rounded">{selectedReg.manifesto_summary || 'N/A'}</p></div>
+                <div className="col-span-1 md:col-span-2"><strong className="block text-xs text-muted uppercase mb-1">Manifesto</strong> <p className="bg-sand p-3 rounded">{selectedReg.manifesto_summary || 'N/A'}</p></div>
               </div>
 
               {/* Documents */}
@@ -214,11 +239,11 @@ export function CandidatesTable({ initialData }: { initialData: Registration[] }
               </div>
 
               {/* Actions */}
-              <div className="flex gap-3 pt-4 border-t">
-                <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={() => updateStatus(selectedReg.id, 'verified')}>
+              <div className="flex flex-col md:flex-row gap-3 pt-4 border-t">
+                <Button className="bg-green-600 hover:bg-green-700 text-white w-full md:w-auto" onClick={() => updateStatus(selectedReg.id, 'verified')}>
                   <CheckCircle className="h-4 w-4 mr-2" /> Approve
                 </Button>
-                <Button variant="destructive" onClick={() => updateStatus(selectedReg.id, 'rejected')}>
+                <Button variant="destructive" className="w-full md:w-auto" onClick={() => updateStatus(selectedReg.id, 'rejected')}>
                   <XCircle className="h-4 w-4 mr-2" /> Reject
                 </Button>
               </div>

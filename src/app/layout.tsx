@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import Script from "next/script"
+import { Toaster } from "@/components/ui/sonner" // <-- Import the Toaster
 import "./globals.css"
 
 const geistSans = Geist({
@@ -47,6 +48,8 @@ export default function RootLayout({
           {`document.addEventListener('DOMContentLoaded',()=>requestAnimationFrame(()=>document.body.classList.add('motion-ready')))`}
         </Script>
         {children}
+        {/* Add the Toaster here so it renders globally */}
+        <Toaster richColors position="top-right" />
       </body>
     </html>
   )

@@ -11,7 +11,7 @@ const supabaseServer = createClient(
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    // 1. Unwrap the params Promise
+    // YOU MUST AWAIT PARAMS HERE:
     const { id } = await params
 
     const cookieStore = await cookies()
@@ -24,16 +24,14 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const body = await req.json()
     const { status, notes } = body
 
-    // 2. Get the registration data
     const { data: reg, error: fetchErr } = await supabaseServer
       .from('candidate_registrations')
       .select('*')
-      .eq('id', id) // Use the unwrapped id here
+      .eq('id', id) // Use the unwrapped 'id' here
       .single()
 
     if (fetchErr || !reg) throw new Error('Registration not found')
 
-    // 3. Update registration status
     const { error: updateErr } = await supabaseServer
       .from('candidate_registrations')
       .update({ status, notes, reviewed_at: new Date().toISOString(), reviewed_by: payload.userId })
@@ -41,7 +39,6 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
     if (updateErr) throw updateErr
 
-    // 4. If Approved, create their public candidate profile!
     if (status === 'verified') {
       const { data: existingCand } = await supabaseServer
         .from('candidates')
