@@ -1,16 +1,12 @@
 import type { Metadata } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
+import { Inter } from "next/font/google" // Changed from Geist
 import Script from "next/script"
-import { Toaster } from "@/components/ui/sonner" // <-- Import the Toaster
+import { Toaster } from "@/components/ui/sonner"
 import "./globals.css"
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-})
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+// Use Inter instead of Geist
+const inter = Inter({
+  variable: "--font-geist-sans", // Keep the same CSS variable name so your tailwind config doesn't break
   subsets: ["latin"],
 })
 
@@ -34,7 +30,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${inter.variable} h-full antialiased`} // Use inter.variable
       suppressHydrationWarning
     >
       <head>
@@ -48,7 +44,6 @@ export default function RootLayout({
           {`document.addEventListener('DOMContentLoaded',()=>requestAnimationFrame(()=>document.body.classList.add('motion-ready')))`}
         </Script>
         {children}
-        {/* Add the Toaster here so it renders globally */}
         <Toaster richColors position="top-right" />
       </body>
     </html>

@@ -316,7 +316,7 @@ export function CandidateRegisterForm() {
                 <label className="block text-xs font-semibold text-ink mb-1.5">Political Party *</label>
                 <select name="party" value={form.party} onChange={handleInputChange} className="w-full h-10 px-3 text-sm bg-white border border-border rounded-lg focus:outline-none focus:border-forest">
                   <option value="">Select party…</option>
-                  {NIGERIAN_PARTIES.map(p => <option key={p} value={p}>{p}</option>)}
+                  {NIGERIAN_PARTIES.map(p => <option key={p.abbr} value={p.name}>{p.name} ({p.abbr})</option>)}
                 </select>
               </div>
               <div>

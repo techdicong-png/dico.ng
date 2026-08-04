@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import {
   LayoutGrid, Users, Video, Vote, FileText, CircleDollarSign, Rss,
-  UserCircle, Settings, BarChart3, Shield, Store, LogOut,
+  UserCircle, Settings, BarChart3, Shield, Store, LogOut, TrendingUp,
   Compass, Wallet,
   type LucideIcon
 } from 'lucide-react'
@@ -28,14 +28,13 @@ const voterLinks: NavLink[] = [
 ]
 
 const candidateLinks: NavLink[] = [
-  // Renamed to Media Hub, points to the new unified profile
   { href: '/dashboard/candidate', label: 'Media Hub', icon: LayoutGrid },
-  // Removed "My Post" since it's now inside the Media Hub
   { href: '/sessions', label: 'Live Sessions', icon: Video },
   { href: '/polls', label: 'Polls', icon: Vote },
   { href: '/reports', label: 'Reports', icon: FileText, count: '15' },
   { href: '/candidates', label: 'All Candidates', icon: Users },
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },
+  { href: '/performance', label: 'Performance Rank', icon: TrendingUp }, // NEW LINK
   { href: '/team', label: 'Campaign Team', icon: Users },
   { href: '/market', label: 'DICO Online Market', icon: Store, market: true },
 ]

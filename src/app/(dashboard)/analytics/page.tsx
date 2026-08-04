@@ -1,13 +1,18 @@
-// src/app/(dashboard)/analytics/page.tsx
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { verifyToken } from '@/lib/auth'
-import { supabaseAdmin } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js' // Inline client
 import {
   TrendingUp, Users, MessageCircle, Eye, ThumbsUp, BarChart3,
   ArrowUp, ArrowDown, ChevronRight
 } from 'lucide-react'
 import Link from 'next/link'
+
+const supabaseServer = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  { auth: { autoRefreshToken: false, persistSession: false } }
+)
 
 export default async function AnalyticsPage() {
   const cookieStore = await cookies()
@@ -17,17 +22,17 @@ export default async function AnalyticsPage() {
   if (!payload) redirect('/login')
   if (!['candidate', 'campaign_team'].includes(payload.role)) redirect('/dashboard')
 
-  const { data: cand } = await supabaseAdmin.from('candidates')
+  const { data: cand } = await supabaseServer.from('candidates')
     .select('*').eq('user_id', payload.userId).maybeSingle()
 
   if (!cand) redirect('/dashboard')
 
   // Fetch real data
   const [postsData, questionsData, sessionsData, followersTrend] = await Promise.all([
-    supabaseAdmin.from('posts').select('created_at, like_count, comment_count').eq('candidate_id', cand.id).order('created_at', { ascending: false }),
-    supabaseAdmin.from('questions').select('id, upvote_count, is_answered').eq('candidate_id', cand.id),
-    supabaseAdmin.from('live_sessions').select('id, viewer_count, status').eq('candidate_id', cand.id),
-    supabaseAdmin.from('candidate_followers').select('created_at').eq('candidate_id', cand.id).order('created_at', { ascending: false }),
+    supabaseServer.from('posts').select('created_at, like_count, comment_count').eq('candidate_id', cand.id).order('created_at', { ascending: false }),
+    supabaseServer.from('questions').select('id, upvote_count, is_answered').eq('candidate_id', cand.id),
+    supabaseServer.from('live_sessions').select('id, viewer_count, status').eq('candidate_id', cand.id),
+    supabaseServer.from('candidate_followers').select('created_at').eq('candidate_id', cand.id).order('created_at', { ascending: false }),
   ])
 
   const posts = postsData.data || []
@@ -52,7 +57,6 @@ export default async function AnalyticsPage() {
     { icon: TrendingUp, label: 'Questions', value: `${answeredQuestions}/${totalQuestions}`, change: `${Math.round(answeredQuestions / (totalQuestions || 1) * 100)}% answered`, up: true },
   ]
 
-  // Mock weekly data for the chart
   const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
   const weeklyData = [65, 78, 52, 91, 84, 43, 67]
   const maxVal = Math.max(...weeklyData)

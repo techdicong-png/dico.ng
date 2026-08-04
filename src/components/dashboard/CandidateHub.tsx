@@ -1,13 +1,15 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { createClient } from '@supabase/supabase-js'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { Upload, Video, Plus, X, Loader2, CheckCircle, AlertCircle, Radio } from 'lucide-react'
-import Image from 'next/image'
+import { Upload, Plus, X, Loader2, Radio, MapPin, CheckCircle } from 'lucide-react'
+import { toast } from 'sonner'
 
+// Initialize Supabase client inline
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -17,7 +19,7 @@ type PromiseType = {
   id: string; text: string; status: 'fulfilled' | 'in-progress' | 'pending'; note: string | null
 }
 
-export function CandidateHub({ candidateId, initialName }: { candidateId: string, initialName: string }) {
+export function CandidateHub({ candidateId, initialName, candidateLga }: { candidateId: string, initialName: string, candidateLga: string }) {
   const [posts, setPosts] = useState<any[]>([])
   const [promises, setPromises] = useState<PromiseType[]>([])
   const [loading, setLoading] = useState(true)
@@ -31,6 +33,9 @@ export function CandidateHub({ candidateId, initialName }: { candidateId: string
   // Live modal state
   const [isLiveModalOpen, setIsLiveModalOpen] = useState(false)
   const [liveTitle, setLiveTitle] = useState('')
+
+  // Create a URL-friendly slug for the LGA link
+  const lgaSlug = candidateLga.toLowerCase().replace(/\s/g, '-')
 
   useEffect(() => {
     loadData()
@@ -63,13 +68,14 @@ export function CandidateHub({ candidateId, initialName }: { candidateId: string
     
     const { error } = await supabase.storage.from('candidate-docs').upload(path, file)
     if (error) {
-      alert('Upload failed')
+      toast.error('Upload failed. Please try again.')
     } else {
       const { data } = supabase.storage.from('candidate-docs').getPublicUrl(path)
       setPostMedia({
         url: data.publicUrl,
         type: file.type.startsWith('video') ? 'video' : 'image'
       })
+      toast.success('Media attached.')
     }
     setUploading(false)
   }
@@ -82,13 +88,15 @@ export function CandidateHub({ candidateId, initialName }: { candidateId: string
       candidate_id: candidateId,
       content: postText,
       image_url: postMedia?.url || null,
-      // video_url: postMedia?.type === 'video' ? postMedia.url : null (if your schema has video_url)
     }).select().single()
 
     if (!error && newPost) {
       setPosts([newPost, ...posts])
       setPostText('')
       setPostMedia(null)
+      toast.success('Post published successfully!')
+    } else {
+      toast.error('Failed to publish post.')
     }
     setPosting(false)
   }
@@ -105,6 +113,7 @@ export function CandidateHub({ candidateId, initialName }: { candidateId: string
 
     if (!error && data) {
       setPromises([data, ...promises])
+      toast.success('Promise added.')
     }
   }
 
@@ -120,27 +129,37 @@ export function CandidateHub({ candidateId, initialName }: { candidateId: string
   function endLive() {
     setIsLiveModalOpen(false)
     setLiveTitle('')
-    alert('Live session ended. (In production, this would save a replay to your feed)')
+    toast.success('Live session ended. (In production, a replay would be saved to your feed)')
   }
 
   if (loading) return <div className="p-8 text-center"><Loader2 className="h-8 w-8 animate-spin mx-auto text-forest" /></div>
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-6 max-w-4xl mx-auto pb-10">
       {/* Profile Header */}
       <div className="bg-white border border-border rounded-2xl overflow-hidden shadow-sm">
         <div className="h-32 bg-gradient-to-br from-forest to-forest-mid"></div>
-        <div className="px-6 pb-6 -mt-12 flex items-end justify-between">
+        <div className="px-6 pb-6 -mt-12 flex items-end justify-between flex-wrap gap-4">
           <div className="flex items-end gap-4">
-            <div className="w-24 h-24 rounded-full bg-white border-4 border-white flex items-center justify-center font-serif text-4xl font-black text-forest">
+            <div className="w-24 h-24 rounded-full bg-white border-4 border-white flex items-center justify-center font-serif text-4xl font-black text-forest shrink-0">
               {initialName.charAt(0)}
             </div>
             <div className="pb-2">
               <h1 className="font-serif text-2xl font-black text-ink flex items-center gap-2">
                 {initialName}
-                <span className="text-xs font-bold bg-forest-light text-forest px-2 py-1 rounded">Verified</span>
+                <span className="text-xs font-bold bg-forest-light text-forest px-2 py-1 rounded flex items-center gap-1">
+                  <CheckCircle className="h-3 w-3" /> Verified
+                </span>
               </h1>
-              <p className="text-sm text-muted">Candidate Profile & Media Hub</p>
+              <p className="text-sm text-muted mb-2">Candidate Profile & Media Hub</p>
+              
+              {/* NEW: Link to LGA Hub */}
+              <Link 
+                href={`/lga/${lgaSlug}`} 
+                className="text-xs font-semibold text-gold hover:underline inline-flex items-center gap-1 bg-gold/10 px-2 py-1 rounded"
+              >
+                <MapPin className="h-3 w-3" /> View {candidateLga} LGA Hub & Ads
+              </Link>
             </div>
           </div>
           <Button onClick={startLive} className="bg-red-600 hover:bg-red-700 text-white">
@@ -155,16 +174,28 @@ export function CandidateHub({ candidateId, initialName }: { candidateId: string
           <div className="bg-white border border-border rounded-2xl p-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-serif text-lg font-bold text-ink">Campaign Promises</h3>
-              <button onClick={addPromise} className="text-forest hover:bg-forest-faint p-1 rounded"><Plus className="h-4 w-4" /></button>
+              <button onClick={addPromise} className="text-forest hover:bg-forest-faint p-1 rounded">
+                <Plus className="h-4 w-4" />
+              </button>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
               {promises.length === 0 && <p className="text-sm text-muted">No promises added yet.</p>}
               {promises.map(p => (
                 <div key={p.id} className="border-l-4 border-forest pl-3 py-1">
                   <p className="text-sm font-medium text-ink">{p.text}</p>
                   <div className="flex gap-2 mt-1">
-                    <button onClick={() => updatePromiseStatus(p.id, 'fulfilled')} className={`text-[10px] px-2 py-0.5 rounded ${p.status === 'fulfilled' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>Fulfilled</button>
-                    <button onClick={() => updatePromiseStatus(p.id, 'in-progress')} className={`text-[10px] px-2 py-0.5 rounded ${p.status === 'in-progress' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500'}`}>In Progress</button>
+                    <button 
+                      onClick={() => updatePromiseStatus(p.id, 'fulfilled')} 
+                      className={`text-[10px] px-2 py-0.5 rounded ${p.status === 'fulfilled' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}
+                    >
+                      Fulfilled
+                    </button>
+                    <button 
+                      onClick={() => updatePromiseStatus(p.id, 'in-progress')} 
+                      className={`text-[10px] px-2 py-0.5 rounded ${p.status === 'in-progress' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500'}`}
+                    >
+                      In Progress
+                    </button>
                   </div>
                 </div>
               ))}
@@ -182,7 +213,7 @@ export function CandidateHub({ candidateId, initialName }: { candidateId: string
             {postMedia && (
               <div className="mt-3 relative rounded-lg overflow-hidden">
                 {postMedia.type === 'image' ? (
-                  <Image src={postMedia.url} alt="Upload" className="w-full max-h-64 object-cover" width={500} height={300} />
+                  <img src={postMedia.url} alt="Upload" className="w-full max-h-64 object-cover" />
                 ) : (
                   <video src={postMedia.url} controls className="w-full max-h-64 object-cover" />
                 )}
@@ -222,7 +253,7 @@ export function CandidateHub({ candidateId, initialName }: { candidateId: string
                 </div>
                 <p className="text-sm text-ink mb-3 whitespace-pre-line">{post.content}</p>
                 {post.image_url && (
-                  <Image src={post.image_url} alt="Post" className="w-full rounded-lg max-h-96 object-cover" width={500} height={300} />
+                  <img src={post.image_url} alt="Post" className="w-full rounded-lg max-h-96 object-cover" />
                 )}
               </div>
             ))}

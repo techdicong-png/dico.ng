@@ -1,216 +1,115 @@
-// src/app/(marketing)/explorer/page.tsx
 'use client'
 
-import { useState } from 'react'
-import { ScrollReveal } from '@/components/sections/ScrollReveal'
-import { MapPin, Search, CheckCircle } from 'lucide-react'
+import { useState, useMemo } from 'react'
 import Link from 'next/link'
+import { ScrollReveal } from '@/components/sections/ScrollReveal'
+import { MapPin, Search, Building, ArrowRight } from 'lucide-react'
 import { NIGERIA_DATA, STATES } from '@/data/nigeria'
 
-const STEPS = [
-  { num: '1', title: 'Enter Your Location', desc: 'Select your state, LGA, and ward to find your constituency.' },
-  { num: '2', title: 'View Your Match', desc: 'See your verified constituency, representative, and civic index.' },
-  { num: '3', title: 'Engage & Participate', desc: 'Join town halls, vote in polls, and track reports in your area.' },
-]
+// We focus only on the 4 active states for the V1 launch
+const ACTIVE_STATES = ['Edo', 'Delta', 'FCT Abuja', 'Nasarawa']
 
-function simulateMatch(state: string, lga: string, ward?: string) {
-  return {
-    constituency: `${lga} Federal Constituency`,
-    representative: 'Hon. Representative',
-    wardCount: NIGERIA_DATA[state]?.[lga]?.length || 10,
-    civicIndex: Math.floor(Math.random() * 40) + 55,
-    registeredVoters: Math.floor(Math.random() * 50000) + 10000,
-  }
-}
-
-const particles = [...Array(12)].map((_, i) => ({
-  left: `${Math.random() * 100}%`,
-  top: `${Math.random() * 100}%`,
-  delay: `${Math.random() * 2}s`,
-  duration: `${3 + Math.random() * 4}s`,
-  drift: `${Math.random() * 20 - 10}px`,
-}))
+// Flatten the data into a simple array of { state, lga, wardCount } for easy searching
+const ALL_LGAS = ACTIVE_STATES.flatMap(state => 
+  Object.keys(NIGERIA_DATA[state] || {}).map(lga => ({
+    state,
+    lga,
+    wardCount: NIGERIA_DATA[state][lga].length
+  }))
+).sort((a, b) => a.lga.localeCompare(b.lga))
 
 export default function ExplorerPage() {
-  const [state, setState] = useState('')
-  const [lga, setLga] = useState('')
-  const [ward, setWard] = useState('')
-  const [match, setMatch] = useState<any>(null)
-  const [searched, setSearched] = useState(false)
+  const [search, setSearch] = useState('')
 
-  const lgas = state ? Object.keys(NIGERIA_DATA[state] || {}).sort() : []
-  const wards = state && lga ? NIGERIA_DATA[state]?.[lga] || [] : []
-
-  function handleSearch(e: React.FormEvent) {
-    e.preventDefault()
-    if (!state || !lga) return
-    setMatch(simulateMatch(state, lga, ward))
-    setSearched(true)
-  }
+  const filteredLgas = useMemo(() => {
+    if (!search) return ALL_LGAS
+    return ALL_LGAS.filter(item => 
+      item.lga.toLowerCase().includes(search.toLowerCase()) ||
+      item.state.toLowerCase().includes(search.toLowerCase())
+    )
+  }, [search])
 
   return (
     <>
       {/* ==================== HERO ==================== */}
       <section className="relative isolate overflow-clip bg-gradient-to-br from-forest via-forest-mid to-forest text-white py-20 md:py-28 px-4 md:px-6">
-        {/* Particles */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {particles.map((p, i) => (
-            <div key={i} className="absolute w-1 h-1 rounded-full bg-white/20"
-              style={{
-                left: p.left, top: p.top,
-                animation: `float ${p.duration} ease-in-out ${p.delay} infinite alternate`,
-                transform: `translateX(${p.drift})`,
-              }} />
-          ))}
-        </div>
-        <div className="absolute w-80 h-80 rounded-full border border-white/15 -top-20 -right-20 animate-[spin_20s_linear_infinite] pointer-events-none" />
-        <div className="absolute w-52 h-52 rounded-full border border-white/15 -bottom-16 -left-16 animate-[spin_18s_linear_infinite_reverse] pointer-events-none" />
         <div className="absolute inset-0 pointer-events-none opacity-60"
           style={{ background: 'radial-gradient(circle at var(--mx,50%) var(--my,50%), rgba(200,150,10,.1), transparent 30%)' }} />
-        <div className="max-w-6xl mx-auto relative z-10">
+        <div className="max-w-4xl mx-auto relative z-10 text-center">
           <ScrollReveal>
             <span className="inline-flex items-center gap-2 text-[11px] font-bold tracking-widest uppercase text-gold/80 bg-gold/10 border border-gold/20 px-3 py-1.5 rounded mb-4">
-              <MapPin className="h-3 w-3" /> Find Your Constituency
+              <MapPin className="h-3 w-3" /> Explore Your Constituency
             </span>
-            <h1 className="font-serif text-4xl md:text-5xl font-black leading-[1.08] mb-4">Your Constituency, <span className="text-gold">Your Voice</span></h1>
-            <p className="text-white/80 max-w-xl mb-8">
-              Discover your federal constituency, meet your representatives, and track civic engagement in your ward — all in one place.
+            <h1 className="font-serif text-4xl md:text-6xl font-black leading-[1.05] mb-4">
+              Your LGA. <br className="md:hidden"/> <span className="text-gold">Your Voice.</span> Your Future.
+            </h1>
+            <p className="text-white/80 max-w-2xl mx-auto mb-8 text-lg">
+              Your Digital Interactive Constituency Office. Search across {ALL_LGAS.length} active Local Government Areas to find local candidates, government services, and community updates.
             </p>
-          </ScrollReveal>
-
-          {/* Search Panel */}
-          <ScrollReveal>
-            <form onSubmit={handleSearch} className="bg-white/10 border border-white/15 rounded-xl p-6 backdrop-blur-sm max-w-2xl">
-              <div className="grid sm:grid-cols-3 gap-3 mb-4">
-                <div>
-                  <label className="block text-[10px] font-bold tracking-widest uppercase text-white/50 mb-1.5">State</label>
-                  <select value={state} onChange={e => { setState(e.target.value); setLga(''); setWard(''); setMatch(null) }}
-                    className="w-full h-11 px-3 text-sm text-ink bg-white rounded-lg focus:outline-none focus:ring-2 focus:ring-gold">
-                    <option value="">Select state...</option>
-                    {STATES.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold tracking-widest uppercase text-white/50 mb-1.5">LGA</label>
-                  <select value={lga} onChange={e => { setLga(e.target.value); setWard(''); setMatch(null) }} disabled={!state}
-                    className="w-full h-11 px-3 text-sm text-ink bg-white rounded-lg focus:outline-none focus:ring-2 focus:ring-gold disabled:opacity-50">
-                    <option value="">Select LGA...</option>
-                    {lgas.map(l => <option key={l} value={l}>{l}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold tracking-widest uppercase text-white/50 mb-1.5">Ward (optional)</label>
-                  <select value={ward} onChange={e => setWard(e.target.value)} disabled={!lga}
-                    className="w-full h-11 px-3 text-sm text-ink bg-white rounded-lg focus:outline-none focus:ring-2 focus:ring-gold disabled:opacity-50">
-                    <option value="">Select ward...</option>
-                    {wards.map(w => <option key={w} value={w}>{w}</option>)}
-                  </select>
-                </div>
-              </div>
-              <button type="submit" disabled={!state || !lga}
-                className="w-full bg-gold hover:bg-gold-hover text-ink font-bold text-sm py-3 rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50">
-                <Search className="h-4 w-4" />
-                Find My Constituency
-              </button>
-            </form>
+            
+            {/* Search Bar */}
+            <div className="max-w-xl mx-auto relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted" />
+              <input
+                type="text"
+                placeholder="Search for an LGA (e.g. Keffi, Asaba)..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full h-14 pl-12 pr-4 text-ink bg-white rounded-xl shadow-lg focus:outline-none focus:ring-2 focus:ring-gold text-sm"
+              />
+            </div>
           </ScrollReveal>
         </div>
       </section>
 
-      {/* ==================== MATCH RESULTS ==================== */}
-      {searched && (
-        <section className="py-16 md:py-20 px-4 md:px-6">
-          <div className="max-w-6xl mx-auto">
+      {/* ==================== LGA GRID ==================== */}
+      <section className="py-16 md:py-20 px-4 md:px-6 bg-sand">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex justify-between items-end mb-8">
             <ScrollReveal>
-              {match ? (
-                <div className="bg-white dark:bg-[#11241b] border border-border dark:border-[#1f3a2c] rounded-2xl p-8 shadow-sm">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-12 h-12 rounded-xl bg-mint dark:bg-[#1b3a2b] flex items-center justify-center">
-                      <CheckCircle className="h-6 w-6 text-forest dark:text-forest-700" />
-                    </div>
-                    <div>
-                      <h2 className="font-serif text-2xl font-black text-ink dark:text-white">Your Constituency Match</h2>
-                      <p className="text-sm text-muted dark:text-[#c0d0c4]">{state} · {lga}{ward ? ` · ${ward}` : ''}</p>
-                    </div>
-                  </div>
-
-                  <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                    {[
-                      { label: 'Constituency', value: match.constituency },
-                      { label: 'Representative', value: match.representative },
-                      { label: 'Wards', value: match.wardCount },
-                      { label: 'Civic Index', value: `${match.civicIndex}/100`, gold: true },
-                    ].map(item => (
-                      <div key={item.label} className="bg-sand dark:bg-[#0f1d16] rounded-xl p-4">
-                        <p className="text-[10px] font-bold tracking-widest uppercase text-muted dark:text-[#c0d0c4] mb-1">{item.label}</p>
-                        <p className={`font-serif text-xl font-black ${item.gold ? 'text-gold' : 'text-forest dark:text-forest-700'}`}>{item.value}</p>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="flex gap-3 flex-wrap">
-                    <Link href="/register?role=voter" className="bg-forest hover:bg-forest-mid text-white font-semibold text-sm px-6 py-3 rounded-lg transition-all">
-                      Register as Voter
-                    </Link>
-                    <Link href={`/candidates?state=${state}&lga=${lga}`} className="border border-border dark:border-[#1f3a2c] text-ink dark:text-white hover:bg-sand dark:hover:bg-[#1b3a2b] font-semibold text-sm px-6 py-3 rounded-lg transition-all">
-                      View Candidates in {lga}
-                    </Link>
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-white dark:bg-[#11241b] border border-border dark:border-[#1f3a2c] rounded-2xl p-8 text-center">
-                  <p className="text-muted dark:text-[#c0d0c4]">No match found. Try a different search.</p>
-                </div>
-              )}
+              <h2 className="font-serif text-2xl md:text-3xl font-black text-ink">
+                {search ? `Results for "${search}"` : 'Explore Active LGAs'}
+              </h2>
+              <p className="text-sm text-muted mt-1">
+                Showing {filteredLgas.length} Local Government Areas across {ACTIVE_STATES.length} states.
+              </p>
             </ScrollReveal>
           </div>
-        </section>
-      )}
 
-      {/* ==================== HOW IT WORKS ==================== */}
-      <section className="py-16 md:py-20 px-4 md:px-6 bg-sand dark:bg-[#0f1d16]">
-        <div className="max-w-6xl mx-auto">
-          <ScrollReveal>
-            <h2 className="font-serif text-3xl md:text-4xl font-black text-ink dark:text-white text-center mb-3">How It Works</h2>
-            <p className="text-muted dark:text-[#c0d0c4] text-center max-w-xl mx-auto mb-12">Find your constituency in three simple steps.</p>
-          </ScrollReveal>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            {STEPS.map(step => (
-              <ScrollReveal key={step.num}>
-                <div className="bg-white dark:bg-[#11241b] border border-border dark:border-[#1f3a2c] rounded-xl p-6 text-center hover:border-forest dark:hover:border-gold/30 hover:-translate-y-0.5 transition-all">
-                  <div className="w-10 h-10 rounded-full bg-mint dark:bg-[#1b3a2b] flex items-center justify-center mx-auto mb-4 font-bold text-forest dark:text-forest-700">
-                    {step.num}
-                  </div>
-                  <h3 className="font-serif text-lg font-bold text-ink dark:text-white mb-2">{step.title}</h3>
-                  <p className="text-sm text-muted dark:text-[#c0d0c4]">{step.desc}</p>
-                </div>
-              </ScrollReveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ==================== TRUST / CTA ==================== */}
-      <section className="relative isolate overflow-clip bg-gradient-to-br from-forest via-forest-mid to-forest py-20 md:py-24 px-4 md:px-6">
-        <div className="max-w-4xl mx-auto text-center relative z-10">
-          <ScrollReveal>
-            <div className="inline-flex items-center gap-2 text-[11px] font-bold tracking-widest uppercase text-gold/80 bg-gold/10 border border-gold/20 px-3 py-1.5 rounded mb-4">
-              Verified & Transparent
+          {filteredLgas.length === 0 ? (
+            <div className="bg-white border border-border rounded-xl p-12 text-center">
+              <p className="text-muted">No LGAs found matching your search. Try "Keffi" or "Asaba".</p>
             </div>
-            <h2 className="font-serif text-3xl md:text-4xl font-black text-white mb-4">Every Constituency, <span className="text-gold">Verified</span></h2>
-            <p className="text-white/70 max-w-xl mx-auto mb-8">
-              DICO maps every Nigerian ward, LGA, and federal constituency — connecting verified voters to their representatives with transparent civic data.
-            </p>
-            <div className="flex gap-3 justify-center flex-wrap">
-              <Link href="/register" className="bg-gold hover:bg-gold-hover text-ink font-bold px-6 py-3 rounded-lg text-sm transition-all">
-                Get Started Free
-              </Link>
-              <Link href="/pricing" className="border border-white/30 text-white/80 hover:text-white hover:border-white/60 px-6 py-3 rounded-lg text-sm transition-all">
-                View Pricing
-              </Link>
+          ) : (
+            <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {filteredLgas.map((item, i) => (
+                <ScrollReveal key={`${item.state}-${item.lga}`}>
+                  <Link 
+                    href={`/lga/${item.lga.toLowerCase().replace(/\s/g, '-')}`}
+                    className="block bg-white border border-border rounded-xl p-5 hover:border-forest hover:shadow-md transition-all group h-full"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="w-10 h-10 rounded-lg bg-forest-light flex items-center justify-center">
+                        <Building className="h-5 w-5 text-forest" />
+                      </div>
+                      <span className="text-[10px] font-bold text-gold bg-gold/10 px-2 py-1 rounded">
+                        {item.wardCount} Wards
+                      </span>
+                    </div>
+                    <h3 className="font-serif text-lg font-bold text-ink mb-1 group-hover:text-forest transition-colors">
+                      {item.lga}
+                    </h3>
+                    <p className="text-xs text-muted flex items-center gap-1">
+                      <MapPin className="h-3 w-3" /> {item.state} State
+                    </p>
+                    <div className="mt-4 pt-3 border-t border-border-light flex items-center text-xs font-semibold text-forest">
+                      Visit LGA Hub <ArrowRight className="h-3 w-3 ml-1 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </Link>
+                </ScrollReveal>
+              ))}
             </div>
-          </ScrollReveal>
+          )}
         </div>
       </section>
     </>

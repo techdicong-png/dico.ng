@@ -20,10 +20,9 @@ export default async function CandidateDashboardPage() {
   const user = await getAuthUser(payload.userId)
   if (!user) redirect('/login')
 
-  // Fetch the candidate profile linked to this user
   const { data: candidate } = await supabaseServer
     .from('candidates')
-    .select('id, full_name')
+    .select('id, full_name, lga')
     .eq('user_id', payload.userId)
     .single()
 
@@ -38,7 +37,11 @@ export default async function CandidateDashboardPage() {
 
   return (
     <div className="py-6">
-      <CandidateHub candidateId={candidate.id} initialName={candidate.full_name} />
+      <CandidateHub 
+        candidateId={candidate.id} 
+        initialName={candidate.full_name} 
+        candidateLga={candidate.lga || 'Unknown'} 
+      />
     </div>
   )
 }
