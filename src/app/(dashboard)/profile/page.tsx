@@ -64,38 +64,35 @@ export default function ProfilePage() {
     setUploading(false)
   }
 
-  async function save() {
-    setLoading(true)
-    const token = localStorage.getItem('dico_token')
-    try {
-      const res = await fetch('/api/auth/update-profile', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify(form),
-      })
-      
-      const data = await res.json()
-      
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to update profile')
+    async function save() {
+      setLoading(true)
+      const token = localStorage.getItem('dico_token')
+      try {
+        // CHANGED URL TO /api/profile
+        const res = await fetch('/api/profile', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify(form),
+        })
+        
+        const data = await res.json()
+        
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to update profile')
+        }
+        
+        const updatedUser = { ...JSON.parse(localStorage.getItem('dico_user') || '{}'), ...data.user }
+        localStorage.setItem('dico_user', JSON.stringify(updatedUser))
+        
+        toast.success('Profile updated successfully!')
+        window.location.reload()
+        
+      } catch (err: any) {
+        toast.error(err.message || 'Network error: Could not reach server.')
+      } finally {
+        setLoading(false)
       }
-      
-      // Update local storage so the sidebar updates dynamically
-      const updatedUser = { ...JSON.parse(localStorage.getItem('dico_user') || '{}'), ...data.user }
-      localStorage.setItem('dico_user', JSON.stringify(updatedUser))
-      
-      toast.success('Profile updated successfully!')
-      
-      // Reload page to refresh sidebar avatar and name
-      window.location.reload()
-      
-    } catch (err: any) {
-      // If you still get an error here, it will now show exactly what the error is in the toast.
-      toast.error(err.message || 'Network error: Could not reach server.')
-    } finally {
-      setLoading(false)
     }
-  }
 
   if (!user) return (
     <div className="bg-card dark:bg-[#11241b] border border-border dark:border-[#1f3a2c] rounded-xl py-12 text-center">
