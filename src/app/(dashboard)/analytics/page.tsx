@@ -20,7 +20,7 @@ export default async function AnalyticsPage() {
   if (!token) redirect('/login')
   const payload = await verifyToken(token)
   if (!payload) redirect('/login')
-  if (!['candidate', 'campaign_team'].includes(payload.role)) redirect('/dashboard')
+  if (!['candidate', 'campaign_team'].includes(payload.role)) redirect('/login')
 
   const { data: cand } = await supabaseServer.from('candidates')
     .select('*').eq('user_id', payload.userId).maybeSingle()

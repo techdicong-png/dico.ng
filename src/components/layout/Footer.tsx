@@ -1,4 +1,4 @@
-"use client"
+'use client'
 import Image from 'next/image'
 import Link from 'next/link'
 
@@ -6,13 +6,10 @@ export function Footer() {
   return (
     <footer className="bg-[#060E08] pt-16 pb-0 px-6 border-t border-white/5">
       <div className="max-w-[1100px] mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-4 items-center gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}
-          <div className="md:col-span-1 flex flex-col items-center">
-            <Image src="/bigLogo.png" alt="Dico logo" width={250} height={250} className="inline-block ml-2 mt-1 border-none bg-transparent"/>
-            {/* <p className="text-sm text-white/40 mt-3 max-w-[260px] leading-relaxed">
-              Digital Constituency Office — connecting verified voters directly to their representatives through transparent, token-powered civic engagement.
-            </p> */}
+          <div className="md:col-span-1 flex flex-col items-center md:items-start">
+            <Image src="/bigLogo.png" alt="Dico logo" width={200} height={200} className="inline-block border-none bg-transparent"/>
             <div className="flex gap-2 mt-5">
               {[
                 { viewBox: '0 0 24 24', path: 'M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z' },
@@ -31,30 +28,30 @@ export function Footer() {
           </div>
 
           {/* Quick Links */}
-          <div>
-            <h6 className="text-[11px] font-bold tracking-widest uppercase text-white/30 mb-4">Quick Links</h6>
+          <div className="text-center md:text-left">
+            <h6 className="text-[11px] font-bold tracking-widest uppercase text-white/30 mb-4">Platform</h6>
             <ul className="space-y-3">
-              {[{ href: '/', label: 'Home' }, { href: '/candidates', label: 'Find Your Candidate' }, { href: '/explorer', label: 'Find Your Constituency' }, { href: '/candidates', label: 'View All Candidates' }, { href: '/sessions', label: 'Live Sessions' }].map(l => (
+              {[{ href: '/', label: 'Home' }, { href: '/explorer', label: 'Explore LGAs' }, { href: '/candidates', label: 'Find Candidates' }, { href: '/parties', label: 'Political Parties' }].map(l => (
                 <li key={l.label}><Link href={l.href} className="text-sm text-white/55 hover:text-white hover:pl-1 transition-all">{l.label}</Link></li>
               ))}
             </ul>
           </div>
 
-          {/* More Links */}
-          <div>
-            <h6 className="text-[11px] font-bold tracking-widest uppercase text-white/30 mb-4">More Links</h6>
+          {/* Get Involved */}
+          <div className="text-center md:text-left">
+            <h6 className="text-[11px] font-bold tracking-widest uppercase text-white/30 mb-4">Get Involved</h6>
             <ul className="space-y-3">
-              {[{ href: '/register?role=candidate', label: 'Register as Candidate' }, { href: '/register?role=voter', label: 'Register as Voter' }, { href: '/pricing', label: 'Pricing' }, { href: '/contact', label: 'Contact Us' }].map(l => (
+              {[{ href: '/register?role=voter', label: 'Register as Voter' }, { href: '/register/candidate', label: 'Register as Candidate' }, { href: '/live-sessions', label: 'Live Sessions' }, { href: '/contact', label: 'Contact Us' }].map(l => (
                 <li key={l.label}><Link href={l.href} className="text-sm text-white/55 hover:text-white hover:pl-1 transition-all">{l.label}</Link></li>
               ))}
             </ul>
           </div>
 
-          {/* More Links 2 */}
-          <div>
-            <h6 className="text-[11px] font-bold tracking-widest uppercase text-white/30 mb-4">More Links</h6>
+          {/* Community & Market */}
+          <div className="text-center md:text-left">
+            <h6 className="text-[11px] font-bold tracking-widest uppercase text-white/30 mb-4">Community & Market</h6>
             <ul className="space-y-3">
-              {[{ href: '/reports', label: 'Reports' }, { href: '/polls', label: 'Polls' }, { href: '/civict', label: 'CIVICT' }].map(l => (
+              {[{ href: '/market', label: 'CIVICT Market' }, { href: '/civict', label: 'What is CIVICT?' }, { href: '/advertise', label: 'Advertise on DICO' }, { href: '/pricing', label: 'Pricing' }].map(l => (
                 <li key={l.label}><Link href={l.href} className="text-sm text-white/55 hover:text-white hover:pl-1 transition-all">{l.label}</Link></li>
               ))}
             </ul>
@@ -62,10 +59,10 @@ export function Footer() {
         </div>
 
         {/* Newsletter */}
-        <div className="mt-8 pt-8 border-t border-white/5">
+        <div className="mt-12 pt-8 border-t border-white/5">
           <h6 className="text-[11px] font-bold tracking-widest uppercase text-white/30 mb-3">Stay Updated</h6>
           <p className="text-sm text-white/45 mb-4">Get weekly town hall schedules, poll results, and civic updates.</p>
-          <form className="relative max-w-md" onSubmit={e => e.preventDefault()}>
+          <form className="relative max-w-md mx-auto md:mx-0" onSubmit={e => e.preventDefault()}>
             <input type="email" placeholder="Enter your email" required
               className="w-full bg-white/5 border border-white/10 rounded-lg py-3.5 pl-4 pr-32 text-sm text-white outline-none focus:border-gold/50 transition-colors placeholder:text-white/30" />
             <button type="submit" className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-gold text-ink font-semibold text-sm px-4 py-2 rounded-md hover:bg-gold-hover transition-all">

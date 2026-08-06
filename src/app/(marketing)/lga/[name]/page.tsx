@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import { NIGERIA_DATA } from '@/data/nigeria'
 import { ScrollReveal } from '@/components/sections/ScrollReveal'
 import { MapPin, Users, Building, Landmark, FileText, CreditCard, Briefcase, ArrowRight } from 'lucide-react'
+import Image from 'next/image'
 
 // Initialize Supabase client inline for Server Components
 const supabaseServer = createClient(
@@ -46,6 +47,13 @@ export default async function LgaHubPage({ params }: { params: Promise<{ name: s
     .select('id, full_name, party, office, avatar_url, is_verified')
     .eq('lga', lgaName)
     .eq('is_active', true)
+
+    // NEW: Fetch active ads that contain this LGA in their target_lgas array
+  const { data: ads } = await supabaseServer
+    .from('advertisements')
+    .select('id, business_name, description, image_url, link_url')
+    .eq('status', 'active')
+    .contains('target_lgas', [lgaName])
 
   // Mock stats for the UI (can be replaced by real DB counts later)
   const stats = [
@@ -145,7 +153,7 @@ export default async function LgaHubPage({ params }: { params: Promise<{ name: s
                 <Link href={`/candidates/${c.id}`} key={c.id} className="bg-sand border border-border rounded-xl overflow-hidden hover:border-forest hover:-translate-y-0.5 transition-all group">
                   <div className="h-28 bg-forest-light flex items-center justify-center font-serif text-3xl font-black text-forest-mid relative">
                     {c.avatar_url ? (
-                      <img src={c.avatar_url} alt={c.full_name} className="w-full h-full object-cover" />
+                      <Image src={c.avatar_url} alt={c.full_name} width={100} height={100} className="w-full h-full object-cover" />
                     ) : (
                       c.full_name?.charAt(0)
                     )}
@@ -169,7 +177,7 @@ export default async function LgaHubPage({ params }: { params: Promise<{ name: s
         </div>
       </section>
 
-      {/* DICOMARKETPLACE (Ad Board Mock) */}
+           {/* DICOMARKETPLACE (Real Ads from DB) */}
       <section className="py-16 md:py-20 px-4 md:px-6 bg-sand">
         <div className="max-w-6xl mx-auto">
           <ScrollReveal>
@@ -177,19 +185,39 @@ export default async function LgaHubPage({ params }: { params: Promise<{ name: s
             <p className="text-muted text-center max-w-xl mx-auto mb-12">Support local businesses and campaigns in {lgaName}.</p>
           </ScrollReveal>
 
-          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {[
-              { title: 'Local Business Ad Spot', desc: 'Reach 271k+ residents in this LGA.' },
-              { title: 'Campaign Flyer Spotlight', desc: 'Feature your political campaign here.' },
-              { title: 'Community Event Board', desc: 'Post local town halls and drives.' },
-            ].map((ad, i) => (
-              <div key={i} className="bg-white border-2 border-dashed border-border rounded-xl p-6 flex flex-col items-center justify-center text-center min-h-[180px] hover:border-gold transition-colors">
-                <h3 className="font-bold text-ink mb-1">{ad.title}</h3>
-                <p className="text-xs text-muted mb-3">{ad.desc}</p>
-                <button className="text-xs font-bold text-gold bg-gold/10 px-3 py-1.5 rounded-md">Advertise Here</button>
+                    {/* Fetch active ads for this LGA */}
+          {ads && ads.length > 0 ? (
+            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {ads.map((ad) => (
+                <a 
+                  key={ad.id} 
+                  href={ad.link_url} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="bg-white border border-border rounded-xl overflow-hidden hover:shadow-md transition-all group"
+                >
+                  <div className="h-40 bg-forest-faint overflow-hidden">
+                    <Image src={ad.image_url} alt={ad.business_name} width={300} height={160} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                  </div>
+                  <div className="p-3">
+                    <p className="text-xs font-bold text-forest uppercase tracking-wide">Sponsored</p>
+                    <h3 className="font-bold text-ink text-sm truncate">{ad.business_name}</h3>
+                    {/* NEW: Display the description if it exists */}
+                    {ad.description && <p className="text-xs text-muted mt-1 line-clamp-2">{ad.description}</p>}
+                  </div>
+                </a>
+              ))}
+            </div>
+          ) : (
+            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {/* Fallback if no active ads in DB */}
+              <div className="bg-white border-2 border-dashed border-border rounded-xl p-6 flex flex-col items-center justify-center text-center min-h-[180px] hover:border-gold transition-colors">
+                <h3 className="font-bold text-ink mb-1">Advertise Here</h3>
+                <p className="text-xs text-muted mb-3">Reach residents in {lgaName}.</p>
+                <Link href="/dashboard/voter" className="text-xs font-bold text-gold bg-gold/10 px-3 py-1.5 rounded-md">Submit Ad</Link>
               </div>
-            ))}
-          </div>
+            </div>
+          )}
         </div>
       </section>
     </div>

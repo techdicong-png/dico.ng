@@ -11,7 +11,6 @@ const supabaseServer = createClient(
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    // YOU MUST AWAIT PARAMS HERE:
     const { id } = await params
 
     const cookieStore = await cookies()
@@ -24,14 +23,16 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const body = await req.json()
     const { status, notes } = body
 
+    // 1. Get the registration data
     const { data: reg, error: fetchErr } = await supabaseServer
       .from('candidate_registrations')
       .select('*')
-      .eq('id', id) // Use the unwrapped 'id' here
+      .eq('id', id)
       .single()
 
     if (fetchErr || !reg) throw new Error('Registration not found')
 
+    // 2. Update registration status
     const { error: updateErr } = await supabaseServer
       .from('candidate_registrations')
       .update({ status, notes, reviewed_at: new Date().toISOString(), reviewed_by: payload.userId })
@@ -39,19 +40,51 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
     if (updateErr) throw updateErr
 
+    // 3. If Approved, create their public profiles!
     if (status === 'verified') {
+      // A. Check if they exist in public.users table
+      const { data: existingUser } = await supabaseServer
+        .from('users')
+        .select('id')
+        .eq('id', reg.user_id)
+        .maybeSingle()
+
+      // B. If not, create their public.users profile first (to satisfy the foreign key)
+      if (!existingUser) {
+        const { error: userInsertErr } = await supabaseServer
+          .from('users')
+          .insert({
+            id: reg.user_id, // Link to Supabase Auth UID
+            email: reg.email,
+            full_name: reg.full_name,
+            avatar_url: reg.avatar_url,
+            role: 'candidate',
+            password_hash: 'managed_by_supabase_auth',
+            is_active: true,
+            civict_balance: 0,
+            state: reg.state_constituency,
+            lga: reg.lga_constituency,
+            ward: reg.ward
+          })
+
+        if (userInsertErr) throw userInsertErr
+      }
+
+      // C. Check if they already exist in candidates table
       const { data: existingCand } = await supabaseServer
         .from('candidates')
         .select('id')
         .eq('user_id', reg.user_id)
         .maybeSingle()
 
+      // D. If not, create their candidates profile
       if (!existingCand) {
         const { error: candInsertErr } = await supabaseServer
           .from('candidates')
           .insert({
             user_id: reg.user_id,
             full_name: reg.full_name,
+            avatar_url: reg.avatar_url,
             party: reg.party,
             office: reg.position,
             state: reg.state_constituency,

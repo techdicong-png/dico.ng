@@ -14,7 +14,7 @@ export default async function AdminDashboardPage() {
   if (!token) redirect('/login')
   const payload = await verifyToken(token)
   if (!payload) redirect('/login')
-  if (payload.role !== 'admin') redirect('/dashboard')
+  if (payload.role !== 'admin') redirect('/login')
 
   const [stats, health] = await Promise.all([
     supabaseAdmin.rpc('total_civict_supply'),

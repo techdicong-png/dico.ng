@@ -8,6 +8,9 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Upload, Plus, X, Loader2, Radio, MapPin, CheckCircle } from 'lucide-react'
 import { toast } from 'sonner'
+import Image from 'next/image'
+// NEW: Import the PostCard component
+import { PostCard } from '@/components/dashboard/PostCard'
 
 // Initialize Supabase client inline
 const supabase = createClient(
@@ -19,8 +22,7 @@ type PromiseType = {
   id: string; text: string; status: 'fulfilled' | 'in-progress' | 'pending'; note: string | null
 }
 
-export function CandidateHub({ candidateId, initialName, candidateLga }: { candidateId: string, initialName: string, candidateLga: string }) {
-  const [posts, setPosts] = useState<any[]>([])
+export function CandidateHub({ candidateId, initialName, candidateLga, avatarUrl }: { candidateId: string, initialName: string, candidateLga: string, avatarUrl?: string }) {  const [posts, setPosts] = useState<any[]>([])
   const [promises, setPromises] = useState<PromiseType[]>([])
   const [loading, setLoading] = useState(true)
   
@@ -30,11 +32,14 @@ export function CandidateHub({ candidateId, initialName, candidateLga }: { candi
   const [uploading, setUploading] = useState(false)
   const [posting, setPosting] = useState(false)
 
+  // Promise inline input state
+  const [isAddingPromise, setIsAddingPromise] = useState(false)
+  const [newPromiseText, setNewPromiseText] = useState('')
+
   // Live modal state
   const [isLiveModalOpen, setIsLiveModalOpen] = useState(false)
   const [liveTitle, setLiveTitle] = useState('')
 
-  // Create a URL-friendly slug for the LGA link
   const lgaSlug = candidateLga.toLowerCase().replace(/\s/g, '-')
 
   useEffect(() => {
@@ -62,15 +67,25 @@ export function CandidateHub({ candidateId, initialName, candidateLga }: { candi
     const file = e.target.files?.[0]
     if (!file) return
     
+    // Show local preview immediately so it doesn't look broken
+    const localPreviewUrl = URL.createObjectURL(file)
+    setPostMedia({
+      url: localPreviewUrl,
+      type: file.type.startsWith('video') ? 'video' : 'image'
+    })
+
     setUploading(true)
     const ext = file.name.split('.').pop()
-    const path = `${candidateId}/posts/${Date.now()}.${ext}`
+    const path = `${candidateId}/${Date.now()}.${ext}`
     
-    const { error } = await supabase.storage.from('candidate-docs').upload(path, file)
+    // Upload to the new public 'candidate-posts' bucket
+    const { error } = await supabase.storage.from('candidate-posts').upload(path, file)
     if (error) {
       toast.error('Upload failed. Please try again.')
+      setPostMedia(null) // Remove preview if upload fails
     } else {
-      const { data } = supabase.storage.from('candidate-docs').getPublicUrl(path)
+      const { data } = supabase.storage.from('candidate-posts').getPublicUrl(path)
+      // Replace local preview with the permanent Supabase URL
       setPostMedia({
         url: data.publicUrl,
         type: file.type.startsWith('video') ? 'video' : 'image'
@@ -102,18 +117,21 @@ export function CandidateHub({ candidateId, initialName, candidateLga }: { candi
   }
 
   async function addPromise() {
-    const text = prompt('Enter new campaign promise:')
-    if (!text) return
+    if (!newPromiseText) return
     
     const { data, error } = await supabase.from('candidate_promises').insert({
       candidate_id: candidateId,
-      text,
+      text: newPromiseText,
       status: 'pending'
     }).select().single()
 
     if (!error && data) {
       setPromises([data, ...promises])
+      setNewPromiseText('')
+      setIsAddingPromise(false)
       toast.success('Promise added.')
+    } else {
+      toast.error('Failed to add promise.')
     }
   }
 
@@ -139,24 +157,27 @@ export function CandidateHub({ candidateId, initialName, candidateLga }: { candi
       {/* Profile Header */}
       <div className="bg-white border border-border rounded-2xl overflow-hidden shadow-sm">
         <div className="h-32 bg-gradient-to-br from-forest to-forest-mid"></div>
-        <div className="px-6 pb-6 -mt-12 flex items-end justify-between flex-wrap gap-4">
-          <div className="flex items-end gap-4">
-            <div className="w-24 h-24 rounded-full bg-white border-4 border-white flex items-center justify-center font-serif text-4xl font-black text-forest shrink-0">
-              {initialName.charAt(0)}
-            </div>
+        <div className="px-6 pb-6 -mt-12 flex items-start md:items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-4">
+            {avatarUrl ? (
+              <Image src={avatarUrl} alt="Avatar" width={96} height={96} className="w-24 h-24 rounded-full bg-white border-4 border-black/10 flex items-center justify-center font-serif text-4xl font-black text-forest shrink-0" />
+            ) : (
+              <div className="w-24 h-24 rounded-full bg-white border-4 border-black/10 flex items-center justify-center font-serif text-4xl font-black text-forest shrink-0">
+                {initialName.charAt(0)}
+              </div>
+            )}
             <div className="pb-2">
-              <h1 className="font-serif text-2xl font-black text-ink flex items-center gap-2">
+              <h1 className="font-serif text-sm md:text-2xl font-black text-ink flex flex-col md:flex-row items-start md:items-center gap-2">
                 {initialName}
                 <span className="text-xs font-bold bg-forest-light text-forest px-2 py-1 rounded flex items-center gap-1">
                   <CheckCircle className="h-3 w-3" /> Verified
                 </span>
               </h1>
-              <p className="text-sm text-muted mb-2">Candidate Profile & Media Hub</p>
+              <p className="text-sm text-muted pt-6">Candidate Profile & Media Hub</p>
               
-              {/* NEW: Link to LGA Hub */}
               <Link 
                 href={`/lga/${lgaSlug}`} 
-                className="text-xs font-semibold text-gold hover:underline inline-flex items-center gap-1 bg-gold/10 px-2 py-1 rounded"
+                className="text-xs font-normal md:font-semibold text-gold hover:underline inline-flex items-center gap-1 bg-gold/10 px-2 py-1 rounded whitespace-nowrap"
               >
                 <MapPin className="h-3 w-3" /> View {candidateLga} LGA Hub & Ads
               </Link>
@@ -174,10 +195,24 @@ export function CandidateHub({ candidateId, initialName, candidateLga }: { candi
           <div className="bg-white border border-border rounded-2xl p-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-serif text-lg font-bold text-ink">Campaign Promises</h3>
-              <button onClick={addPromise} className="text-forest hover:bg-forest-faint p-1 rounded">
+              <button onClick={() => setIsAddingPromise(!isAddingPromise)} className="text-forest hover:bg-forest-faint p-1 rounded">
                 <Plus className="h-4 w-4" />
               </button>
             </div>
+
+            {isAddingPromise && (
+              <div className="mb-4 flex flex-col gap-2 animate-slide-down">
+                <Textarea 
+                  value={newPromiseText} 
+                  onChange={(e) => setNewPromiseText(e.target.value)} 
+                  placeholder="What do you promise to achieve?" 
+                  rows={2}
+                  className="text-sm"
+                />
+                <Button size="sm" onClick={addPromise} className="bg-forest hover:bg-forest-mid w-full">Add Promise</Button>
+              </div>
+            )}
+
             <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
               {promises.length === 0 && <p className="text-sm text-muted">No promises added yet.</p>}
               {promises.map(p => (
@@ -213,7 +248,7 @@ export function CandidateHub({ candidateId, initialName, candidateLga }: { candi
             {postMedia && (
               <div className="mt-3 relative rounded-lg overflow-hidden">
                 {postMedia.type === 'image' ? (
-                  <img src={postMedia.url} alt="Upload" className="w-full max-h-64 object-cover" />
+                  <Image src={postMedia.url} alt="Upload" width={500} height={300} className="w-full max-h-64 object-cover" />
                 ) : (
                   <video src={postMedia.url} controls className="w-full max-h-64 object-cover" />
                 )}
@@ -241,21 +276,7 @@ export function CandidateHub({ candidateId, initialName, candidateLga }: { candi
           <div className="space-y-4">
             {posts.length === 0 && <p className="text-center text-muted py-8">No posts yet. Share your first update!</p>}
             {posts.map(post => (
-              <div key={post.id} className="bg-white border border-border rounded-2xl p-6">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-full bg-forest text-white flex items-center justify-center font-bold">
-                    {initialName.charAt(0)}
-                  </div>
-                  <div>
-                    <p className="font-semibold text-ink">{initialName}</p>
-                    <p className="text-xs text-muted">{new Date(post.created_at).toLocaleString()}</p>
-                  </div>
-                </div>
-                <p className="text-sm text-ink mb-3 whitespace-pre-line">{post.content}</p>
-                {post.image_url && (
-                  <img src={post.image_url} alt="Post" className="w-full rounded-lg max-h-96 object-cover" />
-                )}
-              </div>
+             <PostCard key={post.id} post={post} initialName={initialName} avatarUrl={avatarUrl} />
             ))}
           </div>
         </div>

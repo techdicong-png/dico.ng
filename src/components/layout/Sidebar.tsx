@@ -21,7 +21,7 @@ type NavLink = {
 
 const voterLinks: NavLink[] = [
   { href: '/dashboard/voter', label: 'Dashboard', icon: LayoutGrid },
-  { href: '/feed', label: 'Feeds', icon: Rss, count: '12' },
+  { href: '/feed', label: 'Feeds', icon: Rss },
   { href: '/candidates', label: 'Candidates', icon: Users },
   { href: '/sessions', label: 'Live Sessions', icon: Video, count: '1 LIVE' },
   { href: '/market', label: 'Dico Online Market', icon: Store, market: true },
@@ -31,16 +31,17 @@ const candidateLinks: NavLink[] = [
   { href: '/dashboard/candidate', label: 'Media Hub', icon: LayoutGrid },
   { href: '/sessions', label: 'Live Sessions', icon: Video },
   { href: '/polls', label: 'Polls', icon: Vote },
-  { href: '/reports', label: 'Reports', icon: FileText, count: '15' },
+  { href: '/reports', label: 'Reports', icon: FileText },
   { href: '/candidates', label: 'All Candidates', icon: Users },
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },
-  { href: '/performance', label: 'Performance Rank', icon: TrendingUp }, // NEW LINK
+  { href: '/performance', label: 'Performance Rank', icon: TrendingUp },
   { href: '/team', label: 'Campaign Team', icon: Users },
   { href: '/market', label: 'DICO Online Market', icon: Store, market: true },
 ]
 
 const adminLinks: NavLink[] = [
-  { href: '/dashboard/admin', label: 'Overview', icon: Shield },
+  { href: '/admin', label: 'Overview', icon: Shield },
+  { href: '/admin/candidates', label: 'Verify Candidates', icon: Users },
   { href: '/market', label: 'DICO Online Market', icon: Store, market: true },
 ]
 
@@ -50,8 +51,14 @@ const accountLinks: NavLink[] = [
   { href: '/login', label: 'Logout', icon: LogOut, logout: true },
 ]
 
-export function Sidebar({ role, userInitial, userName }: { role: string; userInitial: string; userName: string }) {
+export function Sidebar({ role, user }: { role: string; user: any }) {
   const pathname = usePathname()
+
+  // Dynamic data from user object
+  const userInitial = user?.full_name?.[0] || 'U'
+  const userName = user?.full_name || 'User'
+  const civictBalance = user?.civict_balance?.toLocaleString() || '0'
+  const userLocation = [user?.lga, user?.state].filter(Boolean).join(' · ') || 'Location not set'
 
   const navLinks: NavLink[] =
     role === 'candidate' || role === 'campaign_team' ? candidateLinks
@@ -68,7 +75,6 @@ export function Sidebar({ role, userInitial, userName }: { role: string; userIni
     if (overlay) overlay.classList.add('hidden')
   }
 
-
   return (
     <>
       {/* Overlay backdrop — mobile only */}
@@ -83,24 +89,23 @@ export function Sidebar({ role, userInitial, userName }: { role: string; userIni
         id="sidebar"
         className="fixed top-14 left-0 bottom-0 w-60 bg-card dark:bg-[#11241b] border-r border-mint-line dark:border-[rgba(255,255,255,0.08)] overflow-y-auto py-4 z-40 -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col"
       >
-        {/* Wallet Card */}
-        <Link href={role === 'candidate' ? '/dashboard/candidate' : '/wallet'}
-          className="block mx-4 mb-3 no-underline text-white" onClick={closeSidebar}>
+        {/* Wallet Card - Strictly CIVICT */}
+        <Link href="/wallet" className="block mx-4 mb-3 no-underline text-white" onClick={closeSidebar}>
           <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-forest to-forest-mid p-4">
             <p className="text-[10px] font-bold tracking-widest uppercase text-white/50 mb-1">
-              {role === 'candidate' ? 'Campaign Funds' : 'CIVICT Balance'}
+              CIVICT Balance
             </p>
             <p className="font-serif text-2xl font-bold">
-              <span className="text-gold-400 text-sm">{role === 'candidate' ? '₦' : '₡'}</span>
-              {role === 'candidate' ? '1.2M' : '2,450'}
+              <span className="text-gold-400 text-sm">₡</span>
+              {civictBalance}
             </p>
             <p className="text-[11px] text-white/50 mt-1">
-              {role === 'candidate' ? '₦450k raised this month' : '+340 earned this month'}
+              {role === 'candidate' ? 'Stockpile for your campaign' : 'Earn more by participating'}
             </p>
           </div>
         </Link>
 
-        {/* Profile Mini */}
+        {/* Profile Mini - Dynamic Name & Location */}
         <Link href="/profile" className="block mx-4 mb-4 no-underline" onClick={closeSidebar}>
           <div className="relative rounded-xl bg-gradient-to-br from-forest to-forest-mid dark:from-[#1b3a2b] dark:to-[#0f1d16] p-4 transition-all hover:shadow-md dark:hover:shadow-[0_8px_24px_rgba(0,0,0,0.4)]">
             <div className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-gold shadow-[0_0_8px_rgba(200,150,10,0.5)]" />
@@ -119,7 +124,7 @@ export function Sidebar({ role, userInitial, userName }: { role: string; userIni
                 <p className="text-sm font-bold text-white truncate">{userName}</p>
                 <p className="text-[11px] text-white/60 truncate flex items-center gap-1">
                   <span className="w-1 h-1 rounded-full bg-gold" />
-                  {role === 'candidate' ? 'Eti-Osa · APC · Reps' : 'Eti-Osa · Lagos · Ward 7'}
+                  {userLocation}
                 </p>
               </div>
               <svg viewBox="0 0 24 24" className="w-4 h-4 text-white/30 shrink-0">
@@ -205,8 +210,6 @@ export function Sidebar({ role, userInitial, userName }: { role: string; userIni
           </ul>
         </div>
       </aside>
-
-      {/* ❌ No shadcn Sheet — just pure CSS toggle */}
     </>
   )
 }

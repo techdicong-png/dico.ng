@@ -26,8 +26,8 @@ export function HeroSection() {
             <div className="inline-flex items-center gap-2 bg-[#C8960A]/20 border border-[#C8960A]/40 text-[#E8C040] text-[11px] font-bold tracking-widest uppercase px-3 py-1.5 rounded mb-5">
               Digital Constituency Office · Nigeria
             </div>
-            <h1 className="font-serif  text-4xl md:text-5xl font-black text-white leading-[1.08] mb-6">
-              The Trusted Digital Marketplace For <span className="text-[#E8C040]">Verified Voters</span> To Connect
+            <h1 className="font-serif  text-3xl md:text-4xl font-black text-white leading-[1.08] mb-6">
+              The Trusted Digital Frontier Where <span className="text-[#E8C040]">Verified Voters</span> Engage Poliltical Aspirations and Representations
             </h1>
             <p className="text-base md:text-lg text-white/80 leading-relaxed mb-8 max-w-lg">
               DICO powers digital town halls, verified voter participation, real-time polling, and community issue reporting. Every question, vote, and idea earns CIVICT — Nigeria&apos;s first civic participation token.
@@ -59,25 +59,20 @@ export function HeroSection() {
         </div>
       </section>
 
-      {/* Stats bar */}
+           {/* Stats bar - Updated for accuracy */}
       <div className="bg-sand py-5 px-4 md:px-6">
-        <div className="max-w-6xl mx-auto flex flex-wrap items-center gap-6 md:gap-10">
+        <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-center gap-6 md:gap-10">
           {[
-            { num: '36', label: 'States + FCT' },
-            { num: '4,218', label: 'Verified Voters' },
-            { num: '47', label: 'Active Candidates' },
-            { num: '128', label: 'Polls Conducted' },
+            { num: '4', label: 'Active States' },
+            { num: '100+', label: 'Local Govts' },
+            { num: '21', label: 'Political Parties' },
+            { num: '₦50', label: 'CIVICT Price' },
           ].map(s => (
             <div key={s.label} className="flex items-center gap-3">
               <span className="font-serif text-2xl md:text-3xl font-black text-forest">{s.num}</span>
               <span className="text-[11px] font-bold tracking-wider uppercase text-[#3D5246]">{s.label}</span>
             </div>
           ))}
-          <div className="flex gap-2 ml-auto flex-wrap">
-            {['Nigerian Voters', 'Candidates', 'Campaign Teams', 'Civil Society'].map(tag => (
-              <span key={tag} className="text-[11px] font-semibold text-forest bg-white border border-border px-3 py-1.5 rounded-full">{tag}</span>
-            ))}
-          </div>
         </div>
       </div>
     </>

@@ -9,6 +9,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { CheckCircle, Upload, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 import { STATES, NIGERIA_DATA } from '@/data/nigeria'
 import { NIGERIAN_PARTIES, OFFICE_LEVELS } from '@/data/parties'
+import { toast } from 'sonner'
+import Image from 'next/image'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -21,17 +23,37 @@ export function CandidateRegisterForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const [avatarUploading, setAvatarUploading] = useState(false)
   
   const [form, setForm] = useState({
     full_name: '', date_of_birth: '', gender: '', phone: '', email: '', password: '',
     state_of_origin: '', lga_of_origin: '', home_address: '',
     state_constituency: '', lga_constituency: '', ward: '', senatorial_district: '', federal_constituency: '',
-    party: '', office_level: '', campaign_slogan: '', manifesto_summary: ''
+    party: '', office_level: '', campaign_slogan: '', manifesto_summary: '', avatar_url: '',
   })
 
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, File | null>>({
     id_card: null, party_membership: null, nomination_form: null, cert_return: null, other: null
   })
+
+    async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
+      const file = e.target.files?.[0]
+      if (!file) return
+      
+      setAvatarUploading(true)
+      const ext = file.name.split('.').pop()
+      const path = `${Date.now()}.${ext}`
+      
+      const { error } = await supabase.storage.from('candidate-avatars').upload(path, file)
+      if (error) {
+        toast.error('Avatar upload failed.')
+      } else {
+        const { data } = supabase.storage.from('candidate-avatars').getPublicUrl(path)
+        setForm(prev => ({ ...prev, avatar_url: data.publicUrl }))
+        toast.success('Profile picture updated.')
+      }
+      setAvatarUploading(false)
+    }
 
   const lgas = form.state_constituency ? Object.keys(NIGERIA_DATA[form.state_constituency] || {}).sort() : []
   const wards = (form.state_constituency && form.lga_constituency) ? NIGERIA_DATA[form.state_constituency]?.[form.lga_constituency] || [] : []
@@ -117,6 +139,7 @@ export function CandidateRegisterForm() {
         .insert({
           user_id: userId, // Link to auth.users
           full_name: form.full_name,
+          avatar_url: form.avatar_url || null,
           date_of_birth: form.date_of_birth || null,
           gender: form.gender || null,
           phone: form.phone,
@@ -223,6 +246,24 @@ export function CandidateRegisterForm() {
             <h2 className="font-serif text-2xl font-black text-ink">Personal Details</h2>
             <p className="text-sm text-muted -mt-2">Basic biographical information about you.</p>
             <div className="grid md:grid-cols-2 gap-4">
+              <div className="md:col-span-2 flex flex-col items-center mb-4">
+                  <div className="relative w-24 h-24 rounded-full bg-sand border-2 border-dashed border-border flex items-center justify-center overflow-hidden">
+                    {avatarUploading ? (
+                      <Loader2 className="h-6 w-6 animate-spin text-muted" />
+                    ) : form.avatar_url ? (
+                      <Image src={form.avatar_url} alt="Avatar" width={96} height={96} className="w-full h-full object-cover" />
+                    ) : (
+                      <Upload className="h-6 w-6 text-muted" />
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                      onChange={handleAvatarUpload}
+                    />
+                  </div>
+                  <p className="text-xs text-muted mt-2">Upload Profile Picture</p>
+                </div>
               <div>
                 <label className="block text-xs font-semibold text-ink mb-1.5">Full Legal Name *</label>
                 <Input name="full_name" value={form.full_name} onChange={handleInputChange} placeholder="As it appears on your ID" />

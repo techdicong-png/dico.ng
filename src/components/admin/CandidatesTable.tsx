@@ -194,10 +194,10 @@ export function CandidatesTable({ initialData }: { initialData: Registration[] }
         </CardContent>
       </Card>
 
-      {/* DETAIL MODAL */}
+            {/* DETAIL MODAL */}
       {selectedReg && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedReg(null)}>
-          <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="bg-forest text-white p-5 flex justify-between items-center sticky top-0 z-10">
               <div>
                 <h3 className="text-xl font-bold">{selectedReg.full_name}</h3>
@@ -207,31 +207,64 @@ export function CandidatesTable({ initialData }: { initialData: Registration[] }
             </div>
             
             <div className="p-6 space-y-6">
-              {/* Details */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <div><strong className="block text-xs text-muted uppercase mb-1">Email</strong> {selectedReg.email}</div>
-                <div><strong className="block text-xs text-muted uppercase mb-1">Phone</strong> {selectedReg.phone}</div>
-                <div><strong className="block text-xs text-muted uppercase mb-1">Constituency</strong> {selectedReg.lga_constituency}, {selectedReg.state_constituency}</div>
-                <div><strong className="block text-xs text-muted uppercase mb-1">Ward</strong> {selectedReg.ward || 'N/A'}</div>
-                <div className="col-span-1 md:col-span-2"><strong className="block text-xs text-muted uppercase mb-1">Manifesto</strong> <p className="bg-sand p-3 rounded">{selectedReg.manifesto_summary || 'N/A'}</p></div>
+              {/* Personal Details */}
+              <div>
+                <h4 className="text-xs font-bold uppercase text-muted mb-3 border-b pb-1">Personal Details</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div><strong className="block text-xs text-muted uppercase mb-1">Date of Birth</strong> {selectedReg.date_of_birth || 'N/A'}</div>
+                  <div><strong className="block text-xs text-muted uppercase mb-1">Gender</strong> {selectedReg.gender || 'N/A'}</div>
+                  <div><strong className="block text-xs text-muted uppercase mb-1">Phone</strong> {selectedReg.phone}</div>
+                  <div><strong className="block text-xs text-muted uppercase mb-1">Email</strong> {selectedReg.email}</div>
+                  <div><strong className="block text-xs text-muted uppercase mb-1">State of Origin</strong> {selectedReg.state_of_origin || 'N/A'}</div>
+                  <div><strong className="block text-xs text-muted uppercase mb-1">LGA of Origin</strong> {selectedReg.lga_of_origin || 'N/A'}</div>
+                  <div className="md:col-span-2"><strong className="block text-xs text-muted uppercase mb-1">Home Address</strong> {selectedReg.home_address || 'N/A'}</div>
+                </div>
+              </div>
+
+              {/* Constituency Details */}
+              <div>
+                <h4 className="text-xs font-bold uppercase text-muted mb-3 border-b pb-1">Constituency Details</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div><strong className="block text-xs text-muted uppercase mb-1">State</strong> {selectedReg.state_constituency}</div>
+                  <div><strong className="block text-xs text-muted uppercase mb-1">LGA</strong> {selectedReg.lga_constituency}</div>
+                  <div><strong className="block text-xs text-muted uppercase mb-1">Ward</strong> {selectedReg.ward || 'N/A'}</div>
+                  <div><strong className="block text-xs text-muted uppercase mb-1">Senatorial District</strong> {selectedReg.senatorial_district || 'N/A'}</div>
+                  <div className="md:col-span-2"><strong className="block text-xs text-muted uppercase mb-1">Federal Constituency</strong> {selectedReg.federal_constituency || 'N/A'}</div>
+                </div>
+              </div>
+
+              {/* Political Details */}
+              <div>
+                <h4 className="text-xs font-bold uppercase text-muted mb-3 border-b pb-1">Political Details</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div><strong className="block text-xs text-muted uppercase mb-1">Party</strong> {selectedReg.party}</div>
+                  <div><strong className="block text-xs text-muted uppercase mb-1">Position</strong> {selectedReg.position}</div>
+                  <div><strong className="block text-xs text-muted uppercase mb-1">Level</strong> {selectedReg.level || 'N/A'}</div>
+                  <div><strong className="block text-xs text-muted uppercase mb-1">Campaign Slogan</strong> {selectedReg.campaign_slogan || 'N/A'}</div>
+                  <div className="md:col-span-2">
+                    <strong className="block text-xs text-muted uppercase mb-1">Manifesto Summary</strong> 
+                    <p className="bg-sand p-3 rounded mt-1">{selectedReg.manifesto_summary || 'N/A'}</p>
+                  </div>
+                </div>
               </div>
 
               {/* Documents */}
               <div>
-                <h4 className="text-sm font-bold mb-2">Supporting Documents</h4>
-                <div className="flex flex-wrap gap-2">
+                <h4 className="text-xs font-bold uppercase text-muted mb-3 border-b pb-1">Supporting Documents</h4>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   <Button variant="outline" size="sm" onClick={() => viewDoc(selectedReg.doc_id_card, 'ID Card')}>View ID Card</Button>
                   <Button variant="outline" size="sm" onClick={() => viewDoc(selectedReg.doc_party_membership, 'Party Membership')}>View Party Membership</Button>
                   <Button variant="outline" size="sm" onClick={() => viewDoc(selectedReg.doc_nomination_form, 'Nomination Form')}>View Nomination Form</Button>
                   <Button variant="outline" size="sm" onClick={() => viewDoc(selectedReg.doc_cert_return, 'Certificate of Return')}>View Certificate</Button>
+                  <Button variant="outline" size="sm" onClick={() => viewDoc(selectedReg.doc_other, 'Other Document')}>View Other Doc</Button>
                 </div>
               </div>
 
               {/* Admin Notes */}
               <div>
-                <h4 className="text-sm font-bold mb-2">Admin Notes</h4>
+                <h4 className="text-xs font-bold uppercase text-muted mb-3 border-b pb-1">Admin Notes</h4>
                 <textarea 
-                  className="w-full p-2 border border-border rounded h-24 text-sm" 
+                  className="w-full p-2 border border-border rounded h-24 text-sm focus:outline-none focus:border-forest" 
                   placeholder="Add internal notes here..."
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}

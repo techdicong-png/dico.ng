@@ -3,115 +3,135 @@
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { ScrollReveal } from '@/components/sections/ScrollReveal'
-import { MapPin, Search, Building, ArrowRight } from 'lucide-react'
-import { NIGERIA_DATA, STATES } from '@/data/nigeria'
+import { MapPin, Search, Building, ArrowRight, ChevronDown, Landmark } from 'lucide-react'
+import { NIGERIA_DATA } from '@/data/nigeria'
 
-// We focus only on the 4 active states for the V1 launch
 const ACTIVE_STATES = ['Edo', 'Delta', 'FCT Abuja', 'Nasarawa']
 
-// Flatten the data into a simple array of { state, lga, wardCount } for easy searching
-const ALL_LGAS = ACTIVE_STATES.flatMap(state => 
-  Object.keys(NIGERIA_DATA[state] || {}).map(lga => ({
-    state,
+const GROUPED_LGAS = ACTIVE_STATES.reduce((acc, state) => {
+  const lgas = Object.keys(NIGERIA_DATA[state] || {}).map(lga => ({
     lga,
     wardCount: NIGERIA_DATA[state][lga].length
-  }))
-).sort((a, b) => a.lga.localeCompare(b.lga))
+  })).sort((a, b) => a.lga.localeCompare(b.lga))
+  
+  acc[state] = lgas
+  return acc
+}, {} as Record<string, { lga: string, wardCount: number }[]>)
 
 export default function ExplorerPage() {
   const [search, setSearch] = useState('')
+  const [expandedState, setExpandedState] = useState<string | null>(null)
 
-  const filteredLgas = useMemo(() => {
-    if (!search) return ALL_LGAS
-    return ALL_LGAS.filter(item => 
-      item.lga.toLowerCase().includes(search.toLowerCase()) ||
-      item.state.toLowerCase().includes(search.toLowerCase())
-    )
+  const filteredGroups = useMemo(() => {
+    const result: Record<string, { lga: string, wardCount: number }[]> = {}
+    
+    Object.entries(GROUPED_LGAS).forEach(([state, lgas]) => {
+      const matchedLgas = lgas.filter(item => 
+        !search || 
+        item.lga.toLowerCase().includes(search.toLowerCase()) ||
+        state.toLowerCase().includes(search.toLowerCase())
+      )
+      if (matchedLgas.length > 0) {
+        result[state] = matchedLgas
+      }
+    })
+    
+    return result
   }, [search])
 
   return (
-    <>
+    <div className="min-h-screen bg-sand flex flex-col">
       {/* ==================== HERO ==================== */}
-      <section className="relative isolate overflow-clip bg-gradient-to-br from-forest via-forest-mid to-forest text-white py-20 md:py-28 px-4 md:px-6">
+      <section className="relative isolate overflow-clip bg-gradient-to-br from-forest via-forest-mid to-forest text-white pt-20 pb-12 md:pt-28 md:pb-16 px-4">
         <div className="absolute inset-0 pointer-events-none opacity-60"
           style={{ background: 'radial-gradient(circle at var(--mx,50%) var(--my,50%), rgba(200,150,10,.1), transparent 30%)' }} />
-        <div className="max-w-4xl mx-auto relative z-10 text-center">
+        <div className="max-w-3xl mx-auto relative z-10 text-center">
           <ScrollReveal>
-            <span className="inline-flex items-center gap-2 text-[11px] font-bold tracking-widest uppercase text-gold/80 bg-gold/10 border border-gold/20 px-3 py-1.5 rounded mb-4">
+            <span className="inline-flex items-center gap-2 text-[10px] md:text-[11px] font-bold tracking-widest uppercase text-gold/80 bg-gold/10 border border-gold/20 px-3 py-1.5 rounded mb-4">
               <MapPin className="h-3 w-3" /> Explore Your Constituency
             </span>
-            <h1 className="font-serif text-4xl md:text-6xl font-black leading-[1.05] mb-4">
+            <h1 className="font-serif text-3xl sm:text-4xl md:text-6xl font-black leading-[1.1] mb-4">
               Your LGA. <br className="md:hidden"/> <span className="text-gold">Your Voice.</span> Your Future.
             </h1>
-            <p className="text-white/80 max-w-2xl mx-auto mb-8 text-lg">
-              Your Digital Interactive Constituency Office. Search across {ALL_LGAS.length} active Local Government Areas to find local candidates, government services, and community updates.
+            <p className="text-sm md:text-lg text-white/80 max-w-xl mx-auto mb-8">
+              Your Digital Interactive Constituency Office. Select your state to find local candidates, government services, and community updates.
             </p>
             
             {/* Search Bar */}
-            <div className="max-w-xl mx-auto relative">
+            <div className="max-w-md mx-auto relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted" />
               <input
                 type="text"
-                placeholder="Search for an LGA (e.g. Keffi, Asaba)..."
+                placeholder="Search for an LGA or State..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full h-14 pl-12 pr-4 text-ink bg-white rounded-xl shadow-lg focus:outline-none focus:ring-2 focus:ring-gold text-sm"
+                // text-base prevents iOS zoom, rounded-xl for modern look
+                className="w-full h-14 pl-12 pr-4 text-base text-ink bg-white rounded-xl shadow-lg focus:outline-none focus:ring-2 focus:ring-gold"
               />
             </div>
           </ScrollReveal>
         </div>
       </section>
 
-      {/* ==================== LGA GRID ==================== */}
-      <section className="py-16 md:py-20 px-4 md:px-6 bg-sand">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex justify-between items-end mb-8">
-            <ScrollReveal>
-              <h2 className="font-serif text-2xl md:text-3xl font-black text-ink">
-                {search ? `Results for "${search}"` : 'Explore Active LGAs'}
-              </h2>
-              <p className="text-sm text-muted mt-1">
-                Showing {filteredLgas.length} Local Government Areas across {ACTIVE_STATES.length} states.
-              </p>
-            </ScrollReveal>
-          </div>
-
-          {filteredLgas.length === 0 ? (
-            <div className="bg-white border border-border rounded-xl p-12 text-center">
-              <p className="text-muted">No LGAs found matching your search. Try "Keffi" or "Asaba".</p>
+      {/* ==================== STATE ACCORDION ==================== */}
+      <section className="flex-1 py-8 md:py-16 px-4">
+        <div className="max-w-3xl mx-auto space-y-4">
+          {Object.keys(filteredGroups).length === 0 ? (
+            <div className="bg-white border border-border rounded-xl p-8 md:p-12 text-center">
+              <p className="text-muted text-sm md:text-base">No locations found matching your search.</p>
             </div>
           ) : (
-            <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {filteredLgas.map((item, i) => (
-                <ScrollReveal key={`${item.state}-${item.lga}`}>
-                  <Link 
-                    href={`/lga/${item.lga.toLowerCase().replace(/\s/g, '-')}`}
-                    className="block bg-white border border-border rounded-xl p-5 hover:border-forest hover:shadow-md transition-all group h-full"
+            Object.entries(filteredGroups).map(([state, lgas]) => (
+              <ScrollReveal key={state}>
+                <div className="bg-white border border-border rounded-xl overflow-hidden shadow-sm">
+                  {/* State Header Button */}
+                  <button 
+                    className="w-full p-4 md:p-5 flex items-center justify-between hover:bg-forest-faint transition-colors"
+                    onClick={() => setExpandedState(expandedState === state ? null : state)}
                   >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="w-10 h-10 rounded-lg bg-forest-light flex items-center justify-center">
-                        <Building className="h-5 w-5 text-forest" />
+                    <div className="flex items-center gap-3 md:gap-4">
+                      <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-forest flex items-center justify-center shrink-0">
+                        <Landmark className="h-5 w-5 md:h-6 md:w-6 text-gold" />
                       </div>
-                      <span className="text-[10px] font-bold text-gold bg-gold/10 px-2 py-1 rounded">
-                        {item.wardCount} Wards
-                      </span>
+                      <div className="text-left">
+                        <h2 className="font-serif text-lg md:text-xl font-black text-ink">{state}</h2>
+                        <p className="text-[10px] md:text-xs text-muted">{lgas.length} Local Government Areas</p>
+                      </div>
                     </div>
-                    <h3 className="font-serif text-lg font-bold text-ink mb-1 group-hover:text-forest transition-colors">
-                      {item.lga}
-                    </h3>
-                    <p className="text-xs text-muted flex items-center gap-1">
-                      <MapPin className="h-3 w-3" /> {item.state} State
-                    </p>
-                    <div className="mt-4 pt-3 border-t border-border-light flex items-center text-xs font-semibold text-forest">
-                      Visit LGA Hub <ArrowRight className="h-3 w-3 ml-1 group-hover:translate-x-1 transition-transform" />
+                    <ChevronDown className={`h-5 w-5 text-muted transition-transform shrink-0 ${expandedState === state || search ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {/* LGA Grid (Expands) */}
+                  {(expandedState === state || search) && (
+                    <div className="p-4 md:p-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 border-t border-border-light">
+                      {lgas.map((item) => (
+                        <Link 
+                          key={`${state}-${item.lga}`} 
+                          href={`/lga/${item.lga.toLowerCase().replace(/\s/g, '-')}`}
+                          className="block bg-sand border border-border rounded-lg p-4 hover:border-forest hover:shadow-sm transition-all group"
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <Building className="h-5 w-5 text-forest" />
+                            <span className="text-[10px] font-bold text-gold bg-gold/10 px-2 py-0.5 rounded">
+                              {item.wardCount} Wards
+                            </span>
+                          </div>
+                          <h3 className="font-bold text-ink text-sm group-hover:text-forest transition-colors">
+                            {item.lga}
+                          </h3>
+                          <div className="mt-3 flex items-center text-[10px] font-semibold text-forest">
+                            Visit Hub <ArrowRight className="h-3 w-3 ml-1 group-hover:translate-x-1 transition-transform" />
+                          </div>
+                        </Link>
+                      ))}
                     </div>
-                  </Link>
-                </ScrollReveal>
-              ))}
-            </div>
+                  )}
+                </div>
+              </ScrollReveal>
+            ))
           )}
         </div>
       </section>
-    </>
+    </div>
   )
 }

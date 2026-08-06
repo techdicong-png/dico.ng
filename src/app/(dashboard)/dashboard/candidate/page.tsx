@@ -15,14 +15,14 @@ export default async function CandidateDashboardPage() {
   const token = cookieStore.get('token')?.value
   if (!token) redirect('/login')
   const payload = await verifyToken(token)
-  if (!payload || !['candidate', 'campaign_team'].includes(payload.role)) redirect('/dashboard')
+  if (!payload || !['candidate', 'campaign_team'].includes(payload.role)) redirect('/login')
 
   const user = await getAuthUser(payload.userId)
   if (!user) redirect('/login')
 
   const { data: candidate } = await supabaseServer
     .from('candidates')
-    .select('id, full_name, lga')
+    .select('id, full_name, lga, avatar_url')
     .eq('user_id', payload.userId)
     .single()
 
@@ -41,6 +41,7 @@ export default async function CandidateDashboardPage() {
         candidateId={candidate.id} 
         initialName={candidate.full_name} 
         candidateLga={candidate.lga || 'Unknown'} 
+        avatarUrl={candidate.avatar_url}
       />
     </div>
   )

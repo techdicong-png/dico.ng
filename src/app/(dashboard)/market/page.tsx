@@ -1,105 +1,163 @@
 'use client'
 
-import { useState } from 'react'
-import { Store, Search, ShoppingCart, ChevronRight } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { createClient } from '@supabase/supabase-js'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { TrendingUp, TrendingDown, ArrowUpCircle, ArrowDownCircle, Wallet } from 'lucide-react'
+import { toast } from 'sonner'
 
-const categories = ['All Items', 'Civic Merch', 'Services', 'Digital Goods']
-
-const items = [
-  { cat: 'Civic Merch', icon: 'tshirt', title: 'Verified Voter Tee', desc: 'Premium cotton shirt with official DICO verification emblem.', price: '1,200', btn: 'Buy Now' },
-  { cat: 'Services', icon: 'laptop-code', title: 'Campaign Web Design', desc: 'Professional 3-page website setup for local civic campaigns.', price: '15,000', btn: 'Hire Now' },
-  { cat: 'Digital Goods', icon: 'id-card', title: 'Digital Voter ID', desc: 'Blockchain-verified digital identification card for your wallet.', price: '500', btn: 'Purchase' },
-  { cat: 'Services', icon: 'bullhorn', title: 'Town Hall Promo', desc: 'Boost your upcoming session to verified voters in your constituency.', price: '8,500', btn: 'Promote' },
-  { cat: 'Civic Merch', icon: 'mug-hot', title: 'Constituency Mug', desc: 'Ceramic mug featuring the DICO forest-green crest.', price: '800', btn: 'Buy Now' },
-  { cat: 'Civic Merch', icon: 'cap', title: 'Branded Face Cap', desc: 'Adjustable cap with embroidered DICO logo.', price: '2,000', btn: 'Buy Now' },
-  { cat: 'Digital Goods', icon: 'print', title: 'Custom Flyers (1000)', desc: 'High-quality campaign flyers with your candidate details.', price: '8,500', btn: 'Order' },
-  { cat: 'Services', icon: 'megaphone', title: 'Loud Megaphone', desc: 'Portable PA system for rallies and town hall meetings.', price: '15,000', btn: 'Buy Now' },
-]
-
-const iconMap: Record<string, string> = {
-  tshirt: '👕', 'laptop-code': '💻', 'id-card': '🪪', bullhorn: '📢',
-  'mug-hot': '☕', cap: '🧢', print: '🖨️', megaphone: '📣',
-}
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 export default function MarketPage() {
-  const [activeFilter, setActiveFilter] = useState('All Items')
-  const [search, setSearch] = useState('')
+  const [listings, setListings] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState<any>(null)
+  const [amount, setAmount] = useState('')
+  const [rate, setRate] = useState('50')
 
-  const filtered = items.filter(item => {
-    const matchCat = activeFilter === 'All Items' || item.cat === activeFilter
-    const matchSearch = !search || item.title.toLowerCase().includes(search.toLowerCase())
-    return matchCat && matchSearch
-  })
+  useEffect(() => {
+    const u = JSON.parse(localStorage.getItem('dico_user') || '{}')
+    setUser(u)
+    loadListings()
+  }, [])
+
+  async function loadListings() {
+    setLoading(true)
+    const { data } = await supabase
+      .from('civict_market_listings')
+      .select('*, users(full_name)')
+      .eq('status', 'open')
+      .order('created_at', { ascending: false })
+    
+    setListings(data || [])
+    setLoading(false)
+  }
+
+  async function placeListing(type: 'buy' | 'sell') {
+    if (!amount || !rate) return toast.error('Please enter amount and rate')
+    
+    const token = localStorage.getItem('dico_token')
+    const res = await fetch('/api/market/list', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ type, amount_civict: parseInt(amount), rate_naira: parseFloat(rate) })
+    })
+
+    const data = await res.json()
+    if (res.ok) {
+      toast.success(`${type === 'buy' ? 'Buy' : 'Sell'} order placed successfully!`)
+      setAmount('')
+      loadListings()
+    } else {
+      toast.error(data.error || 'Failed to place order')
+    }
+  }
+
+  const buyOrders = listings.filter(l => l.type === 'buy')
+  const sellOrders = listings.filter(l => l.type === 'sell')
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-end flex-wrap gap-4">
-        <div>
-          <span className="text-[10px] font-bold tracking-widest uppercase text-forest-800 dark:text-white bg-forest-light dark:bg-[#1b3a2b] px-2.5 py-1 rounded inline-block mb-2">
-            Marketplace
-          </span>
-          <h1 className="font-serif text-2xl md:text-3xl font-black text-ink dark:text-white">Dico Online Market</h1>
-          <p className="text-sm text-muted dark:text-[#c0d0c4]">Trade civic goods, services, and merchandise using your CIVICT balance.</p>
-        </div>
-        <button className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold bg-gold hover:bg-gold-hover text-[#2d2107] transition-all">
-          <Store className="h-4 w-4" /> Become a Vendor
-        </button>
+    <div className="space-y-6 max-w-5xl mx-auto">
+      <div>
+        <span className="text-[10px] font-bold tracking-widest uppercase text-gold bg-gold/10 px-2.5 py-1 rounded inline-block mb-2">
+          CIVICT Market
+        </span>
+        <h1 className="font-serif text-2xl md:text-3xl font-black text-ink">Trade CIVICT</h1>
+        <p className="text-sm text-muted">Buy and sell CIVICT tokens. Current base price: ₦50.00</p>
       </div>
 
-      {/* Search */}
-      <div className="bg-card dark:bg-[#11241b] border border-border-tint dark:border-[#1f3a2c] rounded-lg px-4 py-3 flex items-center gap-2.5">
-        <Search className="h-4 w-4 text-muted dark:text-[#c0d0c4]" />
-        <input value={search} onChange={e => setSearch(e.target.value)}
-          placeholder="Search for goods and services..."
-          className="w-full bg-transparent border-none outline-none text-sm text-ink dark:text-white placeholder:text-muted/60 dark:placeholder:text-[#c0d0c4]/60 font-sans" />
+      <div className="grid md:grid-cols-3 gap-4">
+        <Card className="bg-forest text-white">
+          <CardContent className="pt-6">
+            <Wallet className="h-5 w-5 text-gold mb-2" />
+            <p className="font-serif text-2xl font-black">₡ {user?.civict_balance || 0}</p>
+            <p className="text-xs text-white/60 uppercase">Your Balance</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <TrendingUp className="h-5 w-5 text-green-600 mb-2" />
+            <p className="font-serif text-2xl font-black text-green-600">₦52.00</p>
+            <p className="text-xs text-muted uppercase">Today's High</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <TrendingDown className="h-5 w-5 text-red-600 mb-2" />
+            <p className="font-serif text-2xl font-black text-red-600">₦48.00</p>
+            <p className="text-xs text-muted uppercase">Today's Low</p>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Filter pills */}
-      <div className="flex gap-2 flex-wrap">
-        {categories.map(cat => (
-          <button key={cat} onClick={() => setActiveFilter(cat)}
-            className={`px-3.5 py-1.5 rounded-full text-sm font-semibold transition-all border ${
-              activeFilter === cat
-                ? 'bg-forest-800 text-white border-forest-800 dark:bg-white dark:text-forest-800 dark:border-white'
-                : 'bg-card dark:bg-[#11241b] text-muted dark:text-[#c0d0c4] border-border-tint dark:border-[#1f3a2c] hover:border-forest-800'
-            }`}>
-            {cat}
-          </button>
-        ))}
-      </div>
-
-      {/* Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-        {filtered.map((item, i) => (
-          <div key={i}
-            className="bg-card dark:bg-[#11241b] border border-border-tint dark:border-[#1f3a2c] rounded-xl overflow-hidden flex flex-col hover:-translate-y-1 hover:shadow-md dark:hover:shadow-[0_16px_36px_rgba(0,0,0,0.42)] hover:border-gold dark:hover:border-gold transition-all">
-            {/* Image */}
-            <div className="h-32 bg-mint dark:bg-[#102019] flex items-center justify-center text-4xl text-forest-800 dark:text-[#d4ebdf]">
-              {iconMap[item.icon] || '📦'}
-            </div>
-            {/* Body */}
-            <div className="p-4 flex flex-col flex-1">
-              <p className="text-[10px] font-bold tracking-widest uppercase text-gold-500 dark:text-gold mb-1">{item.cat}</p>
-              <h3 className="font-serif font-bold text-ink dark:text-white mb-2">{item.title}</h3>
-              <p className="text-xs text-muted dark:text-[#c0d0c4] flex-1 mb-3">{item.desc}</p>
-              <div className="flex items-center gap-1.5 mb-3">
-                <span className="font-bold text-ink dark:text-white">₡ {item.price}</span>
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* Trading Panel */}
+        <Card>
+          <CardHeader><CardTitle className="text-base">Place Order</CardTitle></CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold">Amount (CIVICT)</label>
+                <Input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="e.g. 100" />
               </div>
-              <button className="w-full py-2 rounded-lg text-sm font-semibold bg-forest-800 dark:bg-white text-white dark:text-forest-800 hover:bg-forest-700 dark:hover:bg-[#e8faf2] transition-all font-sans">
-                {item.btn}
-              </button>
+              <div>
+                <label className="text-xs font-semibold">Rate (₦ per CIVICT)</label>
+                <Input type="number" value={rate} onChange={e => setRate(e.target.value)} placeholder="50" />
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+            <div className="flex gap-3">
+              <Button className="bg-green-600 hover:bg-green-700" onClick={() => placeListing('buy')}>
+                <ArrowUpCircle className="h-4 w-4 mr-2" /> Place Buy Order
+              </Button>
+              <Button className="bg-forest hover:bg-forest-mid" onClick={() => placeListing('sell')}>
+                <ArrowDownCircle className="h-4 w-4 mr-2" /> Place Sell Order
+              </Button>
+            </div>
+            <p className="text-xs text-muted">Note: Placing a sell order locks the CIVICT in your wallet until matched or cancelled.</p>
+          </CardContent>
+        </Card>
 
-      {filtered.length === 0 && (
-        <div className="bg-card dark:bg-[#11241b] border border-border-tint dark:border-[#1f3a2c] rounded-xl py-16 text-center">
-          <Store className="h-10 w-10 text-muted dark:text-[#c0d0c4] mx-auto mb-3" />
-          <p className="text-sm text-muted dark:text-[#c0d0c4]">No items found matching your search.</p>
-        </div>
-      )}
+        {/* Market Feed */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Live Order Book</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="buy">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="buy">Buy Orders ({buyOrders.length})</TabsTrigger>
+                <TabsTrigger value="sell">Sell Orders ({sellOrders.length})</TabsTrigger>
+              </TabsList>
+              <TabsContent value="buy" className="mt-4 space-y-2 max-h-64 overflow-y-auto">
+                {buyOrders.length === 0 ? <p className="text-sm text-muted text-center py-4">No buy orders.</p> : 
+                  buyOrders.map(o => (
+                    <div key={o.id} className="flex justify-between items-center p-2 border border-border-light rounded text-sm">
+                      <span className="font-medium text-ink">{o.users?.full_name || 'Anonymous'}</span>
+                      <span className="text-muted">₡ {o.amount_civict} @ ₦{o.rate_naira}</span>
+                    </div>
+                  ))
+                }
+              </TabsContent>
+              <TabsContent value="sell" className="mt-4 space-y-2 max-h-64 overflow-y-auto">
+                {sellOrders.length === 0 ? <p className="text-sm text-muted text-center py-4">No sell orders.</p> : 
+                  sellOrders.map(o => (
+                    <div key={o.id} className="flex justify-between items-center p-2 border border-border-light rounded text-sm">
+                      <span className="font-medium text-ink">{o.users?.full_name || 'Anonymous'}</span>
+                      <span className="text-muted">₡ {o.amount_civict} @ ₦{o.rate_naira}</span>
+                    </div>
+                  ))
+                }
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

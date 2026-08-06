@@ -340,6 +340,21 @@ export const NIGERIA_DATA: Record<string, Record<string, string[]>> = {
     "Port Harcourt": ["Port Harcourt I", "Port Harcourt II", "Port Harcourt III"],
     "Tai": ["Tai I", "Tai II"],
   },
+    "Nasarawa": {
+    "Akwanga": ["Akwanga North", "Akwanga Central", "Akwanga West", "Anchobaba", "Andaha", "Gudi", "Nunku", "Moroa", "Gwanje", "Ningo"],
+    "Awe": ["Awe I", "Awe II", "Awe III", "Awe IV", "Awe V", "Azara", "Jangaru", "Ribi", "Tunga", "Kankare"],
+    "Doma": ["Doma North", "Doma Central", "Doma South", "Alagye", "Sabon Gari", "Rukubi", "Agbashi", "Umuogbai", "Akpanaja", "Madaki"],
+    "Karu": ["Mararaba", "New Nyanya", "Masaka", "Ado", "Karu", "Keffi Road", "Panda", "Gidan Zakara", "Kuruduma", "Uke"],
+    "Keana": ["Keana I", "Keana II", "Keana III", "Aloshi", "Giza", "Obene", "Olosoho", "Kadarko", "Iwagu", "Amiri"],
+    "Keffi": ["Keffi I", "Keffi II", "Keffi III", "Keffi IV", "Angwan Waje", "Yelwa", "GRA", "Sabon Gari", "Jigwada", "Gangare"],
+    "Kokona": ["Kokona I", "Kokona II", "Kokona III", "Agwada", "Garaku", "Haddari", "Kana", "Amba", "Laminga", "Dari"],
+    "Lafia": ["Lafia North", "Lafia Central", "Lafia South", "Makama", "Chiroma", "Gayam", "Shabu", "Adogi", "Bakin Rijiya", "Akpanaja"],
+    "Nasarawa": ["Nasarawa North", "Nasarawa Central", "Nasarawa East", "Ara I", "Ara II", "Loko", "Akum", "Udeni Gida", "Tunga", "Odu"],
+    "Nasarawa Eggon": ["Eggon North", "Eggon Central", "Eggon South", "Wakama", "Ubbe", "Agunji", "Alogani", "Lizhi", "Ende", "Bakyano"],
+    "Obi": ["Obi I", "Obi II", "Obi III", "Deddere", "Agyaragu", "Tudun Adabu", "Gidan Ausa", "Gude", "Gbagyi", "Ribi"],
+    "Toto": ["Toto I", "Toto II", "Toto III", "Umaisha", "Gadabuke", "Shafa", "Gwargwada", "Dausu", "Ugya", "Kolo"],
+    "Wamba": ["Wamba I", "Wamba II", "Wamba III", "Wamba IV", "Wamba V", "Garko", "Gbata", "Oroko", "Jimi", "Angwan Madaki"]
+  },
 
 }
 

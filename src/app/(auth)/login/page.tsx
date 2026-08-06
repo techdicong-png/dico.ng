@@ -33,9 +33,9 @@ export default function LoginPage() {
         voter: '/dashboard/voter',
         candidate: '/dashboard/candidate',
         campaign_team: '/dashboard/candidate',
-        admin: '/dashboard/admin',
+        admin: '/admin',
       }
-      router.push(map[data.user.role] || '/dashboard')
+      router.push(map[data.user.role])
     } catch {
       setError('Network error')
     } finally {

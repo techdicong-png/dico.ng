@@ -31,29 +31,27 @@ const navItems: NavItem[] = [
     children: [
       { href: '/explorer', label: 'Your Constituency', icon: 'fa-magnifying-glass-location' },
       { href: '/all-candidates', label: 'All Candidates', icon: 'fa-users' },
+      { href: '/parties', label: 'Political Parties', icon: 'fa-landmark' },
     ],
   },
-  { href: '/live-sessions', label: 'Live Session', icon: 'fa-video' },
-  { href: '/token-civict', label: 'CIVICT', icon: 'fa-coins' },
-  { href: '/active-marketplace', label: 'Marketplace', icon: 'fa-store' },
-  { href: '/pricing', label: 'Pricing', icon: 'fa-tag' },
   {
-    label: 'Insights', icon: 'fa-chart-simple', dropdown: true,
+    label: 'Engage', icon: 'fa-handshake', dropdown: true,
     children: [
-      { href: '/live-reports', label: 'Reports', icon: 'fa-file-lines' },
+      { href: '/live-sessions', label: 'Live Sessions', icon: 'fa-video' },
+      { href: '/live-reports', label: 'Community Reports', icon: 'fa-file-lines' },
       { href: '/live-polls', label: 'Polls', icon: 'fa-square-poll-vertical' },
     ],
   },
-  { href: '/contact', label: 'Contact', icon: 'fa-envelope' },
   {
-    label: 'Get Started', icon: 'fa-rocket', dropdown: true, gold: true,
+    label: 'Economy', icon: 'fa-coins', dropdown: true,
     children: [
-      // Updated URLs for the new dedicated registration routes
-      { href: '/register/candidate', label: 'As Candidate', icon: 'fa-chalkboard-user' },
-      { href: '/register', label: 'As Voter', icon: 'fa-user-check' },
+      { href: '/token-civict', label: 'CIVICT Token', icon: 'fa-coins' },
+      { href: '/active-marketplace', label: 'DICO Marketplace', icon: 'fa-store' },
+      { href: '/advertise', label: 'Advertise on DICO', icon: 'fa-bullhorn' },
     ],
   },
-  { href: '/login', label: 'Login', icon: 'fa-arrow-right-to-bracket' },
+  { href: '/pricing', label: 'Pricing', icon: 'fa-tag' },
+  { href: '/contact', label: 'Contact', icon: 'fa-envelope' },
 ]
 
 function isDropdown(item: NavItem): item is NavDropdown {
@@ -100,12 +98,8 @@ export function Nav() {
             isDropdown(item) ? (
               <div key={item.label} className="relative h-full flex items-center"
                 onMouseEnter={() => setOpenDropdown(item.label)}>
-                <span className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium cursor-pointer transition-all ${
-                  item.gold
-                    ? 'text-gold font-semibold hover:bg-gold/10'
-                    : 'text-ink/70 hover:text-ink hover:bg-gold/5'
-                }`}>
-                  <i className={`fa-solid ${item.icon} text-[10px] ${item.gold ? 'text-gold' : 'text-muted'}`} />
+                <span className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium cursor-pointer transition-all text-ink/70 hover:text-ink hover:bg-gold/5`}>
+                  <i className={`fa-solid ${item.icon} text-[10px] text-muted`} />
                   {item.label}
                   <svg className="w-2 h-2 stroke-current fill-none stroke-2 mt-0.5 transition-transform duration-200" viewBox="0 0 10 10"
                     style={{ transform: openDropdown === item.label ? 'rotate(180deg)' : 'rotate(0deg)' }}>
@@ -149,6 +143,16 @@ export function Nav() {
               </Link>
             )
           )}
+          
+          {/* Auth Buttons (Pushed to right) */}
+          <div className="flex items-center gap-2 ml-4 pl-4 border-l border-mint-line h-8">
+            <Link href="/login" className="text-sm font-medium text-ink/70 hover:text-ink px-3 py-1.5 rounded-lg hover:bg-gold/5 transition-all">
+              Login
+            </Link>
+            <Link href="/register" className="bg-gold hover:bg-gold-hover text-ink font-semibold text-sm px-4 py-1.5 rounded-lg transition-all">
+              Register
+            </Link>
+          </div>
         </div>
 
         {/* Hamburger */}
@@ -169,8 +173,11 @@ export function Nav() {
           mobileOpen ? 'translate-x-0' : 'translate-x-full'
         }`}>
           {/* Mobile Logo */}
-          <div className="flex items-center px-6 pt-6 pb-4 border-b border-mint-line">
+          <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-mint-line">
             <Image src="/logo.png" alt="DICO" width={40} height={40} />
+            <button onClick={() => setMobileOpen(false)} className="text-ink/70 hover:text-ink">
+              <i className="fa-solid fa-xmark text-lg"></i>
+            </button>
           </div>
 
           {/* Mobile Links */}
@@ -180,10 +187,8 @@ export function Nav() {
                 <div key={item.label}>
                   <button
                     onClick={() => setOpenDropdown(openDropdown === item.label ? null : item.label)}
-                    className={`w-full flex items-center gap-3 px-6 py-3.5 text-sm font-medium border-b border-mint-line transition-colors ${
-                      item.gold ? 'text-gold' : 'text-ink/70 hover:text-ink'
-                    }`}>
-                    <i className={`fa-solid ${item.icon} text-[11px] w-4 ${item.gold ? 'text-gold' : 'text-muted'}`} />
+                    className="w-full flex items-center gap-3 px-6 py-3.5 text-sm font-medium border-b border-mint-line transition-colors text-ink/70 hover:text-ink">
+                    <i className={`fa-solid ${item.icon} text-[11px] w-4 text-muted`} />
                     {item.label}
                     <svg className="w-2.5 h-2.5 stroke-current fill-none stroke-2 ml-auto transition-transform duration-200"
                       style={{ transform: openDropdown === item.label ? 'rotate(180deg)' : 'rotate(0deg)' }}
@@ -221,16 +226,17 @@ export function Nav() {
             )}
           </div>
 
-          {/* Mobile Footer */}
-          <div className="px-6 py-6 mt-2 border-t border-mint-line text-center">
-            <p className="text-xs text-ink/50 mb-4">&copy; 2025 DICO. All rights reserved.</p>
-            <p className="text-[10px] text-ink/40">
-              <Link href="#" className="hover:text-ink">Privacy</Link>
-              <span className="mx-2">·</span>
-              <Link href="#" className="hover:text-ink">Terms</Link>
-              <span className="mx-2">·</span>
-              <Link href="#" className="hover:text-ink">Cookies</Link>
-            </p>
+          {/* Mobile Auth Buttons */}
+          <div className="px-6 py-6 space-y-3 border-t border-mint-line">
+            <Link href="/login" onClick={() => setMobileOpen(false)} className="block w-full text-center border border-forest text-forest font-semibold py-3 rounded-lg text-sm">
+              Login
+            </Link>
+            <Link href="/register" onClick={() => setMobileOpen(false)} className="block w-full text-center bg-gold hover:bg-gold-hover text-ink font-bold py-3 rounded-lg text-sm">
+              Register as Voter
+            </Link>
+            <Link href="/register/candidate" onClick={() => setMobileOpen(false)} className="block w-full text-center text-xs text-muted hover:text-ink">
+              Register as Candidate instead?
+            </Link>
           </div>
         </div>
       </div>
