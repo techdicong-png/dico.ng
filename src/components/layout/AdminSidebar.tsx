@@ -2,7 +2,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { Shield, Users, FileText, CircleDollarSign, Wallet, UserCheck, Image } from 'lucide-react'
+import { Shield, Users, FileText, CircleDollarSign, Wallet, UserCheck, Image, TrendingUp } from 'lucide-react'
 
 const links = [
   { href: '/admin', label: 'Overview', icon: Shield },
@@ -10,6 +10,7 @@ const links = [
   // NEW: Added the link to the candidate verification page
   { href: '/admin/candidates', label: 'Candidate Verification', icon: UserCheck },
   { href: '/admin/ads', label: 'Ad Approvals', icon: Image },
+  { href: '/admin/market', label: 'Trade Matching', icon: TrendingUp },
   // { href: '/admin/reports',   label: 'Reports', icon: FileText },
   // { href: '/admin/grants',    label: 'CIVICT Grants', icon: CircleDollarSign },
   // { href: '/admin/finance',   label: 'Finance & Pool', icon: Wallet },

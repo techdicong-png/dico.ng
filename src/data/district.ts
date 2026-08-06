@@ -1,21 +1,13 @@
-// src/data/districts.ts
-export const SENATORIAL_DISTRICTS: Record<string, Record<string, string[]>> = {
-  "Edo": {
-    "Edo North": ["Akoko Edo", "Etsako East", "Etsako Central", "Etsako West", "Owan East", "Owan West"],
-    "Edo Central": ["Esan Central", "Esan North East", "Esan South East", "Esan West", "Igueben"],
-    "Edo South": ["Egor", "Ikpoba/Okha", "Oredo", "Orhionmwon", "Ovia North East", "Ovia South West", "Uhunmwonde"]
-  },
-  "Delta": {
-    "Delta North": ["Aniocha North", "Aniocha South", "Ika North East", "Ika South", "Ndokwa East", "Ndokwa West", "Oshimili North", "Oshimili South", "Ukwuani"],
-    "Delta Central": ["Ethiope East", "Ethiope West", "Okpe", "Sapele", "Udu", "Ughelli North", "Ughelli South", "Uvwie"],
-    "Delta South": ["Bomadi", "Burutu", "Isoko North", "Isoko South", "Patani", "Warri North", "Warri South", "Warri South West"]
-  },
-  "FCT Abuja": {
-    "FCT": ["Abaji", "Abuja Municipal", "Bwari", "Gwagwalada", "Kuje", "Kwali"]
-  },
-  "Nasarawa": {
-    "Nasarawa North": ["Akwanga", "Nasarawa", "Nasarawa Eggon", "Wamba", "Toto"],
-    "Nasarawa West": ["Karu", "Keffi", "Kokona"],
-    "Nasarawa South": ["Awe", "Doma", "Keana", "Lafia", "Obi"]
-  }
+export const SENATORIAL_DISTRICTS: Record<string, string[]> = {
+  "Edo": ["Edo North", "Edo Central", "Edo South"],
+  "Delta": ["Delta North", "Delta Central", "Delta South"],
+  "FCT Abuja": ["FCT"],
+  "Nasarawa": ["Nasarawa North", "Nasarawa West", "Nasarawa South"]
+}
+
+export const FEDERAL_CONSTITUENCIES: Record<string, string[]> = {
+  "Edo": ["Akoko-Edo/Owan", "Egor/Ikpoba-Okha", "Esan North-East/Esan South-East", "Etsako East/West/Central", "Oredo/Orhionmwon", "Ovia North/South-West", "Uhunmwonde/Orhionmwon"],
+  "Delta": ["Aniocha/Oshimili", "Bomadi/Patani", "Ethiope East/West", "Ika North/South", "Isoko North/South", "Ndokwa East/West", "Okpe/Uvwie/Sapele", "Ughelli North/South", "Warri North/South/South-West"],
+  "FCT Abuja": ["AMAC/Bwari", "Abaji/Gwagwalada/Kwali/Kuje"],
+  "Nasarawa": ["Awe/Keana/Doma", "Karu/Keffi/Kokona", "Lafia/Obi", "Nasarawa/Toto", "Nasarawa Eggon/Akwanga/Wamba", "Keffi/Karu/Kokona"]
 }

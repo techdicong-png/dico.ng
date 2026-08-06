@@ -24,6 +24,7 @@ const voterLinks: NavLink[] = [
   { href: '/feed', label: 'Feeds', icon: Rss },
   { href: '/candidates', label: 'Candidates', icon: Users },
   { href: '/sessions', label: 'Live Sessions', icon: Video, count: '1 LIVE' },
+  { href: '/trade', label: 'CIVICT Trade', icon: TrendingUp },
   { href: '/market', label: 'Dico Online Market', icon: Store, market: true },
 ]
 
@@ -36,6 +37,7 @@ const candidateLinks: NavLink[] = [
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/performance', label: 'Performance Rank', icon: TrendingUp },
   { href: '/team', label: 'Campaign Team', icon: Users },
+  { href: '/trade', label: 'CIVICT Trade', icon: TrendingUp },
   { href: '/market', label: 'DICO Online Market', icon: Store, market: true },
 ]
 

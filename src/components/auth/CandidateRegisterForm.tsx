@@ -1,5 +1,5 @@
 'use client'
-
+import { SENATORIAL_DISTRICTS, FEDERAL_CONSTITUENCIES } from '@/data/district'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
@@ -57,6 +57,8 @@ export function CandidateRegisterForm() {
 
   const lgas = form.state_constituency ? Object.keys(NIGERIA_DATA[form.state_constituency] || {}).sort() : []
   const wards = (form.state_constituency && form.lga_constituency) ? NIGERIA_DATA[form.state_constituency]?.[form.lga_constituency] || [] : []
+  const districts = form.state_constituency ? SENATORIAL_DISTRICTS[form.state_constituency] || [] : []
+  const constituencies = form.state_constituency ? FEDERAL_CONSTITUENCIES[form.state_constituency] || [] : []
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -335,15 +337,33 @@ export function CandidateRegisterForm() {
                   {wards.map(w => <option key={w} value={w}>{w}</option>)}
                 </select>
               </div>
-              <div>
+               <div>
                 <label className="block text-xs font-semibold text-ink mb-1.5">Senatorial District</label>
-                <Input name="senatorial_district" value={form.senatorial_district} onChange={handleInputChange} placeholder="e.g. Edo Central" />
+                <select 
+                  name="senatorial_district" 
+                  value={form.senatorial_district} 
+                  onChange={handleInputChange} 
+                  disabled={!form.state_constituency} 
+                  className="w-full h-10 px-3 text-sm bg-white border border-border rounded-lg focus:outline-none focus:border-forest disabled:opacity-50"
+                >
+                  <option value="">Select District…</option>
+                  {districts.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
               </div>
             </div>
-            <div>
-              <label className="block text-xs font-semibold text-ink mb-1.5">Federal Constituency</label>
-              <Input name="federal_constituency" value={form.federal_constituency} onChange={handleInputChange} placeholder="e.g. Oredo Federal Constituency" />
-            </div>
+             <div>
+                <label className="block text-xs font-semibold text-ink mb-1.5">Federal Constituency</label>
+                <select 
+                  name="federal_constituency" 
+                  value={form.federal_constituency} 
+                  onChange={handleInputChange} 
+                  disabled={!form.state_constituency} 
+                  className="w-full h-10 px-3 text-sm bg-white border border-border rounded-lg focus:outline-none focus:border-forest disabled:opacity-50"
+                >
+                  <option value="">Select Constituency…</option>
+                  {constituencies.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
           </div>
         )}
 
