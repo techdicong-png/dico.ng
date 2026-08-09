@@ -30,6 +30,7 @@ const navItems: NavItem[] = [
     label: 'Explore', icon: 'fa-compass', dropdown: true,
     children: [
       { href: '/explorer', label: 'Your Constituency', icon: 'fa-magnifying-glass-location' },
+       { href: '/lgas', label: 'All 774 LGAs', icon: 'fa-map' }, // NEW DIRECTORY
       { href: '/all-candidates', label: 'All Candidates', icon: 'fa-users' },
       { href: '/parties', label: 'Political Parties', icon: 'fa-landmark' },
     ],

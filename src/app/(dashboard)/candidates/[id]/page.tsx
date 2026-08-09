@@ -1,19 +1,29 @@
-// src/app/(dashboard)/candidates/[id]/page.tsx
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { verifyToken } from '@/lib/auth'
-import { supabaseAdmin } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
 import Link from 'next/link'
+import { FollowButton } from '@/components/candidates/FollowButton'
+
+const supabaseServer = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  { auth: { autoRefreshToken: false, persistSession: false } }
+)
 
 export default async function CandidateProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const cookieStore = await cookies()
   const token = cookieStore.get('token')?.value
   if (!token) redirect('/login')
-  await verifyToken(token)
+  
+  const payload = await verifyToken(token)
+  if (!payload) redirect('/login')
 
-  const { data: candidate } = await supabaseAdmin.from('candidates')
+  const { id: candidateId } = await params
+
+  const { data: candidate } = await supabaseServer.from('candidates')
     .select('*, users!inner(email, created_at)')
-    .eq('id', (await params).id).single()
+    .eq('id', candidateId).single()
 
   if (!candidate) return (
     <div className="bg-card dark:bg-[#11241b] border border-border dark:border-[#1f3a2c] rounded-xl py-12 text-center">
@@ -21,14 +31,24 @@ export default async function CandidateProfilePage({ params }: { params: Promise
     </div>
   )
 
+  // Check if the logged-in user is already following this candidate
+  const { data: followRecord } = await supabaseServer
+    .from('candidate_follows')
+    .select('id')
+    .eq('user_id', payload.userId)
+    .eq('candidate_id', candidateId)
+    .maybeSingle()
+
+  const isFollowing = !!followRecord
+
   const [qas, sessions] = await Promise.all([
-    supabaseAdmin.from('questions')
+    supabaseServer.from('questions')
       .select('id, question_text, answer_text, created_at, upvote_count, users(full_name, ward)')
-      .eq('candidate_id', (await params).id).not('answer_text', 'is', null)
+      .eq('candidate_id', candidateId).not('answer_text', 'is', null)
       .order('upvote_count', { ascending: false }).limit(5),
-    supabaseAdmin.from('live_sessions')
+    supabaseServer.from('live_sessions')
       .select('id, title, scheduled_at, status, viewer_count, topic')
-      .eq('candidate_id', (await params).id).gte('scheduled_at', new Date().toISOString())
+      .eq('candidate_id', candidateId).gte('scheduled_at', new Date().toISOString())
       .order('scheduled_at').limit(3),
   ])
 
@@ -37,24 +57,30 @@ export default async function CandidateProfilePage({ params }: { params: Promise
   return (
     <div className="space-y-6">
       {/* Hero */}
-      <div className="bg-gradient-to-br from-[#071E12] to-[#0F5438] rounded-xl p-8 text-white">
-        <div className="flex items-center gap-6">
-          <div className="w-20 h-20 rounded-full bg-gold/20 border-2 border-gold/40 text-gold font-serif text-3xl font-black flex items-center justify-center shrink-0">
-            {c.full_name?.[0] || '?'}
+      <div className="bg-gradient-to-br from-[#071E12] to-[#0F5438] rounded-xl p-6 md:p-8 text-white">
+        <div className="flex items-center gap-6 flex-wrap">
+          {/* Avatar with Image Support */}
+          <div className="w-20 h-20 rounded-full bg-gold/20 border-2 border-gold/40 text-gold font-serif text-3xl font-black flex items-center justify-center shrink-0 overflow-hidden">
+            {c.avatar_url ? <img src={c.avatar_url} alt={c.full_name} className="w-full h-full object-cover" /> : c.full_name?.[0] || '?'}
           </div>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <h1 className="font-serif text-2xl font-black">{c.full_name}</h1>
             <p className="text-white/60 text-sm">{c.party} · {c.office} · {c.state}{c.lga ? ` / ${c.lga}` : ''}</p>
           </div>
-          <div className="text-center">
-            <p className="font-serif text-3xl font-black text-gold">{(c.reputation_score || 0).toLocaleString()}</p>
-            <p className="text-[10px] font-bold tracking-wider uppercase text-white/40">Reputation</p>
+          
+          {/* Reputation & Follow Button */}
+          <div className="flex flex-col items-center gap-2 ml-auto">
+            <div className="text-center">
+              <p className="font-serif text-3xl font-black text-gold">{(c.reputation_score || 0).toLocaleString()}</p>
+              <p className="text-[10px] font-bold tracking-wider uppercase text-white/40">Reputation</p>
+            </div>
+            <FollowButton candidateId={c.id} initialFollowing={isFollowing} initialCount={c.follower_count || 0} />
           </div>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { label: 'Followers', value: (c.follower_count || 0).toLocaleString() },
           { label: 'Q&As', value: c.qa_count || 0 },

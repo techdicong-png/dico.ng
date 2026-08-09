@@ -1,13 +1,16 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { LocationPicker } from '@/components/ui/LocationPicker'
 import Image from 'next/image'
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const refId = searchParams.get('ref') // Get ref from URL
+
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [form, setForm] = useState({
@@ -21,11 +24,10 @@ export default function RegisterPage() {
     setLoading(true)
 
     try {
-      // We hardcode the role to 'voter' here
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, role: 'voter' }),
+        body: JSON.stringify({ ...form, role: 'voter', ref: refId }), // Pass ref to API
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error); return }
@@ -40,7 +42,6 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-sand flex items-center justify-center p-6">
       <div className="w-full max-w-md bg-white border border-border rounded-2xl p-10 shadow-lg relative overflow-hidden">
-        {/* Decorative rings */}
         <div className="absolute w-44 h-44 rounded-full border border-gold/10 -top-10 -right-10 pointer-events-none" />
         <div className="absolute w-28 h-28 rounded-full border border-gold/10 -bottom-6 -left-6 pointer-events-none" />
 
@@ -55,7 +56,6 @@ export default function RegisterPage() {
           <p className="text-sm text-muted mt-1">Create your voter account</p>
         </div>
 
-        {/* Voter bonus banner */}
         <div className="bg-gold/10 border border-gold/20 rounded-lg p-3 text-sm mb-5 flex items-center gap-2 text-ink">
           <i className="fa-solid fa-coins text-gold" />
           <span><strong>100 CIVICT</strong> welcome bonus for verified voters</span>
@@ -99,7 +99,6 @@ export default function RegisterPage() {
           </button>
         </form>
 
-        {/* Candidate Redirect Link */}
         <div className="mt-6 pt-6 border-t border-border-light text-center">
           <p className="text-sm text-muted">
             Are you a politician? <Link href="/register/candidate" className="text-gold font-semibold hover:underline">Register as a Candidate →</Link>
@@ -111,5 +110,14 @@ export default function RegisterPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+// Wrap the component in Suspense for useSearchParams
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-sand flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-forest"></div></div>}>
+      <RegisterForm />
+    </Suspense>
   )
 }

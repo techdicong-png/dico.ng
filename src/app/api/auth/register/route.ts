@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase' // Or however you initialize it inline
+import { createClient } from '@supabase/supabase-js'
 import { signToken } from '@/lib/auth'
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
-import { createClient } from '@supabase/supabase-js'
 
 const supabaseServer = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -18,7 +17,8 @@ const schema = z.object({
   state: z.string().optional(),
   lga: z.string().optional(),
   ward: z.string().optional(),
-  role: z.string()
+  role: z.string(),
+  ref: z.string().uuid().optional() // NEW: Referral ID
 })
 
 export async function POST(req: Request) {
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
     const parsed = schema.safeParse(body)
     if (!parsed.success) return NextResponse.json({ error: 'Invalid input' }, { status: 400 })
 
-    const { full_name, email, password, state, lga, ward, role } = parsed.data
+    const { full_name, email, password, state, lga, ward, role, ref } = parsed.data
 
     // 1. Hash the password
     const password_hash = await bcrypt.hash(password, 10)
@@ -44,7 +44,8 @@ export async function POST(req: Request) {
         lga: lga || null,
         ward: ward || null,
         is_active: true,
-        civict_balance: 100 // <--- THE FIX IS HERE
+        civict_balance: 100, // Sign-up bonus
+        referred_by: ref || null // NEW: Save referrer
       })
       .select('id, full_name, email, role, state, lga, ward, civict_balance')
       .single()
@@ -62,7 +63,27 @@ export async function POST(req: Request) {
       description: 'Sign-Up Bonus'
     })
 
-    // 4. Generate JWT
+    // 4. NEW: Referral Bonus Logic
+    if (ref) {
+      // Verify referrer exists
+      const { data: referrer } = await supabaseServer.from('users').select('id, civict_balance, full_name').eq('id', ref).single()
+      
+      if (referrer) {
+        // Give 50 CIVICT to the new user
+        await supabaseServer.from('users').update({ civict_balance: user.civict_balance + 50 }).eq('id', user.id)
+        await supabaseServer.from('civict_transactions').insert({
+          user_id: user.id, type: 'earn', amount: 50, description: `Referral Bonus from ${referrer.full_name}`
+        })
+
+        // Give 50 CIVICT to the referrer
+        await supabaseServer.from('users').update({ civict_balance: referrer.civict_balance + 50 }).eq('id', referrer.id)
+        await supabaseServer.from('civict_transactions').insert({
+          user_id: referrer.id, type: 'earn', amount: 50, description: `Referral Bonus for inviting ${user.full_name}`
+        })
+      }
+    }
+
+    // 5. Generate JWT
     const token = await signToken(user.id, user.role)
 
     const response = NextResponse.json({ token, user })

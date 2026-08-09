@@ -3,6 +3,7 @@ import { Inter } from "next/font/google" // Changed from Geist
 import Script from "next/script"
 import { Toaster } from "@/components/ui/sonner"
 import "./globals.css"
+import { PageTracker } from "@/components/layout/PageTracker"
 
 // Use Inter instead of Geist
 const inter = Inter({
@@ -45,6 +46,7 @@ export default function RootLayout({
         </Script>
         {children}
         <Toaster richColors position="top-right" />
+        <PageTracker/>
       </body>
     </html>
   )

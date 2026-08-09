@@ -2,29 +2,25 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@supabase/supabase-js'
 import { NIGERIA_DATA } from '@/data/nigeria'
+import { ALL_NIGERIA_LGAS } from '@/data/all_lgas' // NEW
 import { ScrollReveal } from '@/components/sections/ScrollReveal'
 import { MapPin, Users, Building, Landmark, FileText, CreditCard, Briefcase, ArrowRight } from 'lucide-react'
 import Image from 'next/image'
 
-// Initialize Supabase client inline for Server Components
 const supabaseServer = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
   { auth: { autoRefreshToken: false, persistSession: false } }
 )
 
-// Helper to convert slug ("keffi-north") back to title case ("Keffi North")
 function formatLgaName(slug: string) {
-  return slug
-    .split('-')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ')
+  return slug.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
 }
 
-// Helper to find the state this LGA belongs to
 function findStateByLga(lgaName: string) {
-  for (const [state, lgas] of Object.entries(NIGERIA_DATA)) {
-    if (lgas[lgaName]) return state
+  // Search all 774 LGAs
+  for (const [state, lgas] of Object.entries(ALL_NIGERIA_LGAS)) {
+    if (lgas.includes(lgaName)) return state
   }
   return null
 }
@@ -34,12 +30,13 @@ export default async function LgaHubPage({ params }: { params: Promise<{ name: s
   const lgaName = formatLgaName(name)
   const stateName = findStateByLga(lgaName)
 
-  // If the LGA doesn't exist in our data, show 404
   if (!stateName) {
     notFound()
   }
 
+  // Check if we have detailed ward data for this state (our 4 focus states)
   const wards = NIGERIA_DATA[stateName]?.[lgaName] || []
+  const isActiveState = wards.length > 0
 
   // Fetch candidates registered in this LGA
   const { data: candidates } = await supabaseServer
@@ -48,20 +45,21 @@ export default async function LgaHubPage({ params }: { params: Promise<{ name: s
     .eq('lga', lgaName)
     .eq('is_active', true)
 
-    // NEW: Fetch active ads that contain this LGA in their target_lgas array
+  // Fetch active ads for this LGA
   const { data: ads } = await supabaseServer
     .from('advertisements')
     .select('id, business_name, description, image_url, link_url')
     .eq('status', 'active')
     .contains('target_lgas', [lgaName])
 
-  // Mock stats for the UI (can be replaced by real DB counts later)
   const stats = [
     { icon: Users, label: 'Population', value: '271,688' },
-    { icon: Landmark, label: 'Wards', value: wards.length.toString() },
+    { icon: Landmark, label: 'Wards', value: isActiveState ? wards.length.toString() : 'N/A' },
     { icon: Building, label: 'Registered Voters', value: '124,500' },
     { icon: Briefcase, label: 'Active Candidates', value: (candidates?.length || 0).toString() },
   ]
+
+  // ... keep the rest of your return statement exactly the same
 
   const services = [
     { icon: FileText, title: 'Birth & Death Registration', desc: 'Access official civil registration portals.' },

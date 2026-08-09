@@ -2,13 +2,15 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { Shield, Users, FileText, CircleDollarSign, Wallet, UserCheck, Image, TrendingUp } from 'lucide-react'
+import { Shield, Users, FileText, CircleDollarSign, Wallet, UserCheck, Image, TrendingUp, ArrowRightLeft, BarChart3 } from 'lucide-react'
 
 const links = [
   { href: '/admin', label: 'Overview', icon: Shield },
+  { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 }, 
   { href: '/admin/users',     label: 'Users', icon: Users },
   { href: '/admin/candidates', label: 'Candidate Verification', icon: UserCheck },
   { href: '/admin/ads', label: 'Ad Approvals', icon: Image },
+  { href: '/admin/transfers', label: 'Transfer Approvals', icon: ArrowRightLeft },
   { href: '/admin/market', label: 'Trade Matching', icon: TrendingUp },
 ]
 
