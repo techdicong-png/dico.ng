@@ -13,7 +13,6 @@ export async function GET(req: Request) {
   try {
     let userId: string | undefined = undefined;
 
-    // Try to get token from Authorization header first
     const authHeader = req.headers.get('authorization')
     if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.split(' ')[1]
@@ -21,7 +20,6 @@ export async function GET(req: Request) {
       if (payload) userId = payload.userId;
     }
 
-    // Fallback to cookie if header failed
     if (!userId) {
       const cookieStore = await cookies()
       const cookieToken = cookieStore.get('token')?.value
@@ -34,19 +32,15 @@ export async function GET(req: Request) {
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { data, error } = await supabaseServer
-      .from('users')
-      .select('civict_balance')
-      .eq('id', userId)
-      .single()
+      .from('civict_transactions')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
 
-    if (error) {
-      console.error('Balance fetch error:', error)
-      throw error
-    }
+    if (error) throw error
 
-    return NextResponse.json({ balance: data.civict_balance || 0 })
+    return NextResponse.json({ transactions: data || [] })
   } catch (err: any) {
-    console.error('Wallet API Server error:', err)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }
