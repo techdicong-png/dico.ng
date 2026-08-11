@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { LocationPicker } from '@/components/ui/LocationPicker'
 import Image from 'next/image'
+import { toast } from 'sonner'
 
 function RegisterForm() {
   const router = useRouter()
@@ -29,12 +30,14 @@ function RegisterForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...form, role: 'voter', ref: refId }), // Pass ref to API
       })
-      const data = await res.json()
-      if (!res.ok) { setError(data.error); return }
-
-      localStorage.setItem('dico_token', data.token)
-      localStorage.setItem('dico_user', JSON.stringify(data.user))
-      router.push('/dashboard/voter')
+            const data = await res.json()
+      if (res.ok) {
+        toast.success('Account created! Check your email for the verification link.')
+        // Redirect to login page instead of dashboard
+        router.push('/login')
+      } else {
+        setError(data.error)
+      }
     } catch { setError('Network error') }
     finally { setLoading(false) }
   }

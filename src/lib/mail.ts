@@ -35,3 +35,27 @@ export async function sendOTPEmail(email: string, otp: string, name: string) {
     html,
   })
 }
+
+export async function sendAdminAlert(subject: string, message: string) {
+  const html = `
+    <div style="font-family:Arial;max-width:480px;margin:0 auto;background:#fff;border:1px solid #e0e0e0;border-radius:12px;overflow:hidden;">
+      <div style="background:#0A3D2B;padding:24px;text-align:center;">
+        <span style="color:#E8C040;font-size:22px;font-weight:bold;">DI</span><span style="color:#fff;font-size:22px;font-weight:bold;">CO</span>
+        <p style="color:rgba(255,255,255,0.4);font-size:11px;margin:4px 0 0">Admin Alert System</p>
+      </div>
+      <div style="padding:32px 24px">
+        <h2 style="color:#0D1B12;font-size:18px;margin-bottom:16px;">${subject}</h2>
+        <p style="color:#666;font-size:14px;line-height:1.6;">${message}</p>
+        <a href="https://dicoengage.com/admin" style="display:inline-block;background-color:#C8960A;color:#0D1B12;font-weight:700;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;margin-top:20px;">
+          Go to Admin Dashboard
+        </a>
+      </div>
+    </div>`
+
+  await resend.emails.send({
+    from: 'DICO Alerts <onboarding@resend.dev>',
+    to: 'tech.dico.ng@gmail.com', // Change this to your actual admin email
+    subject: `[Action Required] ${subject}`,
+    html,
+  })
+}

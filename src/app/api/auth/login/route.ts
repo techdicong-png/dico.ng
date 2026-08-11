@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { createClient } from '@supabase/supabase-js'
 import { signToken } from '@/lib/auth'
 
-// Initialize clients inline (No @/lib/supabase import)
+// Initialize clients inline
 const supabaseAuth = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
   const { email, password } = parsed.data
 
   // ──────────────────────────────────────────────────────────────
-  // PATH 1: Supabase Auth (For Candidates)
+  // PATH 1: Supabase Auth (For Candidates & New Voters)
   // ──────────────────────────────────────────────────────────────
   const { data: authData, error: authError } = await supabaseAuth.auth.signInWithPassword({
     email,
@@ -52,10 +52,10 @@ export async function POST(request: Request) {
       const { data: newUser, error: insertErr } = await supabaseServer
         .from('users')
         .insert({
-          id: authData.user.id, // Link to Supabase Auth UID
+          id: authData.user.id,
           email: authData.user.email,
-          full_name: authData.user.user_metadata?.full_name || 'New Candidate',
-          role: authData.user.user_metadata?.role || 'candidate',
+          full_name: authData.user.user_metadata?.full_name || 'New User',
+          role: authData.user.user_metadata?.role || 'voter',
           password_hash: 'managed_by_supabase_auth',
           is_active: true,
           civict_balance: 0
@@ -85,14 +85,29 @@ export async function POST(request: Request) {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: 60 * 60 * 24 * 7,
     })
 
     return response
   }
 
   // ──────────────────────────────────────────────────────────────
-  // PATH 2: Custom Auth Fallback (For Voters)
+  // HANDLE SUPABASE AUTH ERRORS
+  // ──────────────────────────────────────────────────────────────
+  if (authError) {
+    // Check if the error is specifically because they haven't verified their email
+    if (authError.message.includes('Email not confirmed')) {
+      return NextResponse.json({ 
+        error: 'Please check your email and click the verification link before logging in.' 
+      }, { status: 403 })
+    }
+    
+    // If it's not an unverified error, we fall through to Path 2 to check if they are a legacy user.
+    // If Path 2 fails, we will return the "Invalid credentials" error at the very end.
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  // PATH 2: Custom Auth Fallback (For Old Voters who registered before Supabase Auth)
   // ──────────────────────────────────────────────────────────────
   const { data: user, error } = await supabaseServer
     .from('users')
@@ -100,40 +115,33 @@ export async function POST(request: Request) {
     .eq('email', email)
     .single()
 
-  if (error || !user) {
-    return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
+  // If the user exists in the DB, and their password is NOT managed by Supabase, check their bcrypt hash
+  if (user && user.password_hash !== 'managed_by_supabase_auth') {
+    if (!user.is_active) {
+      return NextResponse.json({ error: 'Account suspended' }, { status: 403 })
+    }
+
+    const valid = await bcrypt.compare(password, user.password_hash)
+    if (valid) {
+      // Update last_seen
+      await supabaseServer.from('users').update({ last_seen: new Date().toISOString() }).eq('id', user.id)
+
+      const token = await signToken(user.id, user.role)
+      const { password_hash, ...safeUser } = user
+
+      const response = NextResponse.json({ token, user: safeUser })
+      response.cookies.set('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+      })
+
+      return response
+    }
   }
 
-  // Prevent fallback from trying to validate a Supabase-managed account
-  if (user.password_hash === 'managed_by_supabase_auth') {
-    return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
-  }
-
-  if (!user.is_active) {
-    return NextResponse.json({ error: 'Account suspended' }, { status: 403 })
-  }
-
-  const valid = await bcrypt.compare(password, user.password_hash)
-  if (!valid) {
-    return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
-  }
-
-  // Update last_seen
-  await supabaseServer.from('users').update({ last_seen: new Date().toISOString() }).eq('id', user.id)
-
-  const token = await signToken(user.id, user.role)
-  const { password_hash, ...safeUser } = user
-
-  const response = NextResponse.json({ token, user: safeUser })
-
-  // Set httpOnly cookie so middleware can read it
-  response.cookies.set('token', token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 60 * 60 * 24 * 7, // 7 days
-  })
-
-  return response
+  // If both paths fail, return generic error
+  return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 })
 }

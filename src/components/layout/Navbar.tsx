@@ -1,5 +1,5 @@
 'use client'
-
+import { NotificationBell } from '@/components/layout/NotificationBell'
 import Link from 'next/link'
 import { Bell, Menu, Moon, Sun, LogOut } from 'lucide-react'
 import Image from 'next/image'
@@ -47,9 +47,7 @@ export function Navbar({ user }: { user: any }) {
           ₡ {civictBalance}
         </span>
 
-        <button className="text-muted dark:text-[#C0D0C6] hover:text-ink dark:hover:text-[#EEF2EF] hover:bg-black/5 dark:hover:bg-[#1C241F] h-8 w-8 rounded-lg flex items-center justify-center transition-all">
-          <Bell className="h-4 w-4" />
-        </button>
+        <NotificationBell />
 
         <button onClick={() => { localStorage.clear(); window.location.href = '/login' }}
           className="text-xs text-muted dark:text-[#C0D0C6] hover:text-ink dark:hover:text-[#EEF2EF] bg-black/5 dark:bg-[#1C241F] hover:bg-black/10 dark:hover:bg-[#2A3A30] px-2.5 py-1.5 rounded-lg transition-all hidden sm:inline">

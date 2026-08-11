@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth'
+import { sendNotification } from '@/lib/notifications'
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseServer = createClient(
@@ -34,6 +35,15 @@ export async function POST(req: Request) {
       amount: parseInt(amount),
       description: 'Admin Grant'
     })
+
+    // 4. NEW: Send In-App Notification
+    await sendNotification(
+      userId, 
+      'Account Funded!', 
+      `An Admin just granted you ${amount} CIVICT.`, 
+      '/wallet',
+      'civict_earned'
+    )
 
     return NextResponse.json({ success: true, newBalance })
   } catch (err: any) {

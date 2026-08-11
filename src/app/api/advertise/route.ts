@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth'
 import { createClient } from '@supabase/supabase-js'
+import { sendAdminAlert } from '@/lib/mail'
 
 const supabaseServer = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -33,6 +34,12 @@ export async function POST(req: Request) {
       })
 
     if (error) throw error
+
+    // NEW: Send Admin Email Alert
+    await sendAdminAlert(
+      'New Advertisement Submitted',
+      `A new ad for "${body.business_name}" has been submitted and is awaiting approval.`
+    )
 
     return NextResponse.json({ success: true })
 

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth'
 import { createClient } from '@supabase/supabase-js'
+import { sendAdminAlert } from '@/lib/mail'
 
 const supabaseServer = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -40,12 +41,19 @@ export async function POST(req: Request) {
     })
 
     // 5. Create pending transfer record
+        // 5. Create pending transfer record
     await supabaseServer.from('civict_transfers').insert({
       sender_id: payload.userId,
       recipient_id: recipient.id,
       amount,
       status: 'pending'
     })
+
+    // 6. NEW: Send Admin Email Alert
+    await sendAdminAlert(
+      'CIVICT Transfer Awaiting Approval',
+      `A new P2P transfer of ${amount} CIVICT has been initiated and requires your approval.`
+    )
 
     return NextResponse.json({ success: true })
   } catch (err: any) {
