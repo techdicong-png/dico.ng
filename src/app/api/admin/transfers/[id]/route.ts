@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyToken } from '@/lib/auth'
 import { createClient } from '@supabase/supabase-js'
+import { sendUserAlert } from '@/lib/mail'
 
 const supabaseServer = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -31,13 +32,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     if (fetchErr || !transfer) throw new Error('Transfer not found')
     if (transfer.status !== 'pending') throw new Error('Transfer already processed')
 
-    // 2. Fetch sender and recipient details
-    const { data: sender } = await supabaseServer.from('users').select('id, full_name, civict_balance').eq('id', transfer.sender_id).single()
-    const { data: recipient } = await supabaseServer.from('users').select('id, full_name, civict_balance').eq('id', transfer.recipient_id).single()
+        // 2. Fetch sender and recipient details
+    const { data: sender } = await supabaseServer.from('users').select('id, full_name, civict_balance, email').eq('id', transfer.sender_id).single()
+    const { data: recipient } = await supabaseServer.from('users').select('id, full_name, civict_balance, email').eq('id', transfer.recipient_id).single()
 
     if (!sender || !recipient) throw new Error('Sender or recipient not found')
 
-    if (status === 'approved') {
+       if (status === 'approved') {
       // 3a. Credit recipient
       await supabaseServer.from('users').update({ 
         civict_balance: (recipient.civict_balance || 0) + transfer.amount 
@@ -50,6 +51,14 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         amount: transfer.amount,
         description: `Received from ${sender.full_name}`
       })
+
+      // NEW: Send Emails to both parties
+      if (recipient.email) {
+        await sendUserAlert(recipient.email, 'CIVICT Transfer Received', `You just received ${transfer.amount} CIVICT from ${sender.full_name}.`)
+      }
+      if (sender.email) {
+        await sendUserAlert(sender.email, 'CIVICT Transfer Approved', `Your transfer of ${transfer.amount} CIVICT to ${recipient.full_name} has been approved and delivered.`)
+      }
 
     } else if (status === 'rejected') {
       // 3b. Refund sender
@@ -64,6 +73,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         amount: transfer.amount,
         description: `Transfer to ${recipient.full_name} rejected - Refunded`
       })
+
+      // NEW: Send Rejection Email to sender
+      if (sender.email) {
+        await sendUserAlert(sender.email, 'CIVICT Transfer Rejected', `Your transfer of ${transfer.amount} CIVICT to ${recipient.full_name} was rejected. The funds have been refunded to your wallet.`)
+      }
     }
 
     // 4. Update transfer status

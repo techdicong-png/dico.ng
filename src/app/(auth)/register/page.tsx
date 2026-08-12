@@ -30,11 +30,11 @@ function RegisterForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...form, role: 'voter', ref: refId }), // Pass ref to API
       })
-            const data = await res.json()
+      const data = await res.json()
       if (res.ok) {
-        toast.success('Account created! Check your email for the verification link.')
-        // Redirect to login page instead of dashboard
-        router.push('/login')
+        toast.success('Account created! Check your email for the 6-digit code.')
+        // Redirect to verify page, passing the email
+        router.push(`/verify-email?email=${encodeURIComponent(form.email)}`)
       } else {
         setError(data.error)
       }

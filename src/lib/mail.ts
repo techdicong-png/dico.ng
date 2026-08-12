@@ -1,6 +1,38 @@
-import { Resend } from 'resend'
+const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email'
+const BREVO_API_KEY = process.env.BREVO_API_KEY
+const SENDER_EMAIL = process.env.SENDER_EMAIL || 'hello@dicoengage.com'
+const SENDER_NAME = process.env.SENDER_NAME || 'DICO'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+async function sendEmail(to: string, subject: string, html: string) {
+  if (!BREVO_API_KEY) {
+    console.error('Missing BREVO_API_KEY in .env file')
+    return
+  }
+
+  try {
+    const res = await fetch(BREVO_API_URL, {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'api-key': BREVO_API_KEY,
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+        to: [{ email: to }],
+        subject: subject,
+        htmlContent: html
+      })
+    })
+
+    if (!res.ok) {
+      const errorData = await res.json()
+      console.error('Brevo API Error:', errorData)
+    }
+  } catch (error) {
+    console.error('Email send failed:', error)
+  }
+}
 
 function baseTemplate(content: string) {
   return `
@@ -27,35 +59,28 @@ export async function sendOTPEmail(email: string, otp: string, name: string) {
     </div>
     <p style="color:#999;font-size:12px;margin:0">If you didn't create an account, ignore this email.</p>
   `)
-
-  await resend.emails.send({
-    from: 'DICO <onboarding@resend.dev>',
-    to: email,
-    subject: `${otp} is your DICO verification code`,
-    html,
-  })
+  await sendEmail(email, `${otp} is your DICO verification code`, html)
 }
 
 export async function sendAdminAlert(subject: string, message: string) {
-  const html = `
-    <div style="font-family:Arial;max-width:480px;margin:0 auto;background:#fff;border:1px solid #e0e0e0;border-radius:12px;overflow:hidden;">
-      <div style="background:#0A3D2B;padding:24px;text-align:center;">
-        <span style="color:#E8C040;font-size:22px;font-weight:bold;">DI</span><span style="color:#fff;font-size:22px;font-weight:bold;">CO</span>
-        <p style="color:rgba(255,255,255,0.4);font-size:11px;margin:4px 0 0">Admin Alert System</p>
-      </div>
-      <div style="padding:32px 24px">
-        <h2 style="color:#0D1B12;font-size:18px;margin-bottom:16px;">${subject}</h2>
-        <p style="color:#666;font-size:14px;line-height:1.6;">${message}</p>
-        <a href="https://dicoengage.com/admin" style="display:inline-block;background-color:#C8960A;color:#0D1B12;font-weight:700;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;margin-top:20px;">
-          Go to Admin Dashboard
-        </a>
-      </div>
-    </div>`
+  const html = baseTemplate(`
+    <h2 style="color:#0D1B12;font-size:18px;margin:0 0 16px;">${subject}</h2>
+    <p style="color:#666;font-size:14px;line-height:1.6;">${message}</p>
+    <a href="https://dicoengage.com/admin" style="display:inline-block;background-color:#C8960A;color:#0D1B12;font-weight:700;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;margin-top:20px;">
+      Go to Admin Dashboard
+    </a>
+  `)
+  // Send to your admin email
+  await sendEmail('tech.dico.ng@gmail.com', `[Action Required] ${subject}`, html)
+}
 
-  await resend.emails.send({
-    from: 'DICO Alerts <onboarding@resend.dev>',
-    to: 'tech.dico.ng@gmail.com', // Change this to your actual admin email
-    subject: `[Action Required] ${subject}`,
-    html,
-  })
+export async function sendUserAlert(email: string, subject: string, message: string) {
+  const html = baseTemplate(`
+    <h2 style="color:#0D1B12;font-size:18px;margin:0 0 16px;">${subject}</h2>
+    <p style="color:#666;font-size:14px;line-height:1.6;">${message}</p>
+    <a href="https://dicoengage.com/dashboard" style="display:inline-block;background-color:#C8960A;color:#0D1B12;font-weight:700;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;margin-top:20px;">
+      View Dashboard
+    </a>
+  `)
+  await sendEmail(email, subject, html)
 }

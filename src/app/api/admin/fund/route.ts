@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth'
 import { sendNotification } from '@/lib/notifications'
 import { createClient } from '@supabase/supabase-js'
+import { sendUserAlert } from '@/lib/mail'
 
 const supabaseServer = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -21,7 +22,7 @@ export async function POST(req: Request) {
     const { userId, amount } = await req.json()
 
     // 1. Get current balance
-    const { data: user, error: userErr } = await supabaseServer.from('users').select('civict_balance, full_name').eq('id', userId).single()
+    const { data: user, error: userErr } = await supabaseServer.from('users').select('civict_balance, full_name, email').eq('id', userId).single()
     if (userErr) throw userErr
 
     // 2. Add to balance
@@ -36,7 +37,7 @@ export async function POST(req: Request) {
       description: 'Admin Grant'
     })
 
-    // 4. NEW: Send In-App Notification
+        // 4. NEW: Send In-App Notification
     await sendNotification(
       userId, 
       'Account Funded!', 
@@ -44,6 +45,15 @@ export async function POST(req: Request) {
       '/wallet',
       'civict_earned'
     )
+
+    // 5. NEW: Send User Email Alert
+    if (user.email) {
+      await sendUserAlert(
+        user.email,
+        'Your DICO Account was Funded',
+        `Good news! An Admin has just granted you ${amount} CIVICT. Your new balance is ${newBalance} CIVICT.`
+      )
+    }
 
     return NextResponse.json({ success: true, newBalance })
   } catch (err: any) {
