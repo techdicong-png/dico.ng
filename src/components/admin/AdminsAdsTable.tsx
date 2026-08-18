@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { CheckCircle, XCircle, ExternalLink } from 'lucide-react'
+import { CheckCircle, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import Image from 'next/image'
 
@@ -35,7 +35,6 @@ export function AdminAdsTable({ initialData }: { initialData: Ad[] }) {
       
       if (res.ok) {
         toast.success(`Ad ${status === 'active' ? 'approved' : 'rejected'}!`, { id: loadingToast })
-        // Update local state to remove it from the pending view
         setAds(ads.map(ad => ad.id === id ? { ...ad, status } : ad))
       } else {
         throw new Error('Failed to update status.')
@@ -48,16 +47,18 @@ export function AdminAdsTable({ initialData }: { initialData: Ad[] }) {
   return (
     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
       {ads.length === 0 && (
-        <Card className="col-span-full"><CardContent className="py-12 text-center text-muted">No ads submitted yet.</CardContent></Card>
+        <Card className="col-span-full dark:bg-[#11241b] dark:border-[#1f3a2c]">
+          <CardContent className="py-12 text-center text-muted dark:text-[#c0d0c4]">No ads submitted yet.</CardContent>
+        </Card>
       )}
       
       {ads.map(ad => (
-        <Card key={ad.id} className={ad.status === 'pending' ? 'border-gold' : ''}>
+        <Card key={ad.id} className={`${ad.status === 'pending' ? 'border-gold' : ''} dark:bg-[#11241b] dark:border-[#1f3a2c]`}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-3">
               <div>
-                <p className="font-bold text-ink text-sm">{ad.business_name}</p>
-                <p className="text-xs text-muted">{ad.target_lgas.join(', ')}, {ad.target_states.join(', ')}</p>
+                <p className="font-bold text-ink dark:text-white text-sm">{ad.business_name}</p>
+                <p className="text-xs text-muted dark:text-[#c0d0c4]">{ad.target_lgas.join(', ')}, {ad.target_states.join(', ')}</p>
               </div>
               <Badge variant={ad.status === 'active' ? 'default' : ad.status === 'rejected' ? 'destructive' : 'secondary'}>
                 {ad.status}
@@ -65,7 +66,7 @@ export function AdminAdsTable({ initialData }: { initialData: Ad[] }) {
             </div>
             
             <a href={ad.link_url} target="_blank" rel="noopener noreferrer" className="block mb-3 group">
-              <Image src={ad.image_url} alt={ad.business_name} width={300} height={128} className="w-full h-32 object-cover rounded border border-border" />
+              <Image src={ad.image_url} alt={ad.business_name} width={300} height={128} className="w-full h-32 object-cover rounded border border-border dark:border-[#1f3a2c]" />
             </a>
 
             {ad.status === 'pending' && (

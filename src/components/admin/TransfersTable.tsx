@@ -31,7 +31,6 @@ export function TransfersTable({ initialData }: { initialData: Transfer[] }) {
       
       if (res.ok) {
         toast.success(`Transfer ${status}!`, { id: loadingToast })
-        // Remove from pending list
         setTransfers(transfers.map(t => t.id === id ? { ...t, status } : t))
       } else {
         const data = await res.json()
@@ -45,25 +44,25 @@ export function TransfersTable({ initialData }: { initialData: Transfer[] }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {transfers.length === 0 && (
-        <Card className="col-span-full">
-          <CardContent className="py-12 text-center text-muted">No pending transfers.</CardContent>
+        <Card className="col-span-full dark:bg-[#11241b] dark:border-[#1f3a2c]">
+          <CardContent className="py-12 text-center text-muted dark:text-[#c0d0c4]">No pending transfers.</CardContent>
         </Card>
       )}
       
       {transfers.map(transfer => (
-        <Card key={transfer.id} className={transfer.status === 'pending' ? 'border-gold' : ''}>
+        <Card key={transfer.id} className={`${transfer.status === 'pending' ? 'border-gold' : ''} dark:bg-[#11241b] dark:border-[#1f3a2c]`}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-3">
-              <p className="font-bold text-ink text-lg">₡ {transfer.amount}</p>
+              <p className="font-bold text-ink dark:text-white text-lg">₡ {transfer.amount}</p>
               <Badge variant={transfer.status === 'approved' ? 'default' : transfer.status === 'rejected' ? 'destructive' : 'secondary'}>
                 {transfer.status}
               </Badge>
             </div>
             
             <div className="space-y-1 mb-4 text-sm">
-              <p className="text-muted">From: <span className="font-semibold text-ink">{transfer.sender?.full_name || 'Unknown'}</span></p>
-              <p className="text-muted">To: <span className="font-semibold text-ink">{transfer.recipient?.full_name || 'Unknown'}</span></p>
-              <p className="text-xs text-muted mt-1">{new Date(transfer.created_at).toLocaleString()}</p>
+              <p className="text-muted dark:text-[#c0d0c4]">From: <span className="font-semibold text-ink dark:text-white">{transfer.sender?.full_name || 'Unknown'}</span></p>
+              <p className="text-muted dark:text-[#c0d0c4]">To: <span className="font-semibold text-ink dark:text-white">{transfer.recipient?.full_name || 'Unknown'}</span></p>
+              <p className="text-xs text-muted dark:text-[#c0d0c4] mt-1">{new Date(transfer.created_at).toLocaleString()}</p>
             </div>
 
             {transfer.status === 'pending' && (

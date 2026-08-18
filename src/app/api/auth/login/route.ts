@@ -38,12 +38,10 @@ export async function POST(request: Request) {
     password
   })
 
-  // If Supabase Auth succeeds, log them in
   if (!authError && authData.user) {
-    // Check if they already have a profile in our custom users table
     let { data: dbUser } = await supabaseServer
       .from('users')
-      .select('id, email, password_hash, role, full_name, ward, lga, state, is_active, civict_balance')
+      .select('id, email, password_hash, role, full_name, ward, lga, state, is_active, civict_balance, email_verified')
       .eq('email', email)
       .single()
 
@@ -58,9 +56,10 @@ export async function POST(request: Request) {
           role: authData.user.user_metadata?.role || 'voter',
           password_hash: 'managed_by_supabase_auth',
           is_active: true,
-          civict_balance: 0
+          civict_balance: 0,
+          email_verified: false // New users start as unverified
         })
-        .select('id, email, password_hash, role, full_name, ward, lga, state, is_active, civict_balance')
+        .select('id, email, password_hash, role, full_name, ward, lga, state, is_active, civict_balance, email_verified')
         .single()
 
       if (insertErr) {
@@ -73,11 +72,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Account suspended' }, { status: 403 })
     }
 
+    // 🔒 NEW: Check if they verified their email via our OTP system
+    if (!dbUser.email_verified) {
+      return NextResponse.json({ 
+        error: 'Please verify your email before logging in.' 
+      }, { status: 403 })
+    }
+
     // Update last_seen
     await supabaseServer.from('users').update({ last_seen: new Date().toISOString() }).eq('id', dbUser.id)
 
     const token = await signToken(dbUser.id, dbUser.role)
-    const { password_hash, ...safeUser } = dbUser
+    const { password_hash, email_verified, ...safeUser } = dbUser
 
     const response = NextResponse.json({ token, user: safeUser })
     response.cookies.set('token', token, {
@@ -92,42 +98,32 @@ export async function POST(request: Request) {
   }
 
   // ──────────────────────────────────────────────────────────────
-  // HANDLE SUPABASE AUTH ERRORS
-  // ──────────────────────────────────────────────────────────────
-  if (authError) {
-    // Check if the error is specifically because they haven't verified their email
-    if (authError.message.includes('Email not confirmed')) {
-      return NextResponse.json({ 
-        error: 'Please check your email and click the verification link before logging in.' 
-      }, { status: 403 })
-    }
-    
-    // If it's not an unverified error, we fall through to Path 2 to check if they are a legacy user.
-    // If Path 2 fails, we will return the "Invalid credentials" error at the very end.
-  }
-
-  // ──────────────────────────────────────────────────────────────
-  // PATH 2: Custom Auth Fallback (For Old Voters who registered before Supabase Auth)
+  // PATH 2: Custom Auth Fallback (For Old Voters)
   // ──────────────────────────────────────────────────────────────
   const { data: user, error } = await supabaseServer
     .from('users')
-    .select('id, email, password_hash, role, full_name, ward, lga, state, is_active, civict_balance')
+    .select('id, email, password_hash, role, full_name, ward, lga, state, is_active, civict_balance, email_verified')
     .eq('email', email)
     .single()
 
-  // If the user exists in the DB, and their password is NOT managed by Supabase, check their bcrypt hash
   if (user && user.password_hash !== 'managed_by_supabase_auth') {
     if (!user.is_active) {
       return NextResponse.json({ error: 'Account suspended' }, { status: 403 })
     }
 
+    // 🔒 NEW: Check email verification for legacy users too
+    if (!user.email_verified) {
+      return NextResponse.json({ 
+        error: 'Please verify your email before logging in.' 
+      }, { status: 403 })
+    }
+
     const valid = await bcrypt.compare(password, user.password_hash)
     if (valid) {
-      // Update last_seen
       await supabaseServer.from('users').update({ last_seen: new Date().toISOString() }).eq('id', user.id)
 
       const token = await signToken(user.id, user.role)
-      const { password_hash, ...safeUser } = user
+      const { password_hash, email_verified, ...safeUser } = user
 
       const response = NextResponse.json({ token, user: safeUser })
       response.cookies.set('token', token, {
@@ -135,13 +131,13 @@ export async function POST(request: Request) {
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         path: '/',
-        maxAge: 60 * 60 * 24 * 7, // 7 days
+        maxAge: 60 * 60 * 24 * 7,
       })
 
       return response
     }
   }
 
-  // If both paths fail, return generic error
+  // If both paths fail
   return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 })
 }

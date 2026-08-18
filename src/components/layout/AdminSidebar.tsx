@@ -29,17 +29,16 @@ export function AdminSidebar() {
 
   return (
     <>
-      {/* Overlay backdrop — mobile only */}
       <div
         id="sidebarOverlay"
         className="fixed inset-0 bg-black/40 z-30 hidden lg:hidden"
         onClick={closeSidebar}
       />
 
-      {/* Sidebar */}
+      {/* 🔴 ADDED dark: classes here */}
       <aside
-        id="sidebar" // REQUIRED FOR HAMBURGER TO WORK
-        className="fixed top-14 left-0 bottom-0 w-60 bg-white border-r border-border overflow-y-auto py-4 z-40 -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col"
+        id="sidebar"
+        className="fixed top-14 left-0 bottom-0 w-60 bg-white dark:bg-[#11241b] border-r border-border dark:border-[#1f3a2c] overflow-y-auto py-4 z-40 -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col"
       >
         <div className="px-3 space-y-0.5">
           {links.map(link => (
@@ -48,8 +47,8 @@ export function AdminSidebar() {
               className={cn(
                 'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all',
                 pathname === link.href || (link.href !== '/admin' && pathname.startsWith(link.href))
-                  ? 'bg-forest-light text-forest'
-                  : 'text-muted hover:bg-forest-faint hover:text-forest'
+                  ? 'bg-forest-light dark:bg-[#1b3a2b] text-forest dark:text-white'
+                  : 'text-muted dark:text-[#c0d0c4] hover:bg-forest-faint dark:hover:bg-[#1b3a2b] hover:text-forest dark:hover:text-white'
               )}>
               <link.icon className="h-4 w-4" />
               {link.label}

@@ -36,24 +36,24 @@ export function CandidateRegisterForm() {
     id_card: null, party_membership: null, nomination_form: null, cert_return: null, other: null
   })
 
-    async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
-      const file = e.target.files?.[0]
-      if (!file) return
-      
-      setAvatarUploading(true)
-      const ext = file.name.split('.').pop()
-      const path = `${Date.now()}.${ext}`
-      
-      const { error } = await supabase.storage.from('candidate-avatars').upload(path, file)
-      if (error) {
-        toast.error('Avatar upload failed.')
-      } else {
-        const { data } = supabase.storage.from('candidate-avatars').getPublicUrl(path)
-        setForm(prev => ({ ...prev, avatar_url: data.publicUrl }))
-        toast.success('Profile picture updated.')
-      }
-      setAvatarUploading(false)
+  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    
+    setAvatarUploading(true)
+    const ext = file.name.split('.').pop()
+    const path = `${Date.now()}.${ext}`
+    
+    const { error } = await supabase.storage.from('candidate-avatars').upload(path, file)
+    if (error) {
+      toast.error('Avatar upload failed.')
+    } else {
+      const { data } = supabase.storage.from('candidate-avatars').getPublicUrl(path)
+      setForm(prev => ({ ...prev, avatar_url: data.publicUrl }))
+      toast.success('Profile picture updated.')
     }
+    setAvatarUploading(false)
+  }
 
   const lgas = form.state_constituency ? Object.keys(NIGERIA_DATA[form.state_constituency] || {}).sort() : []
   const wards = (form.state_constituency && form.lga_constituency) ? NIGERIA_DATA[form.state_constituency]?.[form.lga_constituency] || [] : []
@@ -119,71 +119,42 @@ export function CandidateRegisterForm() {
     setError('')
 
     try {
-      // 1. Create Supabase Auth User (Triggers confirmation email automatically)
-      const { data: authData, error: authErr } = await supabase.auth.signUp({
-        email: form.email,
-        password: form.password,
-        options: {
-          data: {
-            full_name: form.full_name,
-            role: 'candidate' // Set role metadata
-          }
-        }
-      })
+      const tempId = crypto.randomUUID()
 
-      if (authErr) throw authErr
-      const userId = authData.user?.id
-      if (!userId) throw new Error('Failed to create user account.')
-
-      // 2. Insert registration record linked to the auth user
-      const { data: reg, error: insertErr } = await supabase
-        .from('candidate_registrations')
-        .insert({
-          user_id: userId, // Link to auth.users
-          full_name: form.full_name,
-          avatar_url: form.avatar_url || null,
-          date_of_birth: form.date_of_birth || null,
-          gender: form.gender || null,
-          phone: form.phone,
-          email: form.email,
-          home_address: form.home_address || null,
-          state_of_origin: form.state_of_origin || null,
-          lga_of_origin: form.lga_of_origin || null,
-          state_constituency: form.state_constituency,
-          lga_constituency: form.lga_constituency,
-          ward: form.ward || null,
-          senatorial_district: form.senatorial_district || null,
-          federal_constituency: form.federal_constituency || null,
-          party: form.party,
-          position: form.office_level, 
-          level: form.office_level,    
-          campaign_slogan: form.campaign_slogan || null,
-          manifesto_summary: form.manifesto_summary || null,
-          status: 'pending'
-        })
-        .select('id')
-        .single()
-
-      if (insertErr) throw insertErr
-      const regId = reg.id
-
-      // 3. Upload documents
+      // Upload documents
       const docPaths: Record<string, string> = {}
       for (const [docKey, file] of Object.entries(uploadedFiles)) {
         if (file) {
           const ext = file.name.split('.').pop()
-          const path = `${regId}/${docKey}.${ext}`
+          const path = `${tempId}/${docKey}.${ext}`
           const { error: uploadErr } = await supabase.storage.from('candidate-docs').upload(path, file, { upsert: true })
           if (uploadErr) throw uploadErr
           docPaths[`doc_${docKey}`] = path
         }
       }
 
-      if (Object.keys(docPaths).length > 0) {
-        await supabase.from('candidate_registrations').update(docPaths).eq('id', regId)
+      // Call the secure API route
+      const res = await fetch('/api/auth/register-candidate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...form,
+          doc_id_card: docPaths.doc_id_card || null,
+          doc_party_membership: docPaths.doc_party_membership || null,
+          doc_nomination_form: docPaths.doc_nomination_form || null,
+          doc_cert_return: docPaths.doc_cert_return || null,
+          doc_other: docPaths.doc_other || null
+        })
+      })
+
+      const data = await res.json()
+      
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to submit application')
       }
 
-      setSuccess(true)
+      router.push(`/verify-email?email=${encodeURIComponent(form.email)}`)
+      
     } catch (err: any) {
       console.error('Submission error:', err)
       setError(err.message || 'Submission failed. Please try again.')
@@ -192,7 +163,9 @@ export function CandidateRegisterForm() {
     }
   }
 
-    if (success) {
+  // We keep the success screen as a fallback in case redirect is blocked,
+  // but normally the router.push() above will take them straight to the OTP screen.
+  if (success) {
     return (
       <div className="max-w-2xl mx-auto bg-white border border-border rounded-2xl p-8 shadow-sm text-center">
         <div className="w-16 h-16 rounded-full bg-forest-light flex items-center justify-center mx-auto mb-4">
@@ -206,7 +179,6 @@ export function CandidateRegisterForm() {
           <Button onClick={() => router.push('/')} variant="outline">
             Back to Home
           </Button>
-          {/* NEW: Direct link to Login */}
           <Button onClick={() => router.push('/login')} className="bg-forest hover:bg-forest-mid text-white">
             Proceed to Login
           </Button>

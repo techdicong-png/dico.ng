@@ -84,35 +84,39 @@ export default function AdminUsersPage() {
     u.email?.toLowerCase().includes(search.toLowerCase())
   )
 
-  if (loading) return <div className="flex justify-center p-12"><Loader2 className="h-8 w-8 animate-spin text-forest" /></div>
+  if (loading) return <div className="flex justify-center p-12"><Loader2 className="h-8 w-8 animate-spin text-forest dark:text-forest-700" /></div>
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center flex-wrap gap-4">
         <div>
-          <span className="text-xs font-bold tracking-widest uppercase text-red-600 bg-red-100 px-2.5 py-1 rounded inline-block mb-2">
+          <span className="text-xs font-bold tracking-widest uppercase text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 px-2.5 py-1 rounded inline-block mb-2">
             Admin Panel
           </span>
-          <h1 className="font-serif text-2xl font-black text-ink">User Management</h1>
-          <p className="text-sm text-muted">Suspend, activate, or fund user accounts.</p>
+          <h1 className="font-serif text-2xl font-black text-ink dark:text-white">User Management</h1>
+          <p className="text-sm text-muted dark:text-[#c0d0c4]">Suspend, activate, or fund user accounts.</p>
         </div>
-        {/* Added Logout Button for Admin */}
-        <Button variant="outline" onClick={() => { localStorage.clear(); window.location.href = '/login' }}>
+        <Button variant="outline" className="dark:bg-[#0f1d16] dark:text-white dark:border-[#1f3a2c]" onClick={() => { localStorage.clear(); window.location.href = '/login' }}>
           Logout Admin
         </Button>
       </div>
 
-      <Card>
+      <Card className="dark:bg-[#11241b] dark:border-[#1f3a2c]">
         <CardContent className="pt-6">
           <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted" />
-            <Input placeholder="Search by name or email..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 max-w-sm" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted dark:text-[#c0d0c4]" />
+            <Input 
+              placeholder="Search by name or email..." 
+              value={search} 
+              onChange={e => setSearch(e.target.value)} 
+              className="pl-9 max-w-sm bg-white dark:bg-[#0f1d16] dark:text-white dark:border-[#1f3a2c]" 
+            />
           </div>
           
           <div className="w-full overflow-x-auto pb-2">
             <table className="w-full min-w-[800px] text-sm">
               <thead>
-                <tr className="border-b border-border text-left text-[10px] font-bold tracking-wider uppercase text-muted">
+                <tr className="border-b border-border dark:border-[#1f3a2c] text-left text-[10px] font-bold tracking-wider uppercase text-muted dark:text-[#c0d0c4]">
                   <th className="pb-2 pr-4">Name</th>
                   <th className="pb-2 pr-4">Email</th>
                   <th className="pb-2 pr-4">Role</th>
@@ -123,13 +127,13 @@ export default function AdminUsersPage() {
               </thead>
               <tbody>
                 {filtered.map(u => (
-                  <tr key={u.id} className="border-b border-border-light">
-                    <td className="py-3 pr-4 font-semibold text-ink">{u.full_name}</td>
-                    <td className="py-3 pr-4 text-muted">{u.email}</td>
+                  <tr key={u.id} className="border-b border-border-light dark:border-[#1f3a2c]">
+                    <td className="py-3 pr-4 font-semibold text-ink dark:text-white">{u.full_name}</td>
+                    <td className="py-3 pr-4 text-muted dark:text-[#c0d0c4]">{u.email}</td>
                     <td className="py-3 pr-4">
-                      <Badge variant="secondary" className="text-[10px]">{u.role}</Badge>
+                      <Badge variant="secondary" className="text-[10px] dark:bg-[#1b3a2b] dark:text-white">{u.role}</Badge>
                     </td>
-                    <td className="py-3 pr-4 font-bold text-forest">₡ {u.civict_balance || 0}</td>
+                    <td className="py-3 pr-4 font-bold text-forest dark:text-forest-700">₡ {u.civict_balance || 0}</td>
                     <td className="py-3 pr-4">
                       <Badge variant={u.is_active ? 'default' : 'destructive'} className="text-[10px]">
                         {u.is_active ? 'Active' : 'Suspended'}
@@ -139,13 +143,13 @@ export default function AdminUsersPage() {
                       <div className="flex flex-col gap-2">
                         {fundingId === u.id ? (
                           <div className="flex gap-2">
-                            <Input type="number" value={fundAmount} onChange={e => setFundAmount(e.target.value)} placeholder="Amount" className="h-8 w-24" />
+                            <Input type="number" value={fundAmount} onChange={e => setFundAmount(e.target.value)} placeholder="Amount" className="h-8 w-24 bg-white dark:bg-[#0f1d16] dark:text-white dark:border-[#1f3a2c]" />
                             <Button size="sm" className="bg-forest hover:bg-forest-mid" onClick={() => fundAccount(u.id)}>Send</Button>
                             <Button size="sm" variant="ghost" onClick={() => setFundingId(null)}>X</Button>
                           </div>
                         ) : (
                           <div className="flex gap-2">
-                            <Button size="sm" variant="outline" onClick={() => { setFundingId(u.id); setFundAmount('') }}>
+                            <Button size="sm" variant="outline" className="dark:bg-[#0f1d16] dark:text-white dark:border-[#1f3a2c]" onClick={() => { setFundingId(u.id); setFundAmount('') }}>
                               <Wallet className="h-4 w-4 mr-1" /> Fund
                             </Button>
                             <Button size="sm" variant={u.is_active ? 'destructive' : 'outline'} onClick={() => toggleUserStatus(u.id, u.is_active)}>

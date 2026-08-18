@@ -22,7 +22,7 @@ export async function verifyToken(token: string) {
 export async function getAuthUser(userId: string) {
   const { data } = await supabaseAdmin
     .from('users')
-    .select('id, email, role, full_name, is_active, ward, lga, state, civict_balance')
+    .select('id, email, role, full_name, is_active, ward, lga, state, civict_balance, phone, bio, avatar_url')
     .eq('id', userId)
     .single()
   return data

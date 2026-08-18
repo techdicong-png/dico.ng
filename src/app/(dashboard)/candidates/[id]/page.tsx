@@ -21,8 +21,8 @@ export default async function CandidateProfilePage({ params }: { params: Promise
 
   const { id: candidateId } = await params
 
-  const { data: candidate } = await supabaseServer.from('candidates')
-    .select('*, users!inner(email, created_at)')
+   const { data: candidate } = await supabaseServer.from('candidates')
+    .select('*, users(email, created_at)')
     .eq('id', candidateId).single()
 
   if (!candidate) return (

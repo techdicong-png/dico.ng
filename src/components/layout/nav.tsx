@@ -85,7 +85,7 @@ export function Nav() {
           : 'bg-mint border-b border-mint-line'
       }`}>
         <Link href="/" className="flex items-center shrink-0">
-          <Image src="/logo.png" alt="DICO" width={40} height={40} className="shrink-0" />
+          <Image src="/logo.png" alt="DICO" width={40} height={40} loading="lazy" className="shrink-0" />
           <span className="font-serif text-xl font-black tracking-tight -ml-2">
             <span className="text-gold">I</span>
             <span className="text-forest">CO</span>
@@ -175,7 +175,7 @@ export function Nav() {
         }`}>
           {/* Mobile Logo */}
           <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-mint-line">
-            <Image src="/logo.png" alt="DICO" width={40} height={40} />
+            <Image src="/logo.png" alt="DICO" width={40} height={40} loading="lazy" />
             <button onClick={() => setMobileOpen(false)} className="text-ink/70 hover:text-ink">
               <i className="fa-solid fa-xmark text-lg"></i>
             </button>

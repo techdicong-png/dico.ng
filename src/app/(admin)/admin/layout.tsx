@@ -11,14 +11,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const payload = await verifyToken(token)
   if (!payload || payload.role !== 'admin') redirect('/login')
 
-  // Fetch user to pass to Navbar for dynamic balance
   const user = await getAuthUser(payload.userId)
   if (!user) redirect('/login')
 
   return (
     <>
       <Navbar user={user} />
-      <div className="flex pt-14 min-h-screen bg-[#F7F4EE]">
+      {/* 🔴 ADDED dark:bg-[#0f1d16] HERE */}
+      <div className="flex pt-14 min-h-screen bg-sand dark:bg-[#0f1d16]">
         <AdminSidebar />
         <main className="flex-1 lg:ml-60 p-4 md:p-8 max-w-full overflow-x-hidden">{children}</main>
       </div>

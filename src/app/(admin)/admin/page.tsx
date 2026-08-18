@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { verifyToken } from '@/lib/auth'
-import { createClient } from '@supabase/supabase-js' // Inline client
+import { createClient } from '@supabase/supabase-js'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
@@ -37,52 +37,51 @@ export default async function AdminDashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <span className="text-xs font-bold tracking-widest uppercase text-red-600 bg-red-100 px-2.5 py-1 rounded inline-block mb-2">
+        <span className="text-xs font-bold tracking-widest uppercase text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 px-2.5 py-1 rounded inline-block mb-2">
           Admin Panel
         </span>
-        <h1 className="font-serif text-2xl font-black text-ink">Platform Overview</h1>
+        <h1 className="font-serif text-2xl font-black text-ink dark:text-white">Platform Overview</h1>
       </div>
 
-      {/* Responsive Grid: 1 col on mobile, 2 on tablet, 4 on desktop */}
+      {/* Responsive Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
+        <Card className="dark:bg-[#11241b] dark:border-[#1f3a2c]">
           <CardContent className="pt-6">
-            <p className="text-[10px] font-bold tracking-wider uppercase text-muted-text mb-2">Total Users</p>
-            <p className="font-serif text-2xl md:text-3xl font-black text-forest">{(totalUsers || 0).toLocaleString()}</p>
-            <p className="text-xs text-muted-text mt-1">{(activeUsers || 0).toLocaleString()} active (30d)</p>
+            <p className="text-[10px] font-bold tracking-wider uppercase text-muted dark:text-[#c0d0c4] mb-2">Total Users</p>
+            <p className="font-serif text-2xl md:text-3xl font-black text-forest dark:text-forest-700">{(totalUsers || 0).toLocaleString()}</p>
+            <p className="text-xs text-muted dark:text-[#c0d0c4] mt-1">{(activeUsers || 0).toLocaleString()} active (30d)</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="dark:bg-[#11241b] dark:border-[#1f3a2c]">
           <CardContent className="pt-6">
-            <p className="text-[10px] font-bold tracking-wider uppercase text-muted-text mb-2">Candidates</p>
-            <p className="font-serif text-2xl md:text-3xl font-black text-forest">{(totalCandidates || 0).toLocaleString()}</p>
+            <p className="text-[10px] font-bold tracking-wider uppercase text-muted dark:text-[#c0d0c4] mb-2">Candidates</p>
+            <p className="font-serif text-2xl md:text-3xl font-black text-forest dark:text-forest-700">{(totalCandidates || 0).toLocaleString()}</p>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-gold/5 to-gold/10 border-gold/20">
+        <Card className="bg-gradient-to-br from-gold/5 to-gold/10 border-gold/20 dark:bg-[#11241b] dark:border-gold/30">
           <CardContent className="pt-6">
-            <p className="text-[10px] font-bold tracking-wider uppercase text-muted-text mb-2">CIVICT in Circulation</p>
+            <p className="text-[10px] font-bold tracking-wider uppercase text-muted dark:text-[#c0d0c4] mb-2">CIVICT in Circulation</p>
             <p className="font-serif text-2xl md:text-3xl font-black text-gold">{(civictTotal || 0).toLocaleString()}</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="dark:bg-[#11241b] dark:border-[#1f3a2c]">
           <CardContent className="pt-6">
-            <p className="text-[10px] font-bold tracking-wider uppercase text-muted-text mb-2">Reward Pool</p>
-            <p className="font-serif text-2xl md:text-3xl font-black text-forest">
+            <p className="text-[10px] font-bold tracking-wider uppercase text-muted dark:text-[#c0d0c4] mb-2">Reward Pool</p>
+            <p className="font-serif text-2xl md:text-3xl font-black text-forest dark:text-forest-700">
               ₦{((parseInt(settings.reward_pool_balance || '0')) / 100).toLocaleString()}
             </p>
           </CardContent>
         </Card>
       </div>
 
-      <Card>
-        <CardHeader><CardTitle className="text-base">⚡ Quick Actions</CardTitle></CardHeader>
+      <Card className="dark:bg-[#11241b] dark:border-[#1f3a2c]">
+        <CardHeader><CardTitle className="text-base text-ink dark:text-white">⚡ Quick Actions</CardTitle></CardHeader>
         <CardContent>
-          {/* Fixed links to point to actual pages, made responsive */}
           <div className="flex gap-3 flex-wrap">
-            <Link href="/admin/users"><Button variant="outline" className="w-full sm:w-auto">Manage Users</Button></Link>
-            <Link href="/admin/candidates"><Button variant="outline" className="w-full sm:w-auto">Verify Candidates</Button></Link>
-            <Link href="/admin/ads"><Button variant="outline" className="w-full sm:w-auto">Ad Approvals</Button></Link>
-            <Link href="/admin/market"><Button variant="outline" className="w-full sm:w-auto">Trade Matching</Button></Link>
+            <Link href="/admin/users"><Button variant="outline" className="w-full sm:w-auto dark:bg-[#0f1d16] dark:text-white dark:border-[#1f3a2c]">Manage Users</Button></Link>
+            <Link href="/admin/candidates"><Button variant="outline" className="w-full sm:w-auto dark:bg-[#0f1d16] dark:text-white dark:border-[#1f3a2c]">Verify Candidates</Button></Link>
+            <Link href="/admin/ads"><Button variant="outline" className="w-full sm:w-auto dark:bg-[#0f1d16] dark:text-white dark:border-[#1f3a2c]">Ad Approvals</Button></Link>
+            <Link href="/admin/market"><Button variant="outline" className="w-full sm:w-auto dark:bg-[#0f1d16] dark:text-white dark:border-[#1f3a2c]">Trade Matching</Button></Link>
           </div>
         </CardContent>
       </Card>
