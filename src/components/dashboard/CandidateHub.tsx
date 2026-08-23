@@ -284,20 +284,20 @@ export function CandidateHub({ candidateId, initialName, candidateLga, avatarUrl
 
       {/* GO LIVE MODAL */}
       {isLiveModalOpen && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setIsLiveModalOpen(false)}>
-          <div className="bg-[#0B140F] rounded-2xl w-full max-w-md overflow-hidden border border-white/10" onClick={e => e.stopPropagation()}>
-            <div className="p-6">
-              <h3 className="text-white font-serif text-xl font-bold mb-2">Start Live Session</h3>
-              <p className="text-white/60 text-sm mb-4">Enter a title for your session. Voters will be notified you are live.</p>
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setIsLiveModalOpen(false)}>
+          <div className="bg-white dark:bg-[#11241b] rounded-2xl w-full max-w-md overflow-hidden border border-border dark:border-[#1f3a2c] shadow-xl" onClick={e => e.stopPropagation()}>
+            <div className="p-5 md:p-6">
+              <h3 className="font-serif text-xl font-bold text-ink dark:text-white mb-2">Start Live Session</h3>
+              <p className="text-muted dark:text-[#c0d0c4] text-sm mb-4">Enter a title for your session. Voters will be notified you are live.</p>
               <Input 
                 value={liveTitle} 
                 onChange={(e) => setLiveTitle(e.target.value)} 
                 placeholder="e.g. Weekly Constituency Q&A" 
-                className="bg-white/5 border-white/10 text-white mb-4"
+                className="bg-white dark:bg-[#0f1d16] text-ink dark:text-white border-border dark:border-[#1f3a2c] mb-4"
               />
-              <div className="flex gap-2">
-                <Button variant="outline" className="border-white/20 text-white hover:bg-white/5" onClick={() => setIsLiveModalOpen(false)}>Cancel</Button>
-                <Button className="bg-red-600 hover:bg-red-700 text-white w-full" onClick={endLive}>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button variant="outline" className="border-border dark:border-[#1f3a2c] text-ink dark:text-white hover:bg-sand dark:hover:bg-[#1b3a2b] w-full sm:w-auto" onClick={() => setIsLiveModalOpen(false)}>Cancel</Button>
+                <Button className="bg-red-600 hover:bg-red-700 text-white w-full sm:flex-1" onClick={endLive}>
                   <Radio className="h-4 w-4 mr-2 animate-pulse" /> Go Live Now
                 </Button>
               </div>

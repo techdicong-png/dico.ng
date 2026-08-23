@@ -27,8 +27,10 @@ export async function POST(req: Request) {
       .single()
 
     if (itemErr || !item) return NextResponse.json({ error: 'Item not found' }, { status: 404 })
-    if (item.is_sold) return NextResponse.json({ error: 'Item already sold' }, { status: 400 })
-    if (item.seller_id === payload.userId) return NextResponse.json({ error: 'You cannot buy your own item' }, { status: 400 })
+    
+    if (item.seller_id === payload.userId) {
+      return NextResponse.json({ error: 'You cannot buy your own item' }, { status: 400 })
+    }
 
     // 2. Fetch buyer's balance
     const { data: buyer, error: buyerErr } = await supabaseServer
@@ -40,6 +42,21 @@ export async function POST(req: Request) {
     if (buyerErr) throw buyerErr
     if (buyer.civict_balance < item.price_civict) {
       return NextResponse.json({ error: 'Insufficient CIVICT balance' }, { status: 400 })
+    }
+
+    // 🔴 CRITICAL FIX: ATOMIC UPDATE TO PREVENT DOUBLE-SPENDING
+    // We try to mark it as sold ONLY IF it is currently false.
+    const { data: updatedItem, error: updateError } = await supabaseServer
+      .from('marketplace_items')
+      .update({ is_sold: true })
+      .eq('id', itemId)
+      .eq('is_sold', false) // This is the magic line!
+      .select()
+      .single()
+
+    // If no rows were updated, it means someone else bought it milliseconds ago!
+    if (updateError || !updatedItem) {
+      return NextResponse.json({ error: 'Item was just sold by someone else!' }, { status: 400 })
     }
 
     // 3. Fetch seller's balance
@@ -77,11 +94,9 @@ export async function POST(req: Request) {
       }
     ])
 
-    // 7. Mark item as sold
-    await supabaseServer.from('marketplace_items').update({ is_sold: true }).eq('id', itemId)
-
     return NextResponse.json({ success: true })
   } catch (err: any) {
+    console.error('Marketplace buy error:', err)
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }
