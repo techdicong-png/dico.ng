@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyToken } from '@/lib/auth'
 import { createClient } from '@supabase/supabase-js'
+import { sendUserAlert } from '@/lib/mail' // 🔴 Import the email function
 
 const supabaseServer = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -49,12 +50,12 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         .eq('id', reg.user_id)
         .maybeSingle()
 
-      // B. If not, create their public.users profile first (to satisfy the foreign key)
+      // B. If not, create their public.users profile first
       if (!existingUser) {
         const { error: userInsertErr } = await supabaseServer
           .from('users')
           .insert({
-            id: reg.user_id, // Link to Supabase Auth UID
+            id: reg.user_id, 
             email: reg.email,
             full_name: reg.full_name,
             avatar_url: reg.avatar_url,
@@ -98,6 +99,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
         if (candInsertErr) throw candInsertErr
       }
+
+      // 🔴 NEW: Send the Candidate Approval Email!
+      await sendUserAlert(
+        reg.email,
+        'Your DICO Candidate Profile is Verified! 🎉',
+        `Congratulations ${reg.full_name}! <br/><br/>Your candidate profile has been reviewed and approved by our admin team. You can now log in to the DICO platform, post updates, and start engaging with verified voters in your constituency.`
+      )
     }
 
     return NextResponse.json({ success: true })

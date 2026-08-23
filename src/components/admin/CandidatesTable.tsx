@@ -273,12 +273,19 @@ export function CandidatesTable({ initialData }: { initialData: Registration[] }
 
               {/* Actions */}
               <div className="flex flex-col md:flex-row gap-3 pt-4 border-t border-border-light dark:border-[#1f3a2c]">
-                <Button className="bg-green-600 hover:bg-green-700 text-white w-full md:w-auto" onClick={() => updateStatus(selectedReg.id, 'verified')}>
-                  <CheckCircle className="h-4 w-4 mr-2" /> Approve
-                </Button>
-                <Button variant="destructive" className="w-full md:w-auto" onClick={() => updateStatus(selectedReg.id, 'rejected')}>
-                  <XCircle className="h-4 w-4 mr-2" /> Reject
-                </Button>
+                {/* 🔴 NEW: Only show Approve if they aren't already verified */}
+                {selectedReg.status !== 'verified' && (
+                  <Button className="bg-green-600 hover:bg-green-700 text-white w-full md:w-auto" onClick={() => updateStatus(selectedReg.id, 'verified')}>
+                    <CheckCircle className="h-4 w-4 mr-2" /> Approve
+                  </Button>
+                )}
+                
+                {/* 🔴 NEW: Only show Reject if they aren't already rejected */}
+                {selectedReg.status !== 'rejected' && (
+                  <Button variant="destructive" className="w-full md:w-auto" onClick={() => updateStatus(selectedReg.id, 'rejected')}>
+                    <XCircle className="h-4 w-4 mr-2" /> Reject
+                  </Button>
+                )}
               </div>
             </div>
           </div>
