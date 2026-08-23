@@ -24,7 +24,16 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       })
       const data = await res.json()
-      if (!res.ok) { setError(data.error); return }
+      
+      if (!res.ok) {
+        // 🔴 NEW: Check if API told us to redirect to verify page
+        if (data.redirect) {
+          router.push(data.redirect)
+          return
+        }
+        setError(data.error); 
+        return
+      }
 
       localStorage.setItem('dico_token', data.token)
       localStorage.setItem('dico_user', JSON.stringify(data.user))

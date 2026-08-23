@@ -4,7 +4,7 @@ import { CandidateRegisterForm } from '@/components/auth/CandidateRegisterForm'
 
 export default function CandidateRegisterPage() {
   return (
-    <div className="min-h-screen bg-sand">
+    <div className="min-h-screen bg-sand dark:bg-[#0f1d16]">
       {/* NAVBAR */}
       <nav className="bg-forest fixed top-0 left-0 right-0 z-50 px-6 flex items-center justify-between h-[60px] border-b border-white/5">
         <Link href="/" className="font-serif text-lg font-bold text-white flex items-center gap-2">
@@ -12,7 +12,6 @@ export default function CandidateRegisterPage() {
           DICO <span className="text-[10px] font-bold tracking-widest uppercase text-gold border border-gold/40 px-1.5 py-0.5 rounded-sm">Nigeria</span>
         </Link>
         <Link href="/" className="text-white/70 text-sm font-medium flex items-center gap-1.5 hover:text-white hover:bg-white/5 px-3 py-1.5 rounded-md transition-colors">
-          {/* FIXED: stroke-width changed to strokeWidth */}
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           Back to DICO
         </Link>

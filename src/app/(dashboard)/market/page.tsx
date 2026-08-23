@@ -132,9 +132,9 @@ export default function MarketPage() {
       {/* Header */}
       <div className="flex justify-between items-end flex-wrap gap-4">
         <div>
-          <span className="text-[10px] font-bold tracking-widest uppercase text-forest-800 bg-forest-light px-2.5 py-1 rounded inline-block mb-2">Marketplace</span>
-          <h1 className="font-serif text-2xl md:text-3xl font-black text-ink">Dico Online Market</h1>
-          <p className="text-sm text-muted">Trade civic goods, services, and merchandise using CIVICT.</p>
+          <span className="text-[10px] font-bold tracking-widest uppercase text-forest-800 dark:text-white bg-forest-light dark:bg-[#1b3a2b] px-2.5 py-1 rounded inline-block mb-2">Marketplace</span>
+          <h1 className="font-serif text-2xl md:text-3xl font-black text-ink dark:text-white">Dico Online Market</h1>
+          <p className="text-sm text-muted dark:text-[#c0d0c4]">Trade civic goods, services, and merchandise using CIVICT.</p>
         </div>
         <Button onClick={() => setShowSellModal(true)} className="bg-gold hover:bg-gold-hover text-ink">
           <Plus className="h-4 w-4 mr-2" /> Sell an Item
@@ -144,13 +144,13 @@ export default function MarketPage() {
       {/* Search & Filters */}
       <div className="flex flex-col md:flex-row gap-4">
         <div className="relative flex-1">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted dark:text-[#c0d0c4]" />
           <input
             type="text"
             placeholder="Search for goods and services..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-12 pl-11 pr-4 text-sm bg-white border border-border rounded-lg focus:outline-none focus:border-forest"
+            className="w-full h-12 pl-11 pr-4 text-sm text-ink dark:text-white bg-white dark:bg-[#0f1d16] border border-border dark:border-[#1f3a2c] rounded-lg focus:outline-none focus:border-forest"
           />
         </div>
         <div className="flex gap-2 flex-wrap">
@@ -159,7 +159,9 @@ export default function MarketPage() {
               key={cat}
               onClick={() => setActiveFilter(cat)}
               className={`px-3.5 py-2 rounded-full text-sm font-semibold border transition-colors ${
-                activeFilter === cat ? 'bg-forest text-white border-forest' : 'bg-white text-muted border-border hover:border-forest'
+                activeFilter === cat 
+                  ? 'bg-forest text-white border-forest' 
+                  : 'bg-white dark:bg-[#0f1d16] text-muted dark:text-[#c0d0c4] border-border dark:border-[#1f3a2c] hover:border-forest'
               }`}
             >
               {cat}
@@ -170,31 +172,31 @@ export default function MarketPage() {
 
       {/* Grid */}
       {loading ? (
-        <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-forest" /></div>
+        <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-forest dark:text-forest-700" /></div>
       ) : filtered.length === 0 ? (
-        <div className="bg-white border border-border rounded-xl py-16 text-center">
-          <Store className="h-10 w-10 text-muted mx-auto mb-3" />
-          <p className="text-muted">No items found. Be the first to list an item!</p>
+        <div className="bg-white dark:bg-[#11241b] border border-border dark:border-[#1f3a2c] rounded-xl py-16 text-center">
+          <Store className="h-10 w-10 text-muted dark:text-[#c0d0c4] mx-auto mb-3" />
+          <p className="text-muted dark:text-[#c0d0c4]">No items found. Be the first to list an item!</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {filtered.map((item) => (
-            <div key={item.id} className="bg-white border border-border rounded-xl overflow-hidden hover:shadow-md transition-all group">
-              <div className="h-40 bg-mint flex items-center justify-center text-4xl text-forest-800 overflow-hidden">
+            <div key={item.id} className="bg-white dark:bg-[#11241b] border border-border dark:border-[#1f3a2c] rounded-xl overflow-hidden hover:shadow-md transition-all group">
+              <div className="h-40 bg-mint dark:bg-[#1b3a2b] flex items-center justify-center text-4xl text-forest-800 dark:text-forest-700 overflow-hidden">
                 {item.image_url ? (
                   <Image src={item.image_url} alt={item.title} width={300} height={160} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                 ) : (
-                  <ImageIcon className="h-10 w-10 text-muted" />
+                  <ImageIcon className="h-10 w-10 text-muted dark:text-[#c0d0c4]" />
                 )}
               </div>
               <div className="p-4">
                 <p className="text-[10px] font-bold tracking-widest uppercase text-gold mb-1">{item.category}</p>
-                <h3 className="font-bold text-ink mb-1 truncate">{item.title}</h3>
-                <p className="text-xs text-muted mb-3 line-clamp-2 h-8">{item.description || 'No description'}</p>
-                                <div className="flex items-center justify-between">
-                  <span className="font-bold text-ink">₡ {item.price_civict.toLocaleString()}</span>
+                <h3 className="font-bold text-ink dark:text-white mb-1 truncate">{item.title}</h3>
+                <p className="text-xs text-muted dark:text-[#c0d0c4] mb-3 line-clamp-2 h-8">{item.description || 'No description'}</p>
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-ink dark:text-white">₡ {item.price_civict.toLocaleString()}</span>
                   {item.is_sold ? (
-                     <span className="text-xs font-bold text-red-500 bg-red-50 px-3 py-1.5 rounded-md">SOLD</span>
+                     <span className="text-xs font-bold text-red-500 bg-red-50 dark:bg-red-900/30 px-3 py-1.5 rounded-md">SOLD</span>
                   ) : (
                     <Button 
                       size="sm" 
@@ -216,7 +218,7 @@ export default function MarketPage() {
       {/* SELL ITEM MODAL */}
       {showSellModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowSellModal(false)}>
-          <div className="bg-white rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-[#11241b] rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="bg-forest text-white p-5 flex justify-between items-center sticky top-0">
               <h3 className="font-serif text-xl font-bold">List a New Item</h3>
               <button onClick={() => setShowSellModal(false)}><X className="h-6 w-6" /></button>
@@ -225,8 +227,8 @@ export default function MarketPage() {
             <div className="p-6 space-y-4">
               {/* Image Upload */}
               <div>
-                <Label>Product Image</Label>
-                <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed border-border rounded-md">
+                <Label className="text-ink dark:text-white">Product Image</Label>
+                <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed border-border dark:border-[#1f3a2c] rounded-md">
                   <div className="space-y-1 text-center">
                     {form.image_url ? (
                       <div className="relative inline-block">
@@ -235,9 +237,9 @@ export default function MarketPage() {
                       </div>
                     ) : (
                       <>
-                        {uploading ? <Loader2 className="mx-auto h-10 w-10 text-muted animate-spin" /> : <Upload className="mx-auto h-10 w-10 text-muted" />}
-                        <div className="flex text-sm text-muted justify-center">
-                          <label htmlFor="item-image" className="relative cursor-pointer bg-white rounded-md font-medium text-forest hover:text-gold">
+                        {uploading ? <Loader2 className="mx-auto h-10 w-10 text-muted dark:text-[#c0d0c4] animate-spin" /> : <Upload className="mx-auto h-10 w-10 text-muted dark:text-[#c0d0c4]" />}
+                        <div className="flex text-sm text-muted dark:text-[#c0d0c4] justify-center">
+                          <label htmlFor="item-image" className="relative cursor-pointer bg-white dark:bg-[#11241b] rounded-md font-medium text-forest hover:text-gold">
                             <span>Upload a file</span>
                             <input id="item-image" type="file" className="sr-only" accept="image/*" onChange={handleImageUpload} />
                           </label>
@@ -249,22 +251,22 @@ export default function MarketPage() {
               </div>
 
               <div>
-                <Label htmlFor="title">Item Title</Label>
-                <Input id="title" value={form.title} onChange={e => setForm({...form, title: e.target.value})} placeholder="e.g. Campaign Flyers (1000 pcs)" />
+                <Label htmlFor="title" className="text-ink dark:text-white">Item Title</Label>
+                <Input id="title" value={form.title} onChange={e => setForm({...form, title: e.target.value})} placeholder="e.g. Campaign Flyers (1000 pcs)" className="bg-white dark:bg-[#0f1d16] dark:text-white dark:border-[#1f3a2c]" />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="price">Price (CIVICT)</Label>
-                  <Input id="price" type="number" value={form.price} onChange={e => setForm({...form, price: e.target.value})} placeholder="e.g. 500" />
+                  <Label htmlFor="price" className="text-ink dark:text-white">Price (CIVICT)</Label>
+                  <Input id="price" type="number" value={form.price} onChange={e => setForm({...form, price: e.target.value})} placeholder="e.g. 500" className="bg-white dark:bg-[#0f1d16] dark:text-white dark:border-[#1f3a2c]" />
                 </div>
                 <div>
-                  <Label htmlFor="category">Category</Label>
+                  <Label htmlFor="category" className="text-ink dark:text-white">Category</Label>
                   <select 
                     id="category" 
                     value={form.category} 
                     onChange={e => setForm({...form, category: e.target.value})}
-                    className="w-full h-10 px-3 text-sm bg-white border border-border rounded-lg focus:outline-none focus:border-forest"
+                    className="w-full h-10 px-3 text-sm bg-white dark:bg-[#0f1d16] text-ink dark:text-white border border-border dark:border-[#1f3a2c] rounded-lg focus:outline-none focus:border-forest"
                   >
                     <option value="physical">Physical Good</option>
                     <option value="digital">Digital (E-book/Software)</option>
@@ -274,8 +276,15 @@ export default function MarketPage() {
               </div>
 
               <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea id="description" value={form.description} onChange={e => setForm({...form, description: e.target.value})} rows={3} placeholder="Describe the item or service..." />
+                <Label htmlFor="description" className="text-ink dark:text-white">Description</Label>
+                <Textarea 
+                  id="description" 
+                  value={form.description} 
+                  onChange={e => setForm({...form, description: e.target.value})} 
+                  rows={3} 
+                  placeholder="Describe the item or service..." 
+                  className="bg-white dark:bg-[#0f1d16] dark:text-white dark:border-[#1f3a2c]"
+                />
               </div>
 
               <Button onClick={handleList} disabled={listing} className="w-full bg-forest hover:bg-forest-mid h-11">

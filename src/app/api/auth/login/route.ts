@@ -3,8 +3,8 @@ import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 import { createClient } from '@supabase/supabase-js'
 import { signToken } from '@/lib/auth'
+import { sendOTPEmail } from '@/lib/mail'
 
-// Initialize clients inline
 const supabaseAuth = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -24,18 +24,15 @@ const loginSchema = z.object({
 export async function POST(request: Request) {
   const body = await request.json()
   const parsed = loginSchema.safeParse(body)
-  if (!parsed.success) {
-    return NextResponse.json({ error: 'Invalid input' }, { status: 400 })
-  }
+  if (!parsed.success) return NextResponse.json({ error: 'Invalid input' }, { status: 400 })
 
   const { email, password } = parsed.data
 
   // ──────────────────────────────────────────────────────────────
-  // PATH 1: Supabase Auth (For Candidates & New Voters)
+  // PATH 1: Supabase Auth
   // ──────────────────────────────────────────────────────────────
   const { data: authData, error: authError } = await supabaseAuth.auth.signInWithPassword({
-    email,
-    password
+    email, password
   })
 
   if (!authError && authData.user) {
@@ -45,7 +42,6 @@ export async function POST(request: Request) {
       .eq('email', email)
       .single()
 
-    // If they don't exist in custom users table (first time logging in), create them
     if (!dbUser) {
       const { data: newUser, error: insertErr } = await supabaseServer
         .from('users')
@@ -57,29 +53,36 @@ export async function POST(request: Request) {
           password_hash: 'managed_by_supabase_auth',
           is_active: true,
           civict_balance: 0,
-          email_verified: false // New users start as unverified
+          email_verified: false
         })
         .select('id, email, password_hash, role, full_name, ward, lga, state, is_active, civict_balance, email_verified')
         .single()
 
-      if (insertErr) {
-        return NextResponse.json({ error: insertErr.message }, { status: 500 })
-      }
+      if (insertErr) return NextResponse.json({ error: insertErr.message }, { status: 500 })
       dbUser = newUser
     }
 
-    if (!dbUser.is_active) {
-      return NextResponse.json({ error: 'Account suspended' }, { status: 403 })
-    }
+    if (!dbUser.is_active) return NextResponse.json({ error: 'Account suspended' }, { status: 403 })
 
-    // 🔒 NEW: Check if they verified their email via our OTP system
+    // 🔴 NEW: If not verified, send OTP and redirect them!
     if (!dbUser.email_verified) {
+      const otp = Math.floor(100000 + Math.random() * 900000).toString()
+      const expiresAt = new Date()
+      expiresAt.setMinutes(expiresAt.getMinutes() + 15)
+      const otpHash = await bcrypt.hash(otp, 10)
+
+      await supabaseServer.from('email_otp').insert({
+        user_id: dbUser.id, email, otp_hash: otpHash, purpose: 'verify_email', expires_at: expiresAt.toISOString(), used: false
+      })
+
+      await sendOTPEmail(email, otp, dbUser.full_name)
+
       return NextResponse.json({ 
-        error: 'Please verify your email before logging in.' 
+        error: 'Please verify your email. A new code has been sent to your inbox.',
+        redirect: `/verify-email?email=${encodeURIComponent(email)}`
       }, { status: 403 })
     }
 
-    // Update last_seen
     await supabaseServer.from('users').update({ last_seen: new Date().toISOString() }).eq('id', dbUser.id)
 
     const token = await signToken(dbUser.id, dbUser.role)
@@ -87,18 +90,14 @@ export async function POST(request: Request) {
 
     const response = NextResponse.json({ token, user: safeUser })
     response.cookies.set('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 60 * 60 * 24 * 7,
+      httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: 60 * 60 * 24 * 7,
     })
 
     return response
   }
 
   // ──────────────────────────────────────────────────────────────
-  // PATH 2: Custom Auth Fallback (For Old Voters)
+  // PATH 2: Custom Auth Fallback (Legacy Users)
   // ──────────────────────────────────────────────────────────────
   const { data: user, error } = await supabaseServer
     .from('users')
@@ -107,19 +106,29 @@ export async function POST(request: Request) {
     .single()
 
   if (user && user.password_hash !== 'managed_by_supabase_auth') {
-    if (!user.is_active) {
-      return NextResponse.json({ error: 'Account suspended' }, { status: 403 })
-    }
-
-    // 🔒 NEW: Check email verification for legacy users too
-    if (!user.email_verified) {
-      return NextResponse.json({ 
-        error: 'Please verify your email before logging in.' 
-      }, { status: 403 })
-    }
+    if (!user.is_active) return NextResponse.json({ error: 'Account suspended' }, { status: 403 })
 
     const valid = await bcrypt.compare(password, user.password_hash)
     if (valid) {
+      // 🔴 NEW: If not verified, send OTP and redirect them!
+      if (!user.email_verified) {
+        const otp = Math.floor(100000 + Math.random() * 900000).toString()
+        const expiresAt = new Date()
+        expiresAt.setMinutes(expiresAt.getMinutes() + 15)
+        const otpHash = await bcrypt.hash(otp, 10)
+
+        await supabaseServer.from('email_otp').insert({
+          user_id: user.id, email, otp_hash: otpHash, purpose: 'verify_email', expires_at: expiresAt.toISOString(), used: false
+        })
+
+        await sendOTPEmail(email, otp, user.full_name)
+
+        return NextResponse.json({ 
+          error: 'Please verify your email. A new code has been sent to your inbox.',
+          redirect: `/verify-email?email=${encodeURIComponent(email)}`
+        }, { status: 403 })
+      }
+
       await supabaseServer.from('users').update({ last_seen: new Date().toISOString() }).eq('id', user.id)
 
       const token = await signToken(user.id, user.role)
@@ -127,17 +136,12 @@ export async function POST(request: Request) {
 
       const response = NextResponse.json({ token, user: safeUser })
       response.cookies.set('token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/',
-        maxAge: 60 * 60 * 24 * 7,
+        httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: 60 * 60 * 24 * 7,
       })
 
       return response
     }
   }
 
-  // If both paths fail
   return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 })
 }

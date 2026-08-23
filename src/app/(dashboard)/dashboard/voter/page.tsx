@@ -110,7 +110,7 @@ export default async function VoterDashboardPage() {
           {/* National & Senatorial */}
           {nationalReps.length > 0 && (
             <div className="px-5 py-4">
-              <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted mb-3">National & Senatorial</h4>
+              <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted dark:text-[#c0d0c4] mb-3">National & Senatorial</h4>
               <div className="space-y-3">
                 {nationalReps.map((c: any) => (
                   <Link href={`/candidates/${c.id}`} key={c.id} className="flex items-center gap-3 hover:bg-forest-faint dark:hover:bg-white/5 p-2 rounded-lg transition-colors">
@@ -119,9 +119,9 @@ export default async function VoterDashboardPage() {
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-semibold text-ink dark:text-white">{c.full_name}</p>
-                      <p className="text-xs text-muted">{c.office} · {c.party}</p>
+                      <p className="text-xs text-muted dark:text-[#c0d0c4]">{c.office} · {c.party}</p>
                     </div>
-                    <ChevronRight className="h-4 w-4 text-muted" />
+                    <ChevronRight className="h-4 w-4 text-muted dark:text-[#c0d0c4]" />
                   </Link>
                 ))}
               </div>
@@ -131,7 +131,7 @@ export default async function VoterDashboardPage() {
           {/* State Level */}
           {stateReps.length > 0 && (
             <div className="px-5 py-4">
-              <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted mb-3">State Level</h4>
+              <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted dark:text-[#c0d0c4] mb-3">State Level</h4>
               <div className="space-y-3">
                 {stateReps.map((c: any) => (
                   <Link href={`/candidates/${c.id}`} key={c.id} className="flex items-center gap-3 hover:bg-forest-faint dark:hover:bg-white/5 p-2 rounded-lg transition-colors">
@@ -140,9 +140,9 @@ export default async function VoterDashboardPage() {
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-semibold text-ink dark:text-white">{c.full_name}</p>
-                      <p className="text-xs text-muted">{c.office} · {c.party}</p>
+                      <p className="text-xs text-muted dark:text-[#c0d0c4]">{c.office} · {c.party}</p>
                     </div>
-                    <ChevronRight className="h-4 w-4 text-muted" />
+                    <ChevronRight className="h-4 w-4 text-muted dark:text-[#c0d0c4]" />
                   </Link>
                 ))}
               </div>
@@ -152,7 +152,7 @@ export default async function VoterDashboardPage() {
           {/* LGA Level */}
           {lgaReps.length > 0 && (
             <div className="px-5 py-4">
-              <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted mb-3">Local Government (LGA)</h4>
+              <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted dark:text-[#c0d0c4] mb-3">Local Government (LGA)</h4>
               <div className="space-y-3">
                 {lgaReps.map((c: any) => (
                   <Link href={`/candidates/${c.id}`} key={c.id} className="flex items-center gap-3 hover:bg-forest-faint dark:hover:bg-white/5 p-2 rounded-lg transition-colors">
@@ -161,9 +161,9 @@ export default async function VoterDashboardPage() {
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-semibold text-ink dark:text-white">{c.full_name}</p>
-                      <p className="text-xs text-muted">{c.office} · {c.party}</p>
+                      <p className="text-xs text-muted dark:text-[#c0d0c4]">{c.office} · {c.party}</p>
                     </div>
-                    <ChevronRight className="h-4 w-4 text-muted" />
+                    <ChevronRight className="h-4 w-4 text-muted dark:text-[#c0d0c4]" />
                   </Link>
                 ))}
               </div>
@@ -173,7 +173,7 @@ export default async function VoterDashboardPage() {
           {/* Ward Level */}
           {wardReps.length > 0 && (
             <div className="px-5 py-4">
-              <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted mb-3">Ward Level</h4>
+              <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted dark:text-[#c0d0c4] mb-3">Ward Level</h4>
               <div className="space-y-3">
                 {wardReps.map((c: any) => (
                   <Link href={`/candidates/${c.id}`} key={c.id} className="flex items-center gap-3 hover:bg-forest-faint dark:hover:bg-white/5 p-2 rounded-lg transition-colors">
@@ -182,9 +182,9 @@ export default async function VoterDashboardPage() {
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-semibold text-ink dark:text-white">{c.full_name}</p>
-                      <p className="text-xs text-muted">{c.office} · {c.party}</p>
+                      <p className="text-xs text-muted dark:text-[#c0d0c4]">{c.office} · {c.party}</p>
                     </div>
-                    <ChevronRight className="h-4 w-4 text-muted" />
+                    <ChevronRight className="h-4 w-4 text-muted dark:text-[#c0d0c4]" />
                   </Link>
                 ))}
               </div>
@@ -194,7 +194,7 @@ export default async function VoterDashboardPage() {
           {/* Empty State */}
           {candidates?.length === 0 && (
             <div className="px-5 py-8 text-center">
-              <p className="text-sm text-muted">No candidates have registered in your specific constituency yet. Check back soon!</p>
+              <p className="text-sm text-muted dark:text-[#c0d0c4]">No candidates have registered in your specific constituency yet. Check back soon!</p>
             </div>
           )}
         </div>

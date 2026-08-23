@@ -121,19 +121,17 @@ export function CandidateRegisterForm() {
     try {
       const tempId = crypto.randomUUID()
 
-      // Upload documents
       const docPaths: Record<string, string> = {}
       for (const [docKey, file] of Object.entries(uploadedFiles)) {
         if (file) {
           const ext = file.name.split('.').pop()
           const path = `${tempId}/${docKey}.${ext}`
-          const { error: uploadErr } = await supabase.storage.from('candidate-docs').upload(path, file, { upsert: true })
+          const { error: uploadErr } = await supabase.storage.from('candidate-docs').upload(path, file)
           if (uploadErr) throw uploadErr
           docPaths[`doc_${docKey}`] = path
         }
       }
 
-      // Call the secure API route
       const res = await fetch('/api/auth/register-candidate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -163,20 +161,18 @@ export function CandidateRegisterForm() {
     }
   }
 
-  // We keep the success screen as a fallback in case redirect is blocked,
-  // but normally the router.push() above will take them straight to the OTP screen.
   if (success) {
     return (
-      <div className="max-w-2xl mx-auto bg-white border border-border rounded-2xl p-8 shadow-sm text-center">
-        <div className="w-16 h-16 rounded-full bg-forest-light flex items-center justify-center mx-auto mb-4">
-          <CheckCircle className="h-8 w-8 text-forest" />
+      <div className="max-w-2xl mx-auto bg-white dark:bg-[#11241b] border border-border dark:border-[#1f3a2c] rounded-2xl p-8 shadow-sm text-center">
+        <div className="w-16 h-16 rounded-full bg-forest-light dark:bg-[#1b3a2b] flex items-center justify-center mx-auto mb-4">
+          <CheckCircle className="h-8 w-8 text-forest dark:text-forest-700" />
         </div>
-        <h2 className="font-serif text-2xl font-black text-ink mb-2">Application Submitted!</h2>
-        <p className="text-sm text-muted max-w-md mx-auto mb-6">
+        <h2 className="font-serif text-2xl font-black text-ink dark:text-white mb-2">Application Submitted!</h2>
+        <p className="text-sm text-muted dark:text-[#c0d0c4] max-w-md mx-auto mb-6">
           Your candidate registration has been received. Please check your email to verify your account. Our team will review your application and contact you within 2–5 business days.
         </p>
         <div className="flex gap-3 justify-center">
-          <Button onClick={() => router.push('/')} variant="outline">
+          <Button onClick={() => router.push('/')} variant="outline" className="dark:bg-[#0f1d16] dark:text-white dark:border-[#1f3a2c]">
             Back to Home
           </Button>
           <Button onClick={() => router.push('/login')} className="bg-forest hover:bg-forest-mid text-white">
@@ -188,7 +184,7 @@ export function CandidateRegisterForm() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto bg-white border border-border rounded-2xl shadow-sm overflow-hidden relative">
+    <div className="max-w-3xl mx-auto bg-white dark:bg-[#11241b] border border-border dark:border-[#1f3a2c] rounded-2xl shadow-sm overflow-hidden relative">
       <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-forest to-gold" />
 
       {/* Progress Bar */}
@@ -200,34 +196,34 @@ export function CandidateRegisterForm() {
             <div className="flex flex-col items-center">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all ${
                 currentStep > step.num ? 'bg-forest text-white border-forest' :
-                currentStep === step.num ? 'bg-white text-forest border-forest' : 'bg-white text-muted border-border'
+                currentStep === step.num ? 'bg-white dark:bg-[#11241b] text-forest border-forest' : 'bg-white dark:bg-[#11241b] text-muted dark:text-[#c0d0c4] border-border dark:border-[#1f3a2c]'
               }`}>
                 {currentStep > step.num ? <CheckCircle className="h-4 w-4" /> : step.num}
               </div>
-              <span className={`text-[10px] font-semibold tracking-wide uppercase mt-1.5 ${currentStep >= step.num ? 'text-forest' : 'text-muted'}`}>{step.label}</span>
+              <span className={`text-[10px] font-semibold tracking-wide uppercase mt-1.5 ${currentStep >= step.num ? 'text-forest dark:text-forest-700' : 'text-muted dark:text-[#c0d0c4]'}`}>{step.label}</span>
             </div>
-            {i < 4 && <div className={`flex-1 h-0.5 mx-2 mb-5 ${currentStep > step.num ? 'bg-forest' : 'bg-border'}`} />}
+            {i < 4 && <div className={`flex-1 h-0.5 mx-2 mb-5 ${currentStep > step.num ? 'bg-forest' : 'bg-border dark:bg-[#1f3a2c]'}`} />}
           </div>
         ))}
       </div>
 
       <div className="p-8 pt-4">
-        {error && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-md p-3 mb-6">{error}</div>}
+        {error && <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm rounded-md p-3 mb-6">{error}</div>}
 
         {/* STEP 1: PERSONAL DETAILS */}
         {currentStep === 1 && (
           <div className="space-y-4 animate-fade-up">
-            <h2 className="font-serif text-2xl font-black text-ink">Personal Details</h2>
-            <p className="text-sm text-muted -mt-2">Basic biographical information about you.</p>
+            <h2 className="font-serif text-2xl font-black text-ink dark:text-white">Personal Details</h2>
+            <p className="text-sm text-muted dark:text-[#c0d0c4] -mt-2">Basic biographical information about you.</p>
             <div className="grid md:grid-cols-2 gap-4">
               <div className="md:col-span-2 flex flex-col items-center mb-4">
-                  <div className="relative w-24 h-24 rounded-full bg-sand border-2 border-dashed border-border flex items-center justify-center overflow-hidden">
+                  <div className="relative w-24 h-24 rounded-full bg-sand dark:bg-[#0f1d16] border-2 border-dashed border-border dark:border-[#1f3a2c] flex items-center justify-center overflow-hidden">
                     {avatarUploading ? (
-                      <Loader2 className="h-6 w-6 animate-spin text-muted" />
+                      <Loader2 className="h-6 w-6 animate-spin text-muted dark:text-[#c0d0c4]" />
                     ) : form.avatar_url ? (
                       <Image src={form.avatar_url} alt="Avatar" width={96} height={96} className="w-full h-full object-cover" />
                     ) : (
-                      <Upload className="h-6 w-6 text-muted" />
+                      <Upload className="h-6 w-6 text-muted dark:text-[#c0d0c4]" />
                     )}
                     <input
                       type="file"
@@ -236,19 +232,19 @@ export function CandidateRegisterForm() {
                       onChange={handleAvatarUpload}
                     />
                   </div>
-                  <p className="text-xs text-muted mt-2">Upload Profile Picture</p>
+                  <p className="text-xs text-muted dark:text-[#c0d0c4] mt-2">Upload Profile Picture</p>
                 </div>
               <div>
-                <label className="block text-xs font-semibold text-ink mb-1.5">Full Legal Name *</label>
-                <Input name="full_name" value={form.full_name} onChange={handleInputChange} placeholder="As it appears on your ID" />
+                <label className="block text-xs font-semibold text-ink dark:text-white mb-1.5">Full Legal Name *</label>
+                <Input name="full_name" value={form.full_name} onChange={handleInputChange} placeholder="As it appears on your ID" className="bg-white dark:bg-[#0f1d16] dark:text-white dark:border-[#1f3a2c]" />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-ink mb-1.5">Date of Birth</label>
-                <Input type="date" name="date_of_birth" value={form.date_of_birth} onChange={handleInputChange} />
+                <label className="block text-xs font-semibold text-ink dark:text-white mb-1.5">Date of Birth</label>
+                <Input type="date" name="date_of_birth" value={form.date_of_birth} onChange={handleInputChange} className="bg-white dark:bg-[#0f1d16] dark:text-white dark:border-[#1f3a2c]" />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-ink mb-1.5">Gender</label>
-                <select name="gender" value={form.gender} onChange={handleInputChange} className="w-full h-10 px-3 text-sm bg-white border border-border rounded-lg focus:outline-none focus:border-forest">
+                <label className="block text-xs font-semibold text-ink dark:text-white mb-1.5">Gender</label>
+                <select name="gender" value={form.gender} onChange={handleInputChange} className="w-full h-10 px-3 text-sm bg-white dark:bg-[#0f1d16] dark:text-white border border-border dark:border-[#1f3a2c] rounded-lg focus:outline-none focus:border-forest">
                   <option value="">Select...</option>
                   <option value="male">Male</option>
                   <option value="female">Female</option>
@@ -256,28 +252,28 @@ export function CandidateRegisterForm() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-ink mb-1.5">Phone Number *</label>
-                <Input type="tel" name="phone" value={form.phone} onChange={handleInputChange} placeholder="08012345678" />
+                <label className="block text-xs font-semibold text-ink dark:text-white mb-1.5">Phone Number *</label>
+                <Input type="tel" name="phone" value={form.phone} onChange={handleInputChange} placeholder="08012345678" className="bg-white dark:bg-[#0f1d16] dark:text-white dark:border-[#1f3a2c]" />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-ink mb-1.5">Email Address *</label>
-                <Input type="email" name="email" value={form.email} onChange={handleInputChange} placeholder="you@example.com" />
+                <label className="block text-xs font-semibold text-ink dark:text-white mb-1.5">Email Address *</label>
+                <Input type="email" name="email" value={form.email} onChange={handleInputChange} placeholder="you@example.com" className="bg-white dark:bg-[#0f1d16] dark:text-white dark:border-[#1f3a2c]" />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-ink mb-1.5">Password *</label>
-                <Input type="password" name="password" value={form.password} onChange={handleInputChange} placeholder="Min. 6 characters" />
+                <label className="block text-xs font-semibold text-ink dark:text-white mb-1.5">Password *</label>
+                <Input type="password" name="password" value={form.password} onChange={handleInputChange} placeholder="Min. 6 characters" className="bg-white dark:bg-[#0f1d16] dark:text-white dark:border-[#1f3a2c]" />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-ink mb-1.5">State of Origin</label>
-                <select name="state_of_origin" value={form.state_of_origin} onChange={handleInputChange} className="w-full h-10 px-3 text-sm bg-white border border-border rounded-lg focus:outline-none focus:border-forest">
+                <label className="block text-xs font-semibold text-ink dark:text-white mb-1.5">State of Origin</label>
+                <select name="state_of_origin" value={form.state_of_origin} onChange={handleInputChange} className="w-full h-10 px-3 text-sm bg-white dark:bg-[#0f1d16] dark:text-white border border-border dark:border-[#1f3a2c] rounded-lg focus:outline-none focus:border-forest">
                   <option value="">Select state…</option>
                   {STATES.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-ink mb-1.5">Home Address</label>
-              <Input name="home_address" value={form.home_address} onChange={handleInputChange} placeholder="House number, street, city" />
+              <label className="block text-xs font-semibold text-ink dark:text-white mb-1.5">Home Address</label>
+              <Input name="home_address" value={form.home_address} onChange={handleInputChange} placeholder="House number, street, city" className="bg-white dark:bg-[#0f1d16] dark:text-white dark:border-[#1f3a2c]" />
             </div>
           </div>
         )}
@@ -285,38 +281,38 @@ export function CandidateRegisterForm() {
         {/* STEP 2: CONSTITUENCY */}
         {currentStep === 2 && (
           <div className="space-y-4 animate-fade-up">
-            <h2 className="font-serif text-2xl font-black text-ink">Constituency Information</h2>
-            <p className="text-sm text-muted -mt-2">Where are you running? Provide your electoral constituency details.</p>
+            <h2 className="font-serif text-2xl font-black text-ink dark:text-white">Constituency Information</h2>
+            <p className="text-sm text-muted dark:text-[#c0d0c4] -mt-2">Where are you running? Provide your electoral constituency details.</p>
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-ink mb-1.5">State of Constituency *</label>
-                <select name="state_constituency" value={form.state_constituency} onChange={handleInputChange} className="w-full h-10 px-3 text-sm bg-white border border-border rounded-lg focus:outline-none focus:border-forest">
+                <label className="block text-xs font-semibold text-ink dark:text-white mb-1.5">State of Constituency *</label>
+                <select name="state_constituency" value={form.state_constituency} onChange={handleInputChange} className="w-full h-10 px-3 text-sm bg-white dark:bg-[#0f1d16] dark:text-white border border-border dark:border-[#1f3a2c] rounded-lg focus:outline-none focus:border-forest">
                   <option value="">Select state…</option>
                   {STATES.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-ink mb-1.5">LGA of Constituency *</label>
-                <select name="lga_constituency" value={form.lga_constituency} onChange={handleInputChange} disabled={!form.state_constituency} className="w-full h-10 px-3 text-sm bg-white border border-border rounded-lg focus:outline-none focus:border-forest disabled:opacity-50">
+                <label className="block text-xs font-semibold text-ink dark:text-white mb-1.5">LGA of Constituency *</label>
+                <select name="lga_constituency" value={form.lga_constituency} onChange={handleInputChange} disabled={!form.state_constituency} className="w-full h-10 px-3 text-sm bg-white dark:bg-[#0f1d16] dark:text-white border border-border dark:border-[#1f3a2c] rounded-lg focus:outline-none focus:border-forest disabled:opacity-50">
                   <option value="">Select LGA…</option>
                   {lgas.map(l => <option key={l} value={l}>{l}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-ink mb-1.5">Ward</label>
-                <select name="ward" value={form.ward} onChange={handleInputChange} disabled={!form.lga_constituency} className="w-full h-10 px-3 text-sm bg-white border border-border rounded-lg focus:outline-none focus:border-forest disabled:opacity-50">
+                <label className="block text-xs font-semibold text-ink dark:text-white mb-1.5">Ward</label>
+                <select name="ward" value={form.ward} onChange={handleInputChange} disabled={!form.lga_constituency} className="w-full h-10 px-3 text-sm bg-white dark:bg-[#0f1d16] dark:text-white border border-border dark:border-[#1f3a2c] rounded-lg focus:outline-none focus:border-forest disabled:opacity-50">
                   <option value="">Select ward…</option>
                   {wards.map(w => <option key={w} value={w}>{w}</option>)}
                 </select>
               </div>
                <div>
-                <label className="block text-xs font-semibold text-ink mb-1.5">Senatorial District</label>
+                <label className="block text-xs font-semibold text-ink dark:text-white mb-1.5">Senatorial District</label>
                 <select 
                   name="senatorial_district" 
                   value={form.senatorial_district} 
                   onChange={handleInputChange} 
                   disabled={!form.state_constituency} 
-                  className="w-full h-10 px-3 text-sm bg-white border border-border rounded-lg focus:outline-none focus:border-forest disabled:opacity-50"
+                  className="w-full h-10 px-3 text-sm bg-white dark:bg-[#0f1d16] dark:text-white border border-border dark:border-[#1f3a2c] rounded-lg focus:outline-none focus:border-forest disabled:opacity-50"
                 >
                   <option value="">Select District…</option>
                   {districts.map(d => <option key={d} value={d}>{d}</option>)}
@@ -324,13 +320,13 @@ export function CandidateRegisterForm() {
               </div>
             </div>
              <div>
-                <label className="block text-xs font-semibold text-ink mb-1.5">Federal Constituency</label>
+                <label className="block text-xs font-semibold text-ink dark:text-white mb-1.5">Federal Constituency</label>
                 <select 
                   name="federal_constituency" 
                   value={form.federal_constituency} 
                   onChange={handleInputChange} 
                   disabled={!form.state_constituency} 
-                  className="w-full h-10 px-3 text-sm bg-white border border-border rounded-lg focus:outline-none focus:border-forest disabled:opacity-50"
+                  className="w-full h-10 px-3 text-sm bg-white dark:bg-[#0f1d16] dark:text-white border border-border dark:border-[#1f3a2c] rounded-lg focus:outline-none focus:border-forest disabled:opacity-50"
                 >
                   <option value="">Select Constituency…</option>
                   {constituencies.map(c => <option key={c} value={c}>{c}</option>)}
@@ -342,31 +338,31 @@ export function CandidateRegisterForm() {
         {/* STEP 3: POLITICAL DETAILS */}
         {currentStep === 3 && (
           <div className="space-y-4 animate-fade-up">
-            <h2 className="font-serif text-2xl font-black text-ink">Political Information</h2>
-            <p className="text-sm text-muted -mt-2">Your party affiliation, position, and campaign message.</p>
+            <h2 className="font-serif text-2xl font-black text-ink dark:text-white">Political Information</h2>
+            <p className="text-sm text-muted dark:text-[#c0d0c4] -mt-2">Your party affiliation, position, and campaign message.</p>
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-ink mb-1.5">Political Party *</label>
-                <select name="party" value={form.party} onChange={handleInputChange} className="w-full h-10 px-3 text-sm bg-white border border-border rounded-lg focus:outline-none focus:border-forest">
+                <label className="block text-xs font-semibold text-ink dark:text-white mb-1.5">Political Party *</label>
+                <select name="party" value={form.party} onChange={handleInputChange} className="w-full h-10 px-3 text-sm bg-white dark:bg-[#0f1d16] dark:text-white border border-border dark:border-[#1f3a2c] rounded-lg focus:outline-none focus:border-forest">
                   <option value="">Select party…</option>
                   {NIGERIAN_PARTIES.map(p => <option key={p.abbr} value={p.name}>{p.name} ({p.abbr})</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-ink mb-1.5">Position Running For *</label>
-                <select name="office_level" value={form.office_level} onChange={handleInputChange} className="w-full h-10 px-3 text-sm bg-white border border-border rounded-lg focus:outline-none focus:border-forest">
+                <label className="block text-xs font-semibold text-ink dark:text-white mb-1.5">Position Running For *</label>
+                <select name="office_level" value={form.office_level} onChange={handleInputChange} className="w-full h-10 px-3 text-sm bg-white dark:bg-[#0f1d16] dark:text-white border border-border dark:border-[#1f3a2c] rounded-lg focus:outline-none focus:border-forest">
                   <option value="">Select position…</option>
                   {OFFICE_LEVELS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               </div>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-ink mb-1.5">Campaign Slogan</label>
-              <Input name="campaign_slogan" value={form.campaign_slogan} onChange={handleInputChange} placeholder="e.g. A New Dawn for Edo State" />
+              <label className="block text-xs font-semibold text-ink dark:text-white mb-1.5">Campaign Slogan</label>
+              <Input name="campaign_slogan" value={form.campaign_slogan} onChange={handleInputChange} placeholder="e.g. A New Dawn for Edo State" className="bg-white dark:bg-[#0f1d16] dark:text-white dark:border-[#1f3a2c]" />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-ink mb-1.5">Manifesto Summary</label>
-              <Textarea name="manifesto_summary" value={form.manifesto_summary} onChange={handleInputChange} rows={5} placeholder="Briefly describe your key policy priorities..." />
+              <label className="block text-xs font-semibold text-ink dark:text-white mb-1.5">Manifesto Summary</label>
+              <Textarea name="manifesto_summary" value={form.manifesto_summary} onChange={handleInputChange} rows={5} placeholder="Briefly describe your key policy priorities..." className="bg-white dark:bg-[#0f1d16] dark:text-white dark:border-[#1f3a2c]" />
             </div>
           </div>
         )}
@@ -374,23 +370,23 @@ export function CandidateRegisterForm() {
         {/* STEP 4: DOCUMENTS */}
         {currentStep === 4 && (
           <div className="space-y-6 animate-fade-up">
-            <h2 className="font-serif text-2xl font-black text-ink">Supporting Documents</h2>
-            <p className="text-sm text-muted -mt-2">All documents are optional for now. Accepted formats: JPG, PNG, PDF — max 50MB.</p>
+            <h2 className="font-serif text-2xl font-black text-ink dark:text-white">Supporting Documents</h2>
+            <p className="text-sm text-muted dark:text-[#c0d0c4] -mt-2">All documents are optional for now. Accepted formats: JPG, PNG, PDF — max 50MB.</p>
             <div className="grid md:grid-cols-2 gap-4">
               {Object.entries({
                 id_card: 'National ID / NIN Slip', party_membership: 'Party Membership Form', nomination_form: 'INEC Nomination Form', cert_return: 'Certificate of Return'
               }).map(([key, label]) => (
-                <div key={key} className="border border-border rounded-lg p-4 bg-sand">
-                  <p className="text-sm font-semibold text-ink mb-2">{label}</p>
+                <div key={key} className="border border-border dark:border-[#1f3a2c] rounded-lg p-4 bg-sand dark:bg-[#0f1d16]">
+                  <p className="text-sm font-semibold text-ink dark:text-white mb-2">{label}</p>
                   {!uploadedFiles[key] ? (
-                    <label className="flex flex-col items-center justify-center h-24 border-2 border-dashed border-border rounded-md cursor-pointer hover:border-forest hover:bg-forest-faint transition-colors">
-                      <Upload className="h-5 w-5 text-muted mb-1" />
-                      <span className="text-xs text-muted">Click to upload</span>
+                    <label className="flex flex-col items-center justify-center h-24 border-2 border-dashed border-border dark:border-[#1f3a2c] rounded-md cursor-pointer hover:border-forest dark:hover:border-forest-700 hover:bg-forest-faint dark:hover:bg-[#1b3a2b] transition-colors">
+                      <Upload className="h-5 w-5 text-muted dark:text-[#c0d0c4] mb-1" />
+                      <span className="text-xs text-muted dark:text-[#c0d0c4]">Click to upload</span>
                       <input type="file" accept="image/jpeg,image/png,application/pdf" className="hidden" onChange={(e) => handleFileChange(e, key)} />
                     </label>
                   ) : (
-                    <div className="flex items-center justify-between bg-forest-light border border-forest/20 rounded-md p-2">
-                      <span className="text-xs text-ink truncate">{uploadedFiles[key]!.name}</span>
+                    <div className="flex items-center justify-between bg-forest-light dark:bg-[#1b3a2b] border border-forest/20 dark:border-forest-700 rounded-md p-2">
+                      <span className="text-xs text-ink dark:text-white truncate">{uploadedFiles[key]!.name}</span>
                       <button onClick={() => removeFile(key)} className="text-red-500 text-xs font-bold ml-2">✕</button>
                     </div>
                   )}
@@ -403,25 +399,25 @@ export function CandidateRegisterForm() {
         {/* STEP 5: REVIEW & SUBMIT */}
         {currentStep === 5 && (
           <div className="space-y-6 animate-fade-up">
-            <h2 className="font-serif text-2xl font-black text-ink">Review Your Application</h2>
-            <p className="text-sm text-muted -mt-2">Please review all details carefully before submitting.</p>
-            <div className="bg-sand border border-border rounded-lg p-6 space-y-4 text-sm">
+            <h2 className="font-serif text-2xl font-black text-ink dark:text-white">Review Your Application</h2>
+            <p className="text-sm text-muted dark:text-[#c0d0c4] -mt-2">Please review all details carefully before submitting.</p>
+            <div className="bg-sand dark:bg-[#0f1d16] border border-border dark:border-[#1f3a2c] rounded-lg p-6 space-y-4 text-sm">
               <div className="grid grid-cols-2 gap-4">
-                <div><strong className="block text-muted text-xs uppercase mb-1">Name</strong> {form.full_name}</div>
-                <div><strong className="block text-muted text-xs uppercase mb-1">Email</strong> {form.email}</div>
-                <div><strong className="block text-muted text-xs uppercase mb-1">Phone</strong> {form.phone}</div>
-                <div><strong className="block text-muted text-xs uppercase mb-1">Party</strong> {form.party}</div>
-                <div><strong className="block text-muted text-xs uppercase mb-1">Position</strong> {OFFICE_LEVELS.find(o => o.value === form.office_level)?.label}</div>
-                <div><strong className="block text-muted text-xs uppercase mb-1">Constituency</strong> {form.lga_constituency}, {form.state_constituency}</div>
+                <div><strong className="block text-muted dark:text-[#c0d0c4] text-xs uppercase mb-1">Name</strong> <span className="text-ink dark:text-white">{form.full_name}</span></div>
+                <div><strong className="block text-muted dark:text-[#c0d0c4] text-xs uppercase mb-1">Email</strong> <span className="text-ink dark:text-white">{form.email}</span></div>
+                <div><strong className="block text-muted dark:text-[#c0d0c4] text-xs uppercase mb-1">Phone</strong> <span className="text-ink dark:text-white">{form.phone}</span></div>
+                <div><strong className="block text-muted dark:text-[#c0d0c4] text-xs uppercase mb-1">Party</strong> <span className="text-ink dark:text-white">{form.party}</span></div>
+                <div><strong className="block text-muted dark:text-[#c0d0c4] text-xs uppercase mb-1">Position</strong> <span className="text-ink dark:text-white">{OFFICE_LEVELS.find(o => o.value === form.office_level)?.label}</span></div>
+                <div><strong className="block text-muted dark:text-[#c0d0c4] text-xs uppercase mb-1">Constituency</strong> <span className="text-ink dark:text-white">{form.lga_constituency}, {form.state_constituency}</span></div>
               </div>
               {form.manifesto_summary && (
                 <div>
-                  <strong className="block text-muted text-xs uppercase mb-1">Manifesto</strong>
-                  <p className="text-ink/80">{form.manifesto_summary}</p>
+                  <strong className="block text-muted dark:text-[#c0d0c4] text-xs uppercase mb-1">Manifesto</strong>
+                  <p className="text-ink/80 dark:text-[#c0d0c4]">{form.manifesto_summary}</p>
                 </div>
               )}
             </div>
-            <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-md p-3 flex items-center gap-2">
+            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs rounded-md p-3 flex items-center gap-2">
               <span>⚠️</span>
               <span>By submitting, you confirm that all information provided is accurate and truthful. False information may result in disqualification.</span>
             </div>
@@ -429,9 +425,9 @@ export function CandidateRegisterForm() {
         )}
 
         {/* Navigation Buttons */}
-        <div className="flex justify-between items-center mt-8 pt-6 border-t border-border-light">
+        <div className="flex justify-between items-center mt-8 pt-6 border-t border-border-light dark:border-[#1f3a2c]">
           {currentStep > 1 ? (
-            <Button variant="outline" onClick={prevStep} disabled={loading}>
+            <Button variant="outline" onClick={prevStep} disabled={loading} className="dark:bg-[#0f1d16] dark:text-white dark:border-[#1f3a2c]">
               <ChevronLeft className="h-4 w-4 mr-1" /> Back
             </Button>
           ) : <div />}

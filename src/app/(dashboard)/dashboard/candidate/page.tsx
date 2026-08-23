@@ -26,11 +26,12 @@ export default async function CandidateDashboardPage() {
     .eq('user_id', payload.userId)
     .single()
 
+  // 🔴 NEW: Show a Pending Approval screen instead of redirecting!
   if (!candidate) {
     return (
-      <div className="bg-white border border-border rounded-xl p-8 text-center">
-        <h2 className="text-xl font-bold mb-2">Profile Pending</h2>
-        <p className="text-muted">Your candidate profile is still under review. Please check back later.</p>
+      <div className="bg-white dark:bg-[#11241b] border border-border dark:border-[#1f3a2c] rounded-xl p-8 text-center max-w-md mx-auto mt-10">
+        <h2 className="text-xl font-bold mb-2 text-ink dark:text-white">Profile Pending</h2>
+        <p className="text-muted dark:text-[#c0d0c4]">Your candidate profile is currently under review by our admin team. You will be notified by email once it is approved. Please check back later.</p>
       </div>
     )
   }
