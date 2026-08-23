@@ -143,7 +143,7 @@ export function CandidateHub({ candidateId, initialName, candidateLga, avatarUrl
     toast.success('Live session ended. (In production, a replay would be saved to your feed)')
   }
 
-  if (loading) return <div className="p-8 text-center"><Loader2 className="h-8 w-8 animate-spin mx-auto text-forest" /></div>
+  if (loading) return <div className="p-8 text-center"><Loader2 className="h-8 w-8 animate-spin mx-auto text-forest dark:text-forest-700" /></div>
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-10">
@@ -160,17 +160,18 @@ export function CandidateHub({ candidateId, initialName, candidateLga, avatarUrl
               </div>
             )}
             <div className="pb-2">
-              <h1 className="font-serif text-sm md:text-2xl font-black text-ink dark:text-white flex flex-col md:flex-row items-start md:items-center gap-2">
+              {/* 🔴 FIXED: Added md:text-2xl to ensure name is large and readable in light mode */}
+              <h1 className="font-serif text-lg md:text-2xl font-black text-white flex flex-col md:flex-row items-start md:items-center gap-2">
                 {initialName}
                 <span className="text-xs font-bold bg-forest-light dark:bg-[#1b3a2b] text-forest dark:text-forest-700 px-2 py-1 rounded flex items-center gap-1">
                   <CheckCircle className="h-3 w-3" /> Verified
                 </span>
               </h1>
-              <p className="text-sm text-muted dark:text-[#c0d0c4] pt-6">Candidate Profile & Media Hub</p>
+              <p className="text-sm text-muted dark:text-[#c0d0c4] pt-2 md:pt-6">Candidate Profile & Media Hub</p>
               
               <Link 
                 href={`/lga/${lgaSlug}`} 
-                className="text-xs font-normal md:font-semibold text-gold hover:underline inline-flex items-center gap-1 bg-gold/10 px-2 py-1 rounded whitespace-nowrap"
+                className="text-xs font-normal md:font-semibold text-gold hover:underline inline-flex items-center gap-1 bg-gold/10 px-2 py-1 rounded whitespace-nowrap mt-2"
               >
                 <MapPin className="h-3 w-3" /> View {candidateLga} LGA Hub & Ads
               </Link>

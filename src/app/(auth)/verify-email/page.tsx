@@ -81,17 +81,17 @@ function VerifyForm() {
   }
 
   return (
-    <div className="min-h-screen bg-sand flex items-center justify-center p-6">
-      <div className="w-full max-w-md bg-white border border-border rounded-2xl p-10 shadow-lg">
-        <h1 className="font-serif text-2xl font-black text-ink mb-2">Verify Your Email</h1>
-        <p className="text-sm text-muted mb-6">Enter the 6-digit code we sent to <strong>{email}</strong></p>
+    <div className="min-h-screen bg-sand dark:bg-[#0f1d16] flex items-center justify-center p-6">
+      <div className="w-full max-w-md bg-white dark:bg-[#11241b] border border-border dark:border-[#1f3a2c] rounded-2xl p-10 shadow-lg">
+        <h1 className="font-serif text-2xl font-black text-ink dark:text-white mb-2">Verify Your Email</h1>
+        <p className="text-sm text-muted dark:text-[#c0d0c4] mb-6">Enter the 6-digit code we sent to <strong className="text-ink dark:text-white">{email}</strong></p>
         
         <form onSubmit={handleVerify} className="space-y-4">
           <Input 
             value={otp} 
             onChange={e => setOtp(e.target.value.replace(/\D/g, ''))} 
             maxLength={6}
-            className="text-center text-2xl tracking-[0.5em] font-bold h-14"
+            className="text-center text-2xl tracking-[0.5em] font-bold h-14 bg-white dark:bg-[#0f1d16] dark:text-white dark:border-[#1f3a2c]"
             placeholder="000000" 
           />
           <Button type="submit" disabled={loading || otp.length !== 6} className="w-full bg-forest hover:bg-forest-mid h-11">
@@ -111,13 +111,13 @@ function VerifyForm() {
               {resending ? 'Sending...' : 'Resend Code'}
             </button>
           ) : (
-            <p className="text-xs text-muted">
+            <p className="text-xs text-muted dark:text-[#c0d0c4]">
               Resend code in {timer}s
             </p>
           )}
         </div>
 
-        <p className="text-center text-sm text-muted mt-4">
+        <p className="text-center text-sm text-muted dark:text-[#c0d0c4] mt-4">
           <Link href="/login" className="text-gold font-semibold">Back to Login</Link>
         </p>
       </div>
@@ -127,7 +127,7 @@ function VerifyForm() {
 
 export default function VerifyEmailPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-sand flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-forest"></div></div>}>
+    <Suspense fallback={<div className="min-h-screen bg-sand dark:bg-[#0f1d16] flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-forest"></div></div>}>
       <VerifyForm />
     </Suspense>
   )
