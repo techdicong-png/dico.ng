@@ -149,37 +149,41 @@ export function CandidateHub({ candidateId, initialName, candidateLga, avatarUrl
     <div className="space-y-6 max-w-4xl mx-auto pb-10">
       {/* Profile Header */}
       <div className="bg-white dark:bg-[#11241b] border border-border dark:border-[#1f3a2c] rounded-2xl overflow-hidden shadow-sm">
-        <div className="h-32 bg-gradient-to-br from-forest to-forest-mid"></div>
-        <div className="px-6 pb-6 -mt-12 flex items-start md:items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-4">
-            {avatarUrl ? (
-              <Image src={avatarUrl} alt="Avatar" width={96} height={96} className="w-24 h-24 rounded-full bg-white border-4 border-black/10 flex items-center justify-center font-serif text-4xl font-black text-forest shrink-0" />
-            ) : (
-              <div className="w-24 h-24 rounded-full bg-white border-4 border-black/10 flex items-center justify-center font-serif text-4xl font-black text-forest shrink-0">
-                {initialName.charAt(0)}
+        <div className="h-28 md:h-32 bg-gradient-to-br from-forest to-forest-mid"></div>
+        <div className="px-4 md:px-6 pb-6 -mt-10 md:-mt-12">
+          {/* 🔴 FIXED: Stack vertically on mobile, row on desktop */}
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center gap-3 md:gap-4 w-full md:w-auto">
+              {avatarUrl ? (
+                <Image src={avatarUrl} alt="Avatar" width={80} height={80} className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-white border-4 border-black/10 flex items-center justify-center font-serif text-4xl font-black text-forest shrink-0" />
+              ) : (
+                <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-white border-4 border-black/10 flex items-center justify-center font-serif text-4xl font-black text-forest shrink-0">
+                  {initialName.charAt(0)}
+                </div>
+              )}
+              <div className="pb-2 flex-1 min-w-0">
+                {/* 🔴 FIXED: text-ink dark:text-white instead of text-white so it's visible in light mode */}
+                <h1 className="font-serif text-lg md:text-2xl font-black text-white flex flex-col md:flex-row items-start md:items-center gap-1 md:gap-2">
+                  {initialName}
+                  <span className="text-xs font-bold bg-forest-light dark:bg-[#1b3a2b] text-forest dark:text-forest-700 px-2 py-1 rounded flex items-center gap-1">
+                    <CheckCircle className="h-3 w-3" /> Verified
+                  </span>
+                </h1>
+                <p className="text-xs md:text-sm text-muted dark:text-[#c0d0c4] pt-1 md:pt-2">Candidate Profile & Media Hub</p>
+                
+                <Link 
+                  href={`/lga/${lgaSlug}`} 
+                  className="text-xs font-normal md:font-semibold text-gold hover:underline inline-flex items-center gap-1 bg-gold/10 px-2 py-1 rounded whitespace-nowrap mt-2"
+                >
+                  <MapPin className="h-3 w-3" /> View {candidateLga} LGA Hub & Ads
+                </Link>
               </div>
-            )}
-            <div className="pb-2">
-              {/* 🔴 FIXED: Added md:text-2xl to ensure name is large and readable in light mode */}
-              <h1 className="font-serif text-lg md:text-2xl font-black text-white flex flex-col md:flex-row items-start md:items-center gap-2">
-                {initialName}
-                <span className="text-xs font-bold bg-forest-light dark:bg-[#1b3a2b] text-forest dark:text-forest-700 px-2 py-1 rounded flex items-center gap-1">
-                  <CheckCircle className="h-3 w-3" /> Verified
-                </span>
-              </h1>
-              <p className="text-sm text-muted dark:text-[#c0d0c4] pt-2 md:pt-6">Candidate Profile & Media Hub</p>
-              
-              <Link 
-                href={`/lga/${lgaSlug}`} 
-                className="text-xs font-normal md:font-semibold text-gold hover:underline inline-flex items-center gap-1 bg-gold/10 px-2 py-1 rounded whitespace-nowrap mt-2"
-              >
-                <MapPin className="h-3 w-3" /> View {candidateLga} LGA Hub & Ads
-              </Link>
             </div>
+            {/* Button takes full width on mobile */}
+            <Button onClick={startLive} className="bg-red-600 hover:bg-red-700 text-white w-full md:w-auto shrink-0">
+              <Radio className="h-4 w-4 mr-2 animate-pulse" /> Go Live
+            </Button>
           </div>
-          <Button onClick={startLive} className="bg-red-600 hover:bg-red-700 text-white">
-            <Radio className="h-4 w-4 mr-2 animate-pulse" /> Go Live
-          </Button>
         </div>
       </div>
 
