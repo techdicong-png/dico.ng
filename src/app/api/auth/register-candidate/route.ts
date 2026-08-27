@@ -69,7 +69,12 @@ export async function POST(req: Request) {
               is_active: true, 
               civict_balance: 0, 
               password_hash: 'managed_by_supabase_auth', 
-              email_verified: false
+              email_verified: false,
+              phone: phone,
+              state: state_constituency,
+              lga: lga_constituency,
+              ward: ward || null,
+              avatar_url: avatar_url || null,
             })
           } else {
             return NextResponse.json({ 

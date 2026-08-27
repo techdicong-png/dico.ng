@@ -58,7 +58,14 @@ export async function POST(req: Request) {
         role: 'candidate',
         is_active: true,
         civict_balance: 0,
-        password_hash: 'managed_by_supabase_auth'
+        password_hash: 'managed_by_supabase_auth',
+        email_verified: false,
+        // 🔴 ADD THESE MISSING FIELDS:
+        phone: phone,
+        state: state_constituency,
+        lga: lga_constituency,
+        ward: ward || null,
+        avatar_url: avatar_url || null
       })
 
     if (dbUserErr) {

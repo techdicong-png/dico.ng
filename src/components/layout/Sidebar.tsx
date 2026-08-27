@@ -7,6 +7,7 @@ import {
   LayoutGrid, Users, Video, Vote, FileText, CircleDollarSign, Rss,
   UserCircle, Settings, BarChart3, Shield, Store, LogOut, TrendingUp,
   Compass, Wallet,
+  MessageSquare,
   type LucideIcon
 } from 'lucide-react'
 
@@ -33,6 +34,7 @@ const candidateLinks: NavLink[] = [
   { href: '/sessions', label: 'Live Sessions', icon: Video },
   { href: '/polls', label: 'Polls', icon: Vote },
   { href: '/reports', label: 'Reports', icon: FileText },
+  { href: '/sms-campaigns', label: 'SMS Campaigns', icon: MessageSquare },
   { href: '/candidates', label: 'All Candidates', icon: Users },
   { href: '/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/performance', label: 'Performance Rank', icon: TrendingUp },

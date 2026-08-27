@@ -6,13 +6,23 @@ import { createClient } from '@supabase/supabase-js'
 import Link from 'next/link'
 import { Vote, Video, CircleDollarSign, FileText, ChevronRight, MapPin } from 'lucide-react'
 import Image from 'next/image'
+import {SmsTaskWidget} from '@/components/dashboard/SmsTaskWidget'
 
-// Initialize Supabase client inline for Server Components
 const supabaseServer = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
   { auth: { autoRefreshToken: false, persistSession: false } }
 )
+
+// 🔴 NEW: Classify each candidate into EXACTLY ONE bucket so nobody appears twice
+function classifyCandidate(office: string): 'national' | 'state' | 'lga' | 'ward' | 'other' {
+  const o = (office || '').toLowerCase()
+  if (o.includes('president') || o.includes('senator') || o.includes('rep')) return 'national'
+  if (o.includes('governor') || o.includes('assembly')) return 'state'
+  if (o.includes('chairman') || o.includes('lga')) return 'lga'
+  if (o.includes('councillor') || o.includes('ward')) return 'ward'
+  return 'other'
+}
 
 export default async function VoterDashboardPage() {
   const cookieStore = await cookies()
@@ -28,18 +38,35 @@ export default async function VoterDashboardPage() {
   const { data: userData } = await supabaseServer.from('users').select('civict_balance').eq('id', user.id).single()
   const balance = userData?.civict_balance ?? 0
 
-  // Fetch Candidates based on Voter's Location (matching State, LGA, or Ward)
-  const { data: candidates } = await supabaseServer
+  // 🔴 FIXED: ONE single query (replaces BOTH old queries)
+  const locationFilters: string[] = []
+  if (user.state) locationFilters.push(`state.eq.${user.state}`)
+  if (user.lga) locationFilters.push(`lga.eq.${user.lga}`)
+  if (user.ward) locationFilters.push(`ward.eq.${user.ward}`)
+
+  let candidatesQuery = supabaseServer
     .from('candidates')
     .select('id, full_name, party, office, avatar_url, state, lga, ward')
     .eq('is_active', true)
-    .or(`state.eq.${user.state},lga.eq.${user.lga},ward.eq.${user.ward}`)
 
-  // Group candidates by level for the UI
-  const nationalReps = candidates?.filter(c => c.office.toLowerCase().includes('president') || c.office.toLowerCase().includes('senator') || c.office.toLowerCase().includes('rep')) || []
-  const stateReps = candidates?.filter(c => c.office.toLowerCase().includes('governor') || c.office.toLowerCase().includes('assembly')) || []
-  const lgaReps = candidates?.filter(c => c.office.toLowerCase().includes('chairman') || c.office.toLowerCase().includes('lga')) || []
-  const wardReps = candidates?.filter(c => c.office.toLowerCase().includes('councillor') || c.office.toLowerCase().includes('ward')) || []
+  if (locationFilters.length > 0) {
+    candidatesQuery = candidatesQuery.or(locationFilters.join(','))
+  } else {
+    candidatesQuery = candidatesQuery.limit(10)
+  }
+
+  const { data: rawCandidates } = await candidatesQuery
+
+  // 🔴 NEW: Safety net — dedupe by ID in case duplicate rows exist in the DB
+  const candidates = Array.from(
+    new Map((rawCandidates || []).map(c => [c.id, c])).values()
+  )
+
+  // 🔴 FIXED: Mutually exclusive grouping — each candidate lands in ONE section only
+  const nationalReps = candidates.filter(c => classifyCandidate(c.office) === 'national')
+  const stateReps = candidates.filter(c => classifyCandidate(c.office) === 'state')
+  const lgaReps = candidates.filter(c => classifyCandidate(c.office) === 'lga')
+  const wardReps = candidates.filter(c => classifyCandidate(c.office) === 'ward')
 
   const stats = [
     { icon: Vote, label: 'Polls Voted', value: '0', change: 'Participate to earn', href: '/polls' },
@@ -48,7 +75,6 @@ export default async function VoterDashboardPage() {
     { icon: FileText, label: 'Reports Filed', value: '0', change: 'Earn 15 CIVICT', href: '/reports' },
   ]
 
-  // Create a URL-friendly slug for the LGA link
   const lgaSlug = user.lga?.toLowerCase().replace(/\s/g, '-')
 
   return (
@@ -82,8 +108,28 @@ export default async function VoterDashboardPage() {
         </Link>
       )}
 
-      {/* INVITE FRIENDS LINK (Client Component) */}
+      {/* INVITE FRIENDS LINK */}
       <InviteLink userId={user.id} />
+
+      {/* Nag users to complete their location */}
+      {(!user.state || !user.lga) && (
+        <div className="bg-gold/10 border border-gold/30 rounded-xl p-5 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-gold/20 flex items-center justify-center">
+              <i className="fa-solid fa-triangle-exclamation text-gold"></i>
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-ink dark:text-white">Complete Your Profile</h3>
+              <p className="text-xs text-muted dark:text-[#c0d0c4]">Please set your State and LGA to see representatives in your constituency.</p>
+            </div>
+          </div>
+          <Link href="/profile" className="bg-gold hover:bg-gold-hover text-ink text-xs font-semibold px-4 py-2 rounded-lg whitespace-nowrap">
+            Update Location
+          </Link>
+        </div>
+      )}
+
+      <SmsTaskWidget />
 
       {/* STAT CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -99,7 +145,7 @@ export default async function VoterDashboardPage() {
         ))}
       </div>
 
-      {/* MY REPRESENTATIVES (Dynamic based on location) */}
+      {/* MY REPRESENTATIVES */}
       <div className="bg-card dark:bg-[#11241b] border border-border dark:border-[#1f3a2c] rounded-xl overflow-hidden">
         <div className="px-5 py-4 border-b border-border dark:border-[#1f3a2c]">
           <h3 className="font-serif text-base font-bold text-ink dark:text-white">Your Representatives</h3>
@@ -192,7 +238,7 @@ export default async function VoterDashboardPage() {
           )}
 
           {/* Empty State */}
-          {candidates?.length === 0 && (
+          {candidates.length === 0 && (
             <div className="px-5 py-8 text-center">
               <p className="text-sm text-muted dark:text-[#c0d0c4]">No candidates have registered in your specific constituency yet. Check back soon!</p>
             </div>

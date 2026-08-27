@@ -19,8 +19,8 @@ const schema = z.object({
   full_name: z.string().min(2),
   email: z.string().email(),
   password: z.string().min(6),
-  state: z.string().optional(),
-  lga: z.string().optional(),
+  state: z.string().min(1, "State is required"),
+  lga: z.string().min(1, "Local Government Area is required"),
   ward: z.string().optional(),
   role: z.string(),
   ref: z.string().uuid().nullable().optional()

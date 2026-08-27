@@ -22,6 +22,12 @@ function RegisterForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+
+    // Validate location before submitting
+    if(!form.state || !form.lga) {
+      setError('Please select your state and local government area to continue.');
+      return
+    }
     setLoading(true)
 
     try {
