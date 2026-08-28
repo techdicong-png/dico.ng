@@ -14,23 +14,34 @@ export async function GET() {
     }
 
     const { data: candidate } = await supabaseAdmin.from('candidates')
-      .select('id, state, lga').eq('user_id', payload.userId).single()
+      .select('id, state, lga, office').eq('user_id', payload.userId).single()
 
     if (!candidate) return NextResponse.json({ error: 'Candidate profile not found.' }, { status: 404 })
 
-    // Fetch voters in the candidate's LGA who have a phone number
-    const { data: voters, error } = await supabaseAdmin.from('users')
-      .select('full_name, phone')
+    // 🔴 SMART LOGOGIC: Match by State for Senatorial/Governor, LGA for local races
+    let query = supabaseAdmin.from('users')
+      .select('full_name, phone, lga')
       .eq('role', 'voter')
-      .eq('lga', candidate.lga)
       .not('phone', 'is', null)
+
+    const office = (candidate.office || '').toLowerCase()
+    if (office.includes('senator') || office.includes('governor') || office.includes('president') || office.includes('rep')) {
+      // State/National level: Fetch all voters in the state
+      query = query.eq('state', candidate.state)
+    } else {
+      // LGA/Ward level: Fetch only voters in that specific LGA
+      query = query.eq('lga', candidate.lga)
+    }
+
+    const { data: voters, error } = await query
 
     if (error) throw error
 
     return NextResponse.json({ 
       voters: voters || [], 
       count: voters?.length || 0,
-      lga: candidate.lga 
+      lga: candidate.lga,
+      state: candidate.state
     })
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Server error' }, { status: 500 })
