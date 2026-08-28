@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { Loader2, Send, Smartphone, Megaphone, Users } from 'lucide-react'
+import { Loader2, Send, Smartphone, Megaphone, Users, X } from 'lucide-react'
 import { toast } from 'sonner'
 
 type Campaign = {
@@ -21,9 +21,14 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
   
-  // 🔴 NEW: State for Direct Blast
   const [directMessage, setDirectMessage] = useState('')
   const [sendingBlast, setSendingBlast] = useState(false)
+
+  // 🔴 NEW: State for Audience Modal
+  const [showAudience, setShowAudience] = useState(false)
+  const [voters, setVoters] = useState<any[]>([])
+  const [loadingVoters, setLoadingVoters] = useState(false)
+  const [voterLga, setVoterLga] = useState('')
 
   async function createCampaign() {
     if (message.trim().length < 10) return toast.error('Message must be at least 10 characters.')
@@ -49,7 +54,6 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
     }
   }
 
-  // 🔴 NEW: Send Direct SMS Blast
   async function sendDirectBlast() {
     if (directMessage.trim().length < 10) return toast.error('Message must be at least 10 characters.')
     
@@ -72,6 +76,26 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
     }
   }
 
+  // 🔴 NEW: Fetch the audience
+  async function fetchAudience() {
+    setLoadingVoters(true)
+    try {
+      const res = await fetch('/api/sms/voters')
+      const data = await res.json()
+      if (res.ok) {
+        setVoters(data.voters || [])
+        setVoterLga(data.lga || 'your constituency')
+        setShowAudience(true)
+      } else {
+        throw new Error(data.error || 'Failed to load audience')
+      }
+    } catch (err: any) {
+      toast.error(err.message)
+    } finally {
+      setLoadingVoters(false)
+    }
+  }
+
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
       <div>
@@ -91,6 +115,17 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
           Send an SMS directly to the phones of all verified voters registered in your LGA. This does not reward the voters; it goes straight from you to them.
         </p>
         
+        {/* Audience Button */}
+        <Button 
+          onClick={fetchAudience} 
+          disabled={loadingVoters} 
+          variant="outline" 
+          className="w-full bg-white/10 border-white/20 text-white hover:bg-white/20 hover:text-white mb-4"
+        >
+          {loadingVoters ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Users className="h-4 w-4 mr-2" />}
+          {loadingVoters ? 'Loading...' : 'View Target Audience'}
+        </Button>
+
         <Textarea
           value={directMessage}
           onChange={e => setDirectMessage(e.target.value)}
@@ -167,6 +202,39 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
           )}
         </div>
       </div>
+
+      {/* 🔴 NEW: Target Audience Modal */}
+      {showAudience && (
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setShowAudience(false)}>
+          <div className="bg-white dark:bg-[#11241b] rounded-2xl w-full max-w-lg max-h-[80vh] overflow-hidden border border-border dark:border-[#1f3a2c] shadow-xl flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="p-5 bg-forest text-white flex justify-between items-center sticky top-0 z-10">
+              <div>
+                <h3 className="font-serif text-lg font-bold">Target Audience</h3>
+                <p className="text-xs text-white/70">{voters.length} verified voters in {voterLga}</p>
+              </div>
+              <button onClick={() => setShowAudience(false)}><X className="h-6 w-6" /></button>
+            </div>
+            
+            <div className="p-4 overflow-y-auto space-y-2">
+              {voters.length === 0 ? (
+                <p className="text-center text-muted dark:text-[#c0d0c4] py-8">No voters with phone numbers found in your LGA yet.</p>
+              ) : (
+                voters.map((v, i) => (
+                  <div key={i} className="flex justify-between items-center bg-sand dark:bg-[#0f1d16] p-3 rounded-lg text-sm border border-border-light dark:border-[#1f3a2c]">
+                    <span className="text-ink dark:text-white font-medium">{v.full_name}</span>
+                    <span className="text-muted dark:text-[#c0d0c4] font-mono">{v.phone}</span>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="p-4 border-t border-border dark:border-[#1f3a2c]">
+              <Button onClick={() => setShowAudience(false)} className="w-full bg-forest hover:bg-forest-mid">
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
