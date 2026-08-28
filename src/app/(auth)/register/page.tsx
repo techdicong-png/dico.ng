@@ -16,7 +16,7 @@ function RegisterForm() {
   const [error, setError] = useState('')
   const [form, setForm] = useState({
     full_name: '', email: '', password: '',
-    state: '', lga: '', ward: '',
+    state: '', lga: '', ward: '', phone: '',
   })
 
   async function handleSubmit(e: React.FormEvent) {
@@ -87,6 +87,13 @@ function RegisterForm() {
             <input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} required
               className="w-full px-3.5 py-3 text-sm text-ink bg-white border border-border rounded-lg focus:outline-none focus:border-gold focus:ring-3 focus:ring-gold/12 transition-all placeholder:text-[#9DAFA5]"
               placeholder="Enter your email" />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-ink mb-1.5">Phone Number *</label>
+            <input type="tel" required value={form.phone} onChange={e => setForm({...form, phone: e.target.value})}
+              className="w-full px-3.5 py-3 text-sm text-ink bg-white border border-border rounded-lg focus:outline-none focus:border-gold focus:ring-3 focus:ring-gold/12 transition-all placeholder:text-[#9DAFA5]"
+              placeholder="08012345678" />
           </div>
 
           <div>

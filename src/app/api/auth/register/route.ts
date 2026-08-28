@@ -23,7 +23,8 @@ const schema = z.object({
   lga: z.string().min(1, "Local Government Area is required"),
   ward: z.string().optional(),
   role: z.string(),
-  ref: z.string().uuid().nullable().optional()
+  ref: z.string().uuid().nullable().optional(),
+  phone: z.string().min(11, "Phone number is required").max(12, "Phone number is too long"),
 })
 
 export async function POST(req: Request) {
@@ -32,7 +33,7 @@ export async function POST(req: Request) {
     const parsed = schema.safeParse(body)
     if (!parsed.success) return NextResponse.json({ error: 'Invalid input' }, { status: 400 })
 
-    const { full_name, email, password, state, lga, ward, role, ref } = parsed.data
+    const { full_name, email, password, state, lga, ward, role, ref, phone } = parsed.data
 
     const { data: authData, error: authError } = await supabaseAuth.auth.signUp({
       email,
@@ -74,7 +75,8 @@ export async function POST(req: Request) {
               civict_balance: 100, 
               password_hash: 'managed_by_supabase_auth', 
               referred_by: ref || null, 
-              email_verified: false
+              email_verified: false,
+              phone: phone,
             })
             
             await supabaseServer.from('civict_transactions').insert({ 
