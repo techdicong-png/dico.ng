@@ -72,7 +72,7 @@ export async function POST(req: Request) {
           from: process.env.SMS_SENDER_ID || 'DICO',
           to: recipients,
           body: fullMessage,
-          gateway: 'direct-refund'
+          gateway: 'direct-corporate'
         })
       })
 

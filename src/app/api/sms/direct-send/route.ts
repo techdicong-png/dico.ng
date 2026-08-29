@@ -73,7 +73,7 @@ export async function POST(req: Request) {
       const smsResponse = await fetch(smsApiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': `Bearer ${apiToken}` },
-        body: JSON.stringify({ from: process.env.SMS_SENDER_ID || 'DICO', to: recipients, body: fullMessage, gateway: 'direct-refund' })
+        body: JSON.stringify({ from: process.env.SMS_SENDER_ID || 'DICO', to: recipients, body: fullMessage, gateway: 'direct-corporate' })
       })
       const smsData = await smsResponse.json()
       if (!smsResponse.ok || smsData.status === 'error') {
