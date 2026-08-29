@@ -138,7 +138,7 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
           <h3 className="font-serif text-lg font-bold">Direct Voter Blast</h3>
         </div>
         <p className="text-xs text-white/70 mb-4">
-          Send an SMS directly to the phones of verified voters registered in your LGA. This does not reward the voters; it goes straight from you to them.
+          Send an SMS directly to the phones of verified voters registered in your constituency. This does not reward the voters; it goes straight from you to them.
         </p>
         
         {/* Audience Button */}
@@ -250,8 +250,12 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
               {campaigns.map(c => (
                 <div key={c.id} className="bg-white dark:bg-[#11241b] border border-border dark:border-[#1f3a2c] rounded-xl p-5">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${c.status === 'active' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'bg-gray-100 text-gray-600 dark:bg-[#0f1d16] dark:text-[#c0d0c4]'}`}>
-                      {c.status === 'active' ? '● Active' : '⏸ Paused'}
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                      c.status === 'active' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 
+                      c.status === 'completed' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 
+                      'bg-gray-100 text-gray-600 dark:bg-[#0f1d16] dark:text-[#c0d0c4]'
+                    }`}>
+                      {c.status === 'active' ? '● Active' : c.status === 'completed' ? '✅ Completed' : '⏸ Paused'}
                     </span>
                   </div>
                   <p className="text-sm text-ink dark:text-white">{c.message}</p>
@@ -283,7 +287,7 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
 
             <div className="p-4 overflow-y-auto space-y-2">
               {voters.length === 0 ? (
-                <p className="text-center text-muted dark:text-[#c0d0c4] py-8">No voters with phone numbers found in your LGA yet.</p>
+                <p className="text-center text-muted dark:text-[#c0d0c4] py-8">No voters with phone numbers found in your constituency yet.</p>
               ) : (
                 voters.map((v, i) => (
                   <div key={i} className={`flex items-center gap-3 p-3 rounded-lg text-sm border cursor-pointer transition-colors ${
@@ -297,8 +301,12 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
                       onChange={() => toggleVoter(v.phone)}
                       className="h-4 w-4 accent-forest cursor-pointer"
                     />
-                    <span className="text-ink dark:text-white font-medium flex-1">{v.full_name}</span>
-                    <span className="text-muted dark:text-[#c0d0c4] font-mono text-xs">{v.phone}</span>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-ink dark:text-white font-medium block truncate">{v.full_name}</span>
+                      {/* 🔴 NEW: Show the LGA so the candidate knows exactly where they are from */}
+                      <span className="text-[10px] text-muted dark:text-[#c0d0c4] truncate">{v.lga} LGA</span>
+                    </div>
+                    <span className="text-muted dark:text-[#c0d0c4] font-mono text-xs shrink-0">{v.phone}</span>
                   </div>
                 ))
               )}
