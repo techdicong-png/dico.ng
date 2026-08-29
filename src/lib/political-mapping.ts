@@ -1,4 +1,23 @@
-// 1. Add this type definition at the top of the file, below the maps
+// Exact LGA mappings for Delta State Senatorial Districts
+const DELTA_SENATORIAL_DISTRICTS: Record<string, string[]> = {
+  "Delta North": ["Aniocha North", "Aniocha South", "Oshimili North", "Oshimili South", "Ika North East", "Ika South", "Ndokwa East", "Ndokwa West", "Ukwuani"],
+  "Delta South": ["Bomadi", "Patani", "Isoko North", "Isoko South", "Warri North", "Warri South", "Warri South West", "Burutu"],
+  "Delta Central": ["Okpe", "Sapele", "Uvwie", "Ethiope West", "Ethiope East", "Ughelli North", "Ughelli South", "Udu"]
+};
+
+// Exact LGA mappings for Delta State Federal Constituencies
+const DELTA_FEDERAL_CONSTITUENCIES: Record<string, string[]> = {
+  "Aniocha/Oshimili": ["Aniocha North", "Aniocha South", "Oshimili North", "Oshimili South"],
+  "Ika North/South": ["Ika North East", "Ika South"],
+  "Ndokwa East/West": ["Ndokwa East", "Ndokwa West", "Ukwuani"],
+  "Bomadi/Patani": ["Bomadi", "Patani"],
+  "Isoko North/South": ["Isoko North", "Isoko South"],
+  "Ethiope East/West": ["Ethiope East", "Ethiope West"],
+  "Okpe/Uvwie/Sapele": ["Okpe", "Sapele", "Uvwie"],
+  "Ughelli North/South": ["Ughelli North", "Ughelli South", "Udu"],
+  "Warri North/South/South-West": ["Warri North", "Warri South", "Warri South West"]
+};
+
 export type CandidateTarget = 
   | { scope: 'all' }
   | { scope: 'state', state: string }
@@ -6,7 +25,6 @@ export type CandidateTarget =
   | { scope: 'lga', lga: string | null }
   | { scope: 'ward', lga: string | null, ward: string | null };
 
-// 2. Update the function signature to use it:
 export function getCandidateTargetAreas(candidate: any): CandidateTarget {
   const office = (candidate.office || '').toLowerCase();
   const state = candidate.state || '';
