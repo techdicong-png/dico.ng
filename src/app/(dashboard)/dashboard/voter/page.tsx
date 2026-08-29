@@ -6,7 +6,8 @@ import { createClient } from '@supabase/supabase-js'
 import Link from 'next/link'
 import { Vote, Video, CircleDollarSign, FileText, ChevronRight, MapPin } from 'lucide-react'
 import Image from 'next/image'
-import {SmsTaskWidget} from '@/components/dashboard/SmsTaskWidget'
+import { SmsTaskWidget } from '@/components/dashboard/SmsTaskWidget'
+import { getCandidateTargetAreas } from '@/lib/political-mapping'
 
 const supabaseServer = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -14,7 +15,6 @@ const supabaseServer = createClient(
   { auth: { autoRefreshToken: false, persistSession: false } }
 )
 
-// 🔴 NEW: Classify each candidate into EXACTLY ONE bucket so nobody appears twice
 function classifyCandidate(office: string): 'national' | 'state' | 'lga' | 'ward' | 'other' {
   const o = (office || '').toLowerCase()
   if (o.includes('president') || o.includes('senator') || o.includes('rep')) return 'national'
@@ -38,35 +38,41 @@ export default async function VoterDashboardPage() {
   const { data: userData } = await supabaseServer.from('users').select('civict_balance').eq('id', user.id).single()
   const balance = userData?.civict_balance ?? 0
 
-  // 🔴 FIXED: ONE single query (replaces BOTH old queries)
-  const locationFilters: string[] = []
-  if (user.state) locationFilters.push(`state.eq.${user.state}`)
-  if (user.lga) locationFilters.push(`lga.eq.${user.lga}`)
-  if (user.ward) locationFilters.push(`ward.eq.${user.ward}`)
-
+  // 🔴 SMART LOGIC: Fetch all active candidates in the voter's state
   let candidatesQuery = supabaseServer
     .from('candidates')
-    .select('id, full_name, party, office, avatar_url, state, lga, ward')
+    .select('id, full_name, party, office, avatar_url, state, lga, ward, senatorial_district, federal_constituency')
     .eq('is_active', true)
 
-  if (locationFilters.length > 0) {
-    candidatesQuery = candidatesQuery.or(locationFilters.join(','))
+  if (user.state) {
+    candidatesQuery = candidatesQuery.eq('state', user.state)
   } else {
-    candidatesQuery = candidatesQuery.limit(10)
+    candidatesQuery = candidatesQuery.limit(10) // Fallback if voter has no state
   }
 
   const { data: rawCandidates } = await candidatesQuery
 
-  // 🔴 NEW: Safety net — dedupe by ID in case duplicate rows exist in the DB
-  const candidates = Array.from(
-    new Map((rawCandidates || []).map(c => [c.id, c])).values()
-  )
+  // Filter them in JS to ensure exact geographical match using our Political Mapping
+  const candidates = (rawCandidates || []).filter(c => {
+    const target = getCandidateTargetAreas(c)
+    
+    if (target.scope === 'all') return true // President
+    if (target.scope === 'state') return true // Governor / State Assembly / Senator fallback (already filtered by state)
+    if (target.scope === 'lgas') return target.lgas.includes(user.lga) // Senator / Rep exact match
+    if (target.scope === 'lga') return c.lga === user.lga // Chairman
+    if (target.scope === 'ward') return c.lga === user.lga && c.ward === user.ward // Councillor
+    
+    return false
+  })
 
-  // 🔴 FIXED: Mutually exclusive grouping — each candidate lands in ONE section only
-  const nationalReps = candidates.filter(c => classifyCandidate(c.office) === 'national')
-  const stateReps = candidates.filter(c => classifyCandidate(c.office) === 'state')
-  const lgaReps = candidates.filter(c => classifyCandidate(c.office) === 'lga')
-  const wardReps = candidates.filter(c => classifyCandidate(c.office) === 'ward')
+  // Safety net — dedupe by ID
+  const uniqueCandidates = Array.from(new Map(candidates.map(c => [c.id, c])).values())
+
+  // Mutually exclusive grouping
+  const nationalReps = uniqueCandidates.filter(c => classifyCandidate(c.office) === 'national')
+  const stateReps = uniqueCandidates.filter(c => classifyCandidate(c.office) === 'state')
+  const lgaReps = uniqueCandidates.filter(c => classifyCandidate(c.office) === 'lga')
+  const wardReps = uniqueCandidates.filter(c => classifyCandidate(c.office) === 'ward')
 
   const stats = [
     { icon: Vote, label: 'Polls Voted', value: '0', change: 'Participate to earn', href: '/polls' },
@@ -238,7 +244,7 @@ export default async function VoterDashboardPage() {
           )}
 
           {/* Empty State */}
-          {candidates.length === 0 && (
+          {uniqueCandidates.length === 0 && (
             <div className="px-5 py-8 text-center">
               <p className="text-sm text-muted dark:text-[#c0d0c4]">No candidates have registered in your specific constituency yet. Check back soon!</p>
             </div>
