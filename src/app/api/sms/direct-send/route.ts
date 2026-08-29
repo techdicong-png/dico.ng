@@ -13,7 +13,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { message, limit } = await req.json()
+    // 🔴 CHANGED: Added phoneNumbers to the destructured body
+    const { message, limit, phoneNumbers } = await req.json()
     if (!message || message.trim().length < 10) {
       return NextResponse.json({ error: 'Message must be at least 10 characters.' }, { status: 400 })
     }
@@ -59,14 +60,25 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'No valid phone numbers found for voters in your constituency.' }, { status: 400 })
     }
 
-    // 🔴 NEW: Apply the limit if provided (e.g., send to only the first 50 people)
-    if (limit && limit > 0 && limit < formattedPhones.length) {
+    // 🔴 NEW: If specific phone numbers were selected in the UI, filter the master list to only those
+    if (phoneNumbers && Array.isArray(phoneNumbers) && phoneNumbers.length > 0) {
+      // Create a set of the raw numbers the user selected (e.g., "0801...")
+      const selectedSet = new Set(phoneNumbers.map((p: string) => p.replace(/\D/g, '')))
+      
+      // Filter our secure LGA list to only include those selected numbers
+      formattedPhones = formattedPhones.filter(num => {
+        // num is "234801...", we convert back to "0801..." to check if it's in the user's selection
+        const rawNum = num.startsWith('234') ? '0' + num.slice(3) : num
+        return selectedSet.has(rawNum)
+      })
+    } else if (limit && limit > 0 && limit < formattedPhones.length) {
+      // If no specific numbers selected, use the Limit dropdown
       formattedPhones = formattedPhones.slice(0, limit)
     }
 
     // 4. Format message
-    const candidateFirstName = candidate.full_name?.split(' ')[0] || 'DICO';
-    const fullMessage = `${candidateFirstName}: ${message.trim()}`
+    const candidateFirstName = candidate.full_name || 'DICO';
+    const fullMessage = `${candidateFirstName} via DICO: ${message.trim()}`
 
     // 5. Call the SMS API
     const smsApiUrl = process.env.SMS_API_URL || 'https://www.bulksmsnigeria.com/api/v2/sms'

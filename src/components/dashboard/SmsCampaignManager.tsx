@@ -29,9 +29,10 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
   const [voters, setVoters] = useState<any[]>([])
   const [loadingVoters, setLoadingVoters] = useState(false)
   const [voterLga, setVoterLga] = useState('')
-
-  // State for Blast Limit
-  const [blastLimit, setBlastLimit] = useState(50)
+  
+  // State for Blast Limit & Selected Voters
+  const [blastLimit, setBlastLimit] = useState(10)
+  const [selectedVoters, setSelectedVoters] = useState<string[]>([])
 
   async function createCampaign() {
     if (message.trim().length < 10) return toast.error('Message must be at least 10 characters.')
@@ -62,15 +63,24 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
     
     setSendingBlast(true)
     try {
+      const payload: any = { message: directMessage, limit: blastLimit }
+      
+      // If they selected specific people, override the limit
+      if (selectedVoters.length > 0) {
+        payload.phoneNumbers = selectedVoters
+        payload.limit = selectedVoters.length
+      }
+
       const res = await fetch('/api/sms/direct-send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: directMessage, limit: blastLimit })
+        body: JSON.stringify(payload)
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
 
       setDirectMessage('')
+      setSelectedVoters([]) // Clear selection after sending
       toast.success(data.message)
     } catch (err: any) {
       toast.error(err.message)
@@ -98,6 +108,20 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
     }
   }
 
+  function toggleVoter(phone: string) {
+    setSelectedVoters(prev => 
+      prev.includes(phone) ? prev.filter(p => p !== phone) : [...prev, phone]
+    )
+  }
+
+  function toggleSelectAll() {
+    if (selectedVoters.length === voters.length) {
+      setSelectedVoters([])
+    } else {
+      setSelectedVoters(voters.map(v => v.phone))
+    }
+  }
+
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
       <div>
@@ -118,15 +142,27 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
         </p>
         
         {/* Audience Button */}
-        <Button 
-          onClick={fetchAudience} 
-          disabled={loadingVoters} 
-          variant="outline" 
-          className="w-full bg-white/10 border-white/20 text-white hover:bg-white/20 hover:text-white mb-4"
-        >
-          {loadingVoters ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Users className="h-4 w-4 mr-2" />}
-          {loadingVoters ? 'Loading...' : 'View Target Audience'}
-        </Button>
+        <div className="flex gap-2 mb-4">
+          <Button 
+            onClick={fetchAudience} 
+            disabled={loadingVoters} 
+            variant="outline" 
+            className="flex-1 bg-white/10 border-white/20 text-white hover:bg-white/20 hover:text-white"
+          >
+            {loadingVoters ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Users className="h-4 w-4 mr-2" />}
+            {loadingVoters ? 'Loading...' : 'Select Recipients'}
+          </Button>
+          
+          {selectedVoters.length > 0 && (
+            <Button 
+              onClick={() => setSelectedVoters([])} 
+              variant="outline" 
+              className="bg-red-500/20 border-red-500/30 text-red-300 hover:bg-red-500/30"
+            >
+              Clear ({selectedVoters.length})
+            </Button>
+          )}
+        </div>
 
         <Textarea
           value={directMessage}
@@ -137,23 +173,31 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
           className="bg-white/10 border-white/20 text-white placeholder:text-white/50 mb-2"
         />
         
-        {/* Limit Selector UI */}
-        <div className="flex justify-between items-center text-xs mb-4">
-          <span className="font-semibold text-white/70">{directMessage.length}/160 characters</span>
-          <div className="flex items-center gap-2">
-            <span className="text-white/70">Send to:</span>
-            <select 
-              value={blastLimit}
-              onChange={e => setBlastLimit(Number(e.target.value))}
-              className="bg-white/10 border border-white/20 text-white rounded-md px-2 py-1 text-xs focus:outline-none"
-            >
-              <option value={50} className="text-ink">50 people</option>
-              <option value={100} className="text-ink">100 people</option>
-              <option value={500} className="text-ink">500 people</option>
-              <option value={1000} className="text-ink">1000 people</option>
-            </select>
+        {/* Limit Selector UI - Only shows if no one is manually selected */}
+        {selectedVoters.length === 0 && (
+          <div className="flex justify-between items-center text-xs mb-4">
+            <span className="font-semibold text-white/70">{directMessage.length}/160 characters</span>
+            <div className="flex items-center gap-2">
+              <span className="text-white/70">Quick Send to:</span>
+              <select 
+                value={blastLimit}
+                onChange={e => setBlastLimit(Number(e.target.value))}
+                className="bg-white/10 border border-white/20 text-white rounded-md px-2 py-1 text-xs focus:outline-none"
+              >
+                <option value={10} className="text-ink">10 people</option>
+                <option value={20} className="text-ink">20 people</option>
+                <option value={50} className="text-ink">50 people</option>
+              </select>
+            </div>
           </div>
-        </div>
+        )}
+
+        {selectedVoters.length > 0 && (
+          <div className="flex justify-between items-center text-xs mb-4">
+            <span className="font-semibold text-white/70">{directMessage.length}/160 characters</span>
+            <span className="text-gold font-bold">Sending to {selectedVoters.length} selected</span>
+          </div>
+        )}
 
         <Button onClick={sendDirectBlast} disabled={sendingBlast || directMessage.trim().length < 10} className="w-full bg-gold hover:bg-gold-hover text-ink font-bold h-11">
           {sendingBlast ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
@@ -224,27 +268,44 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
           <div className="bg-white dark:bg-[#11241b] rounded-2xl w-full max-w-lg max-h-[80vh] overflow-hidden border border-border dark:border-[#1f3a2c] shadow-xl flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="p-5 bg-forest text-white flex justify-between items-center sticky top-0 z-10">
               <div>
-                <h3 className="font-serif text-lg font-bold">Target Audience</h3>
-                <p className="text-xs text-white/70">{voters.length} verified voters in {voterLga}</p>
+                <h3 className="font-serif text-lg font-bold">Select Recipients</h3>
+                <p className="text-xs text-white/70">{voters.length} voters in {voterLga}</p>
               </div>
               <button onClick={() => setShowAudience(false)}><X className="h-6 w-6" /></button>
             </div>
             
+            <div className="p-3 border-b border-border dark:border-[#1f3a2c] flex justify-between items-center bg-sand dark:bg-[#0f1d16]">
+              <span className="text-xs font-bold text-ink dark:text-white">{selectedVoters.length} selected</span>
+              <Button size="sm" variant="outline" onClick={toggleSelectAll} className="dark:bg-[#11241b] dark:text-white dark:border-[#1f3a2c]">
+                {selectedVoters.length === voters.length ? 'Deselect All' : 'Select All'}
+              </Button>
+            </div>
+
             <div className="p-4 overflow-y-auto space-y-2">
               {voters.length === 0 ? (
                 <p className="text-center text-muted dark:text-[#c0d0c4] py-8">No voters with phone numbers found in your LGA yet.</p>
               ) : (
                 voters.map((v, i) => (
-                  <div key={i} className="flex justify-between items-center bg-sand dark:bg-[#0f1d16] p-3 rounded-lg text-sm border border-border-light dark:border-[#1f3a2c]">
-                    <span className="text-ink dark:text-white font-medium">{v.full_name}</span>
-                    <span className="text-muted dark:text-[#c0d0c4] font-mono">{v.phone}</span>
+                  <div key={i} className={`flex items-center gap-3 p-3 rounded-lg text-sm border cursor-pointer transition-colors ${
+                    selectedVoters.includes(v.phone) 
+                      ? 'bg-forest-light dark:bg-[#1b3a2b] border-forest dark:border-forest-700' 
+                      : 'bg-sand dark:bg-[#0f1d16] border-border-light dark:border-[#1f3a2c] hover:bg-forest-faint dark:hover:bg-[#1b3a2b]'
+                  }`} onClick={() => toggleVoter(v.phone)}>
+                    <input
+                      type="checkbox"
+                      checked={selectedVoters.includes(v.phone)}
+                      onChange={() => toggleVoter(v.phone)}
+                      className="h-4 w-4 accent-forest cursor-pointer"
+                    />
+                    <span className="text-ink dark:text-white font-medium flex-1">{v.full_name}</span>
+                    <span className="text-muted dark:text-[#c0d0c4] font-mono text-xs">{v.phone}</span>
                   </div>
                 ))
               )}
             </div>
             <div className="p-4 border-t border-border dark:border-[#1f3a2c]">
               <Button onClick={() => setShowAudience(false)} className="w-full bg-forest hover:bg-forest-mid">
-                Close
+                Done ({selectedVoters.length} selected)
               </Button>
             </div>
           </div>

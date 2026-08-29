@@ -31,13 +31,62 @@ export async function POST(req: Request) {
 
     if (existingTask) return NextResponse.json({ error: 'You have already participated in this campaign.' }, { status: 400 })
 
-    const candidateFirstName = campaign.candidates?.full_name?.split(' ')[0] || 'DICO';
-    const fullMessage = `${candidateFirstName}: ${campaign.message}`
+    // 🔴 UPDATED MESSAGE FORMAT: "Full Name via DICO: Message"
+    const candidateFullName = campaign.candidates?.full_name || 'DICO';
+    const fullMessage = `${candidateFullName} via DICO: ${campaign.message}`;
 
-    // 🟡 MOCK SMS MODE (For Presentation)
-    console.log(`[MOCK SMS] Sending to ${phoneNumbers.length} numbers: ${phoneNumbers.join(', ')}`);
-    console.log(`[MOCK SMS] Message: ${fullMessage}`);
-    await new Promise(resolve => setTimeout(resolve, 800)); // Simulate network delay
+    // 🔴 ADDED PHONE FORMATTING: Convert 0801... to 234801...
+    const formatPhone = (p: string) => {
+      let num = p.replace(/\D/g, '');
+      if (num.startsWith('0')) num = '234' + num.slice(1);
+      if (num.startsWith('234') && num.length === 13) return num; 
+      return null;
+    }
+
+    const formattedPhones = phoneNumbers.map(formatPhone).filter((n): n is string => n !== null)
+    
+    if (formattedPhones.length < 5) {
+      return NextResponse.json({ error: 'Please enter at least 5 valid Nigerian phone numbers.' }, { status: 400 })
+    }
+
+    // 🔴 REAL SMS MODE (BulkSMSNigeria)
+    const smsApiUrl = process.env.SMS_API_URL || 'https://www.bulksmsnigeria.com/api/v2/sms'
+    const apiToken = process.env.SMS_API_TOKEN
+
+    if (!apiToken) {
+      console.warn('⚠️ SMS_API_TOKEN is missing. Running in MOCK MODE.')
+      console.log(`[MOCK SMS] Sending to ${formattedPhones.length} numbers: ${formattedPhones.join(', ')}`);
+      console.log(`[MOCK SMS] Message: ${fullMessage}`);
+      await new Promise(resolve => setTimeout(resolve, 800));
+    } else {
+      const recipients = formattedPhones.join(',')
+      
+      const smsResponse = await fetch(smsApiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${apiToken}`
+        },
+        body: JSON.stringify({
+          from: process.env.SMS_SENDER_ID || 'DICO',
+          to: recipients,
+          body: fullMessage,
+          gateway: 'direct-refund'
+        })
+      })
+
+      const smsData = await smsResponse.json()
+
+      if (!smsResponse.ok || smsData.status === 'error') {
+        console.error('SMS API Error:', smsData)
+        const errMsg = smsData.error?.message || 'Failed to send SMS via provider.'
+        if (smsResponse.status === 402 || errMsg.toLowerCase().includes('insufficient') || errMsg.toLowerCase().includes('balance')) {
+          return NextResponse.json({ error: 'Insufficient SMS credits. Please top up the campaign SMS wallet.' }, { status: 402 })
+        }
+        throw new Error(errMsg)
+      }
+    }
     
     // Record the task
     await supabaseAdmin.from('sms_tasks').insert({
