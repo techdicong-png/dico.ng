@@ -3,6 +3,16 @@ import { cookies } from 'next/headers'
 import { verifyToken } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 
+// 🔴 Reusing the exact same classification logic from the Voter Dashboard
+function classifyCandidate(office: string): 'national' | 'state' | 'lga' | 'ward' | 'other' {
+  const o = (office || '').toLowerCase()
+  if (o.includes('president') || o.includes('senator') || o.includes('rep')) return 'national'
+  if (o.includes('governor') || o.includes('assembly')) return 'state'
+  if (o.includes('chairman') || o.includes('lga')) return 'lga'
+  if (o.includes('councillor') || o.includes('ward')) return 'ward'
+  return 'other'
+}
+
 export async function GET() {
   try {
     const cookieStore = await cookies()
@@ -14,23 +24,31 @@ export async function GET() {
     }
 
     const { data: candidate } = await supabaseAdmin.from('candidates')
-      .select('id, state, lga, office').eq('user_id', payload.userId).single()
+      .select('id, state, lga, ward, office').eq('user_id', payload.userId).single()
 
     if (!candidate) return NextResponse.json({ error: 'Candidate profile not found.' }, { status: 404 })
 
-    // 🔴 SMART LOGOGIC: Match by State for Senatorial/Governor, LGA for local races
+    const level = classifyCandidate(candidate.office)
     let query = supabaseAdmin.from('users')
-      .select('full_name, phone, lga')
+      .select('full_name, phone, lga, ward')
       .eq('role', 'voter')
       .not('phone', 'is', null)
 
-    const office = (candidate.office || '').toLowerCase()
-    if (office.includes('senator') || office.includes('governor') || office.includes('president') || office.includes('rep')) {
-      // State/National level: Fetch all voters in the state
+    let regionName = 'your constituency'
+
+    // 🔴 Target audience based on exact political level
+    if (level === 'national' || level === 'state') {
       query = query.eq('state', candidate.state)
-    } else {
-      // LGA/Ward level: Fetch only voters in that specific LGA
+      regionName = `${candidate.state} State`
+    } else if (level === 'lga') {
       query = query.eq('lga', candidate.lga)
+      regionName = `${candidate.lga} LGA`
+    } else if (level === 'ward') {
+      query = query.eq('ward', candidate.ward)
+      regionName = `${candidate.ward} Ward`
+    } else {
+      query = query.eq('lga', candidate.lga)
+      regionName = `${candidate.lga} LGA`
     }
 
     const { data: voters, error } = await query
@@ -40,8 +58,7 @@ export async function GET() {
     return NextResponse.json({ 
       voters: voters || [], 
       count: voters?.length || 0,
-      lga: candidate.lga,
-      state: candidate.state
+      regionName: regionName
     })
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Server error' }, { status: 500 })

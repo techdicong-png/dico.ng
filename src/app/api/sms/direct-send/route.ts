@@ -3,6 +3,15 @@ import { cookies } from 'next/headers'
 import { verifyToken } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 
+function classifyCandidate(office: string): 'national' | 'state' | 'lga' | 'ward' | 'other' {
+  const o = (office || '').toLowerCase()
+  if (o.includes('president') || o.includes('senator') || o.includes('rep')) return 'national'
+  if (o.includes('governor') || o.includes('assembly')) return 'state'
+  if (o.includes('chairman') || o.includes('lga')) return 'lga'
+  if (o.includes('councillor') || o.includes('ward')) return 'ward'
+  return 'other'
+}
+
 export async function POST(req: Request) {
   try {
     const cookieStore = await cookies()
@@ -18,28 +27,34 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Message must be at least 10 characters.' }, { status: 400 })
     }
 
-    // 1. Get candidate's location and office
     const { data: candidate, error: candErr } = await supabaseAdmin.from('candidates')
-      .select('id, full_name, state, lga, office')
+      .select('id, full_name, state, lga, ward, office')
       .eq('user_id', payload.userId)
       .single()
 
     if (candErr || !candidate) return NextResponse.json({ error: 'Candidate profile not found.' }, { status: 404 })
 
-    // 2. SMART LOGIC: Fetch voters based on office level
+    // 1. Smart Targeting
+    const level = classifyCandidate(candidate.office)
     let query = supabaseAdmin.from('users')
       .select('phone')
       .eq('role', 'voter')
       .not('phone', 'is', null)
 
-    const office = (candidate.office || '').toLowerCase()
-    
-    // If they are running for State/National office, target the whole State
-    if (office.includes('senator') || office.includes('governor') || office.includes('president') || office.includes('rep')) {
+    let regionName = 'your constituency'
+
+    if (level === 'national' || level === 'state') {
       query = query.eq('state', candidate.state)
-    } else {
-      // If they are running for local office, target only their LGA
+      regionName = `${candidate.state} State`
+    } else if (level === 'lga') {
       query = query.eq('lga', candidate.lga)
+      regionName = `${candidate.lga} LGA`
+    } else if (level === 'ward') {
+      query = query.eq('ward', candidate.ward)
+      regionName = `${candidate.ward} Ward`
+    } else {
+      query = query.eq('lga', candidate.lga)
+      regionName = `${candidate.lga} LGA`
     }
 
     const { data: voters, error: votersErr } = await query
@@ -47,37 +62,40 @@ export async function POST(req: Request) {
     if (votersErr) throw votersErr
     if (!voters || voters.length === 0) {
       return NextResponse.json({ 
-        error: `No voters with phone numbers found in your ${office.includes('senator') ? 'State' : 'LGA'} yet.` 
+        error: `No voters with phone numbers found in ${regionName} yet.` 
       }, { status: 400 })
     }
 
-    // 3. Format the message (e.g., "Henry: Vote for progress!")
+    // 2. Format message
     const candidateFirstName = candidate.full_name?.split(' ')[0] || 'DICO';
     const fullMessage = `${candidateFirstName}: ${message.trim()}`
 
-    // 4. Format phone numbers (convert 0801... to 234801...)
+    // 3. Format phone numbers (convert 0801... to 234801...)
     const formatPhone = (p: string | null) => {
       if (!p) return null;
-      let num = p.replace(/\D/g, ''); // remove spaces/symbols
+      let num = p.replace(/\D/g, '');
       if (num.startsWith('0')) num = '234' + num.slice(1);
-      if (num.startsWith('234') && num.length === 13) return num; // valid 234 format
+      if (num.startsWith('234') && num.length === 13) return num; 
       return null;
     }
 
     const formattedPhones = voters
       .map(v => formatPhone(v.phone))
-      .filter((n): n is string => n !== null) // Remove any null/invalid numbers
+      .filter((n): n is string => n !== null)
     
     if (formattedPhones.length === 0) {
       return NextResponse.json({ error: 'No valid phone numbers found for voters in your constituency.' }, { status: 400 })
     }
 
-    // 5. Call the SMS API (Real API if configured, Mock Mode if not)
-    const smsApiUrl = process.env.SMS_API_URL
+    // 4. Call the SMS API (BulkSMSNigeria V2 Real Mode)
+    const smsApiUrl = process.env.SMS_API_URL || 'https://www.bulksmsnigeria.com/api/v2/sms'
     const apiToken = process.env.SMS_API_TOKEN
-    
-    if (apiToken && smsApiUrl) {
-      // 🔴 REAL SMS MODE
+
+    if (!apiToken) {
+      console.warn('⚠️ SMS_API_TOKEN is missing in .env file. Running in MOCK MODE.')
+      console.log(`[MOCK DIRECT SMS] Sending to ${formattedPhones.length} voters in ${regionName}.`)
+      await new Promise(resolve => setTimeout(resolve, 1000))
+    } else {
       const recipients = formattedPhones.join(',')
       
       const smsResponse = await fetch(smsApiUrl, {
@@ -91,7 +109,7 @@ export async function POST(req: Request) {
           from: process.env.SMS_SENDER_ID || 'DICO',
           to: recipients,
           body: fullMessage,
-          gateway: 'direct-refund' // Recommended for BulkSMSNigeria
+          gateway: 'direct-refund'
         })
       })
 
@@ -101,28 +119,23 @@ export async function POST(req: Request) {
         console.error('SMS API Error:', smsData)
         throw new Error(smsData.error?.message || 'Failed to send SMS via provider.')
       }
-    } else {
-      // 🟡 MOCK SMS MODE (For testing/presentation if no API token is set)
-      console.log(`[MOCK DIRECT SMS] Sending to ${formattedPhones.length} voters:`);
-      console.log(`[MOCK DIRECT SMS] Message: ${fullMessage}`);
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate network delay
     }
     
     const sentCount = formattedPhones.length;
 
-    // 6. Record the direct campaign in the database
+    // 5. Record the direct campaign
     await supabaseAdmin.from('sms_campaigns').insert({
       candidate_id: candidate.id,
       message: message.trim(),
-      reward_civict: 0, // No reward for direct blasts
+      reward_civict: 0,
       target_state: candidate.state,
       target_lga: candidate.lga,
-      status: 'completed' // Mark as completed immediately since it was a one-time blast
+      status: 'completed'
     })
 
     return NextResponse.json({ 
       success: true, 
-      message: `SMS blast sent successfully to ${sentCount} voters in ${candidate.lga || candidate.state}!`,
+      message: `SMS blast sent successfully to ${sentCount} voters in ${regionName}!`,
       recipients: sentCount
     })
 

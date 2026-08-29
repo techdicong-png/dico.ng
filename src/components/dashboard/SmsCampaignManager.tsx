@@ -84,7 +84,7 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
       const data = await res.json()
       if (res.ok) {
         setVoters(data.voters || [])
-        setVoterLga(data.lga || 'your constituency')
+        setVoterLga(data.regionName || 'your constituency') // 🔴 Uses the smart region name
         setShowAudience(true)
       } else {
         throw new Error(data.error || 'Failed to load audience')
