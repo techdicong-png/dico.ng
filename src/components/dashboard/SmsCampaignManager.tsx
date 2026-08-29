@@ -24,11 +24,14 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
   const [directMessage, setDirectMessage] = useState('')
   const [sendingBlast, setSendingBlast] = useState(false)
 
-  // 🔴 NEW: State for Audience Modal
+  // State for Audience Modal
   const [showAudience, setShowAudience] = useState(false)
   const [voters, setVoters] = useState<any[]>([])
   const [loadingVoters, setLoadingVoters] = useState(false)
   const [voterLga, setVoterLga] = useState('')
+
+  // State for Blast Limit
+  const [blastLimit, setBlastLimit] = useState(50)
 
   async function createCampaign() {
     if (message.trim().length < 10) return toast.error('Message must be at least 10 characters.')
@@ -62,7 +65,7 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
       const res = await fetch('/api/sms/direct-send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: directMessage })
+        body: JSON.stringify({ message: directMessage, limit: blastLimit })
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
@@ -76,7 +79,6 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
     }
   }
 
-  // 🔴 NEW: Fetch the audience
   async function fetchAudience() {
     setLoadingVoters(true)
     try {
@@ -84,7 +86,7 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
       const data = await res.json()
       if (res.ok) {
         setVoters(data.voters || [])
-        setVoterLga(data.regionName || 'your constituency') // 🔴 Uses the smart region name
+        setVoterLga(data.regionName || 'your constituency')
         setShowAudience(true)
       } else {
         throw new Error(data.error || 'Failed to load audience')
@@ -105,14 +107,14 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
         <h1 className="font-serif text-2xl md:text-3xl font-black text-ink dark:text-white">Campaign SMS</h1>
       </div>
 
-      {/* 🔴 NEW: Direct Voter Blast Section */}
+      {/* Direct Voter Blast Section */}
       <div className="bg-forest text-white rounded-2xl p-6 shadow-lg">
         <div className="flex items-center gap-2 mb-4">
           <Megaphone className="h-5 w-5 text-gold" />
           <h3 className="font-serif text-lg font-bold">Direct Voter Blast</h3>
         </div>
         <p className="text-xs text-white/70 mb-4">
-          Send an SMS directly to the phones of all verified voters registered in your LGA. This does not reward the voters; it goes straight from you to them.
+          Send an SMS directly to the phones of verified voters registered in your LGA. This does not reward the voters; it goes straight from you to them.
         </p>
         
         {/* Audience Button */}
@@ -134,19 +136,32 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
           placeholder="e.g. I am hosting a live town hall on DICO tomorrow at 4PM. Join me to ask your questions!"
           className="bg-white/10 border-white/20 text-white placeholder:text-white/50 mb-2"
         />
+        
+        {/* Limit Selector UI */}
         <div className="flex justify-between items-center text-xs mb-4">
           <span className="font-semibold text-white/70">{directMessage.length}/160 characters</span>
-          <span className="flex items-center gap-1 text-gold font-bold">
-            <Users className="h-3 w-3" /> Sends to all voters in your LGA
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-white/70">Send to:</span>
+            <select 
+              value={blastLimit}
+              onChange={e => setBlastLimit(Number(e.target.value))}
+              className="bg-white/10 border border-white/20 text-white rounded-md px-2 py-1 text-xs focus:outline-none"
+            >
+              <option value={50} className="text-ink">50 people</option>
+              <option value={100} className="text-ink">100 people</option>
+              <option value={500} className="text-ink">500 people</option>
+              <option value={1000} className="text-ink">1000 people</option>
+            </select>
+          </div>
         </div>
+
         <Button onClick={sendDirectBlast} disabled={sendingBlast || directMessage.trim().length < 10} className="w-full bg-gold hover:bg-gold-hover text-ink font-bold h-11">
           {sendingBlast ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
           {sendingBlast ? 'Sending Blast...' : 'Send Direct Blast'}
         </Button>
       </div>
 
-      {/* Existing: Voter Canvassing (Viral) Section */}
+      {/* Voter Canvassing (Viral) Section */}
       <div className="space-y-6">
         <div className="border-t border-border dark:border-[#1f3a2c] pt-6">
           <h3 className="font-serif text-lg font-bold text-ink dark:text-white mb-2">Voter Canvassing (Viral)</h3>
@@ -203,7 +218,7 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
         </div>
       </div>
 
-      {/* 🔴 NEW: Target Audience Modal */}
+      {/* Target Audience Modal */}
       {showAudience && (
         <div className="fixed inset-0 bg-black/50 dark:bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setShowAudience(false)}>
           <div className="bg-white dark:bg-[#11241b] rounded-2xl w-full max-w-lg max-h-[80vh] overflow-hidden border border-border dark:border-[#1f3a2c] shadow-xl flex flex-col" onClick={e => e.stopPropagation()}>

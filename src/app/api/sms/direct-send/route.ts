@@ -3,15 +3,6 @@ import { cookies } from 'next/headers'
 import { verifyToken } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 
-function classifyCandidate(office: string): 'national' | 'state' | 'lga' | 'ward' | 'other' {
-  const o = (office || '').toLowerCase()
-  if (o.includes('president') || o.includes('senator') || o.includes('rep')) return 'national'
-  if (o.includes('governor') || o.includes('assembly')) return 'state'
-  if (o.includes('chairman') || o.includes('lga')) return 'lga'
-  if (o.includes('councillor') || o.includes('ward')) return 'ward'
-  return 'other'
-}
-
 export async function POST(req: Request) {
   try {
     const cookieStore = await cookies()
@@ -22,55 +13,36 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { message } = await req.json()
+    const { message, limit } = await req.json()
     if (!message || message.trim().length < 10) {
       return NextResponse.json({ error: 'Message must be at least 10 characters.' }, { status: 400 })
     }
 
+    // 1. Get candidate's location
     const { data: candidate, error: candErr } = await supabaseAdmin.from('candidates')
-      .select('id, full_name, state, lga, ward, office')
+      .select('id, full_name, state, lga, office')
       .eq('user_id', payload.userId)
       .single()
 
     if (candErr || !candidate) return NextResponse.json({ error: 'Candidate profile not found.' }, { status: 404 })
 
-    // 1. Smart Targeting
-    const level = classifyCandidate(candidate.office)
+    // 2. Fetch voters strictly in the candidate's LGA
     let query = supabaseAdmin.from('users')
       .select('phone')
       .eq('role', 'voter')
+      .eq('lga', candidate.lga)
       .not('phone', 'is', null)
-
-    let regionName = 'your constituency'
-
-    if (level === 'national' || level === 'state') {
-      query = query.eq('state', candidate.state)
-      regionName = `${candidate.state} State`
-    } else if (level === 'lga') {
-      query = query.eq('lga', candidate.lga)
-      regionName = `${candidate.lga} LGA`
-    } else if (level === 'ward') {
-      query = query.eq('ward', candidate.ward)
-      regionName = `${candidate.ward} Ward`
-    } else {
-      query = query.eq('lga', candidate.lga)
-      regionName = `${candidate.lga} LGA`
-    }
 
     const { data: voters, error: votersErr } = await query
 
     if (votersErr) throw votersErr
     if (!voters || voters.length === 0) {
       return NextResponse.json({ 
-        error: `No voters with phone numbers found in ${regionName} yet.` 
+        error: `No voters with phone numbers found in ${candidate.lga} LGA yet.` 
       }, { status: 400 })
     }
 
-    // 2. Format message
-    const candidateFirstName = candidate.full_name?.split(' ')[0] || 'DICO';
-    const fullMessage = `${candidateFirstName}: ${message.trim()}`
-
-    // 3. Format phone numbers (convert 0801... to 234801...)
+    // 3. Format phone numbers
     const formatPhone = (p: string | null) => {
       if (!p) return null;
       let num = p.replace(/\D/g, '');
@@ -79,7 +51,7 @@ export async function POST(req: Request) {
       return null;
     }
 
-    const formattedPhones = voters
+    let formattedPhones = voters
       .map(v => formatPhone(v.phone))
       .filter((n): n is string => n !== null)
     
@@ -87,13 +59,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'No valid phone numbers found for voters in your constituency.' }, { status: 400 })
     }
 
-    // 4. Call the SMS API (BulkSMSNigeria V2 Real Mode)
+    // 🔴 NEW: Apply the limit if provided (e.g., send to only the first 50 people)
+    if (limit && limit > 0 && limit < formattedPhones.length) {
+      formattedPhones = formattedPhones.slice(0, limit)
+    }
+
+    // 4. Format message
+    const candidateFirstName = candidate.full_name?.split(' ')[0] || 'DICO';
+    const fullMessage = `${candidateFirstName}: ${message.trim()}`
+
+    // 5. Call the SMS API
     const smsApiUrl = process.env.SMS_API_URL || 'https://www.bulksmsnigeria.com/api/v2/sms'
     const apiToken = process.env.SMS_API_TOKEN
 
     if (!apiToken) {
-      console.warn('⚠️ SMS_API_TOKEN is missing in .env file. Running in MOCK MODE.')
-      console.log(`[MOCK DIRECT SMS] Sending to ${formattedPhones.length} voters in ${regionName}.`)
+      console.warn('⚠️ SMS_API_TOKEN is missing. Running in MOCK MODE.')
+      console.log(`[MOCK DIRECT SMS] Sending to ${formattedPhones.length} voters in ${candidate.lga} LGA.`)
       await new Promise(resolve => setTimeout(resolve, 1000))
     } else {
       const recipients = formattedPhones.join(',')
@@ -115,15 +96,24 @@ export async function POST(req: Request) {
 
       const smsData = await smsResponse.json()
 
+      // 🔴 IMPROVED ERROR HANDLING
       if (!smsResponse.ok || smsData.status === 'error') {
         console.error('SMS API Error:', smsData)
-        throw new Error(smsData.error?.message || 'Failed to send SMS via provider.')
+        const errMsg = smsData.error?.message || 'Failed to send SMS via provider.'
+        
+        if (smsResponse.status === 402 || errMsg.toLowerCase().includes('insufficient') || errMsg.toLowerCase().includes('balance')) {
+          return NextResponse.json({ 
+            error: 'Insufficient SMS credits. Please top up your campaign SMS wallet to send to more voters.' 
+          }, { status: 402 })
+        }
+        
+        throw new Error(errMsg)
       }
     }
     
     const sentCount = formattedPhones.length;
 
-    // 5. Record the direct campaign
+    // 6. Record the direct campaign
     await supabaseAdmin.from('sms_campaigns').insert({
       candidate_id: candidate.id,
       message: message.trim(),
@@ -135,7 +125,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ 
       success: true, 
-      message: `SMS blast sent successfully to ${sentCount} voters in ${regionName}!`,
+      message: `SMS blast sent successfully to ${sentCount} voters in ${candidate.lga} LGA!`,
       recipients: sentCount
     })
 
