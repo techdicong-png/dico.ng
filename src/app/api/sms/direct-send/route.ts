@@ -38,14 +38,19 @@ export async function POST(req: Request) {
     else if (target.scope === 'lgas') query = query.in('lga', target.lgas)
     else if (target.scope === 'lga') query = query.eq('lga', target.lga)
     else if (target.scope === 'ward') query = query.eq('lga', target.lga).eq('ward', target.ward)
-    // 'all' scope (President) has no location filter
 
     const { data: voters, error: votersErr } = await query
 
     if (votersErr) throw votersErr
     if (!voters || voters.length === 0) {
+      // 🔴 TS FIX: Safely determine the region name based on scope
+      const regionName = target.scope === 'state' ? target.state 
+                       : target.scope === 'lga' ? target.lga 
+                       : target.scope === 'ward' ? `${target.lga} / ${target.ward}` 
+                       : 'your constituency';
+
       return NextResponse.json({ 
-        error: `No voters with phone numbers found in ${target.scope === 'state' ? target.state : target.lga || 'your constituency'} yet.` 
+        error: `No voters with phone numbers found in ${regionName} yet.` 
       }, { status: 400 })
     }
 
@@ -66,18 +71,12 @@ export async function POST(req: Request) {
 
     // 4. Filter by specific selected recipients OR apply the limit
     if (phoneNumbers && Array.isArray(phoneNumbers) && phoneNumbers.length > 0) {
-      // Create a set of the raw numbers the user selected (e.g., "0801...")
       const selectedSet = new Set(phoneNumbers.map((p: string) => p.replace(/\D/g, '')))
-      
-      // Filter our secure LGA list to only include those selected numbers
       formattedPhones = formattedPhones.filter(num => {
-        // num is "234801...", we convert back to "0801..." to check if it's in the user's selection
         const rawNum = num.startsWith('234') ? '0' + num.slice(3) : num
-        // Also check the 234 version just in case
         return selectedSet.has(rawNum) || selectedSet.has(num)
       })
     } else if (limit && limit > 0 && limit < formattedPhones.length) {
-      // If no specific numbers selected, use the Limit dropdown
       formattedPhones = formattedPhones.slice(0, limit)
     }
 
@@ -112,22 +111,18 @@ export async function POST(req: Request) {
           from: process.env.SMS_SENDER_ID || 'DICO',
           to: recipients,
           body: fullMessage,
-          gateway: 'direct-corporate' // Forces delivery past DND
+          gateway: 'direct-corporate' 
         })
       })
 
       const smsData = await smsResponse.json()
 
-      // 🔴 IMPROVED ERROR HANDLING
       if (!smsResponse.ok || smsData.status === 'error') {
         console.error('SMS API Error:', smsData)
         const errMsg = smsData.error?.message || 'Failed to send SMS via provider.'
-        
-        // Check for insufficient funds specifically
         if (smsResponse.status === 402 || errMsg.toLowerCase().includes('insufficient') || errMsg.toLowerCase().includes('balance') || errMsg.toLowerCase().includes('disabled')) {
           return NextResponse.json({ error: 'Insufficient SMS credits. Please top up your campaign SMS wallet to send to more voters.' }, { status: 402 })
         }
-        
         throw new Error(errMsg)
       }
     }

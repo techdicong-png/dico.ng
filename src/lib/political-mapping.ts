@@ -22,12 +22,14 @@ export type CandidateTarget =
   | { scope: 'all' }
   | { scope: 'state', state: string }
   | { scope: 'lgas', lgas: string[] }
-  | { scope: 'lga', lga: string | null }
-  | { scope: 'ward', lga: string | null, ward: string | null };
+  | { scope: 'lga', lga: string }
+  | { scope: 'ward', lga: string, ward: string };
 
 export function getCandidateTargetAreas(candidate: any): CandidateTarget {
   const office = (candidate.office || '').toLowerCase();
   const state = candidate.state || '';
+  const lga = candidate.lga || '';
+  const ward = candidate.ward || '';
 
   // President: Target everyone
   if (office.includes('president')) return { scope: 'all' };
@@ -56,12 +58,20 @@ export function getCandidateTargetAreas(candidate: any): CandidateTarget {
     return { scope: 'state', state: state };
   }
 
-  // LGA Chairman: Target specific LGA
-  if (office.includes('chairman') || office.includes('lga')) return { scope: 'lga', lga: candidate.lga };
+  // LGA Chairman: Target specific LGA (fallback to state if LGA is missing)
+  if (office.includes('chairman') || office.includes('lga')) {
+    if (lga) return { scope: 'lga', lga: lga };
+    return { scope: 'state', state: state };
+  }
 
-  // Councillor: Target specific Ward
-  if (office.includes('councillor') || office.includes('ward')) return { scope: 'ward', lga: candidate.lga, ward: candidate.ward };
+  // Councillor: Target specific Ward (fallback to LGA or state if missing)
+  if (office.includes('councillor') || office.includes('ward')) {
+    if (lga && ward) return { scope: 'ward', lga: lga, ward: ward };
+    if (lga) return { scope: 'lga', lga: lga };
+    return { scope: 'state', state: state };
+  }
 
   // Default fallback
-  return { scope: 'lga', lga: candidate.lga };
+  if (lga) return { scope: 'lga', lga: lga };
+  return { scope: 'state', state: state };
 }
