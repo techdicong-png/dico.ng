@@ -16,6 +16,13 @@ type Campaign = {
   target_state: string | null
 }
 
+// 🔴 NEW: Explicit Voter type to fix TypeScript squiggly lines
+type Voter = {
+  full_name: string
+  phone: string
+  lga: string | null
+}
+
 export function SmsCampaignManager({ candidateName, initialCampaigns }: { candidateName: string, initialCampaigns: Campaign[] }) {
   const [campaigns, setCampaigns] = useState<Campaign[]>(initialCampaigns)
   const [message, setMessage] = useState('')
@@ -26,7 +33,8 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
 
   // State for Audience Modal
   const [showAudience, setShowAudience] = useState(false)
-  const [voters, setVoters] = useState<any[]>([])
+  // 🔴 Changed from any[] to Voter[]
+  const [voters, setVoters] = useState<Voter[]>([])
   const [loadingVoters, setLoadingVoters] = useState(false)
   const [voterRegion, setVoterRegion] = useState('')
   
@@ -42,7 +50,7 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
       if (!acc[lga]) acc[lga] = [];
       acc[lga].push(v);
       return acc;
-    }, {} as Record<string, any[]>)
+    }, {} as Record<string, Voter[]>) // 🔴 Typed as Voter[]
   }, [voters])
 
   async function createCampaign() {
@@ -132,7 +140,7 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
     }
   }
 
-  function toggleSelectLga(lga: string, votersInLga: any[]) {
+  function toggleSelectLga(lga: string, votersInLga: Voter[]) {
     const phonesInLga = votersInLga.map(v => v.phone)
     const allSelected = phonesInLga.every(p => selectedVoters.includes(p))
     
