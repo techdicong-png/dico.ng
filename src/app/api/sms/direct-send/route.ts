@@ -19,25 +19,37 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Message must be at least 10 characters.' }, { status: 400 })
     }
 
+    // 1. Get candidate's location
     const { data: candidate, error: candErr } = await supabaseAdmin.from('candidates')
       .select('id, full_name, state, lga, ward, senatorial_district, federal_constituency, office')
-      .eq('user_id', payload.userId).single()
+      .eq('user_id', payload.userId)
+      .single()
 
     if (candErr || !candidate) return NextResponse.json({ error: 'Candidate profile not found.' }, { status: 404 })
 
-    // 🔴 SMART TARGETING
+    // 2. SMART TARGETING: Fetch voters based on office level
     const target = getCandidateTargetAreas(candidate)
-    let query = supabaseAdmin.from('users').select('phone').eq('role', 'voter').not('phone', 'is', null)
+    let query = supabaseAdmin.from('users')
+      .select('phone')
+      .eq('role', 'voter')
+      .not('phone', 'is', null)
 
     if (target.scope === 'state') query = query.eq('state', target.state)
     else if (target.scope === 'lgas') query = query.in('lga', target.lgas)
     else if (target.scope === 'lga') query = query.eq('lga', target.lga)
     else if (target.scope === 'ward') query = query.eq('lga', target.lga).eq('ward', target.ward)
+    // 'all' scope (President) has no location filter
 
     const { data: voters, error: votersErr } = await query
-    if (votersErr) throw votersErr
-    if (!voters || voters.length === 0) return NextResponse.json({ error: 'No voters with phone numbers found in your constituency yet.' }, { status: 400 })
 
+    if (votersErr) throw votersErr
+    if (!voters || voters.length === 0) {
+      return NextResponse.json({ 
+        error: `No voters with phone numbers found in ${target.scope === 'state' ? target.state : target.lga || 'your constituency'} yet.` 
+      }, { status: 400 })
+    }
+
+    // 3. Format phone numbers (convert 0801... to 234801...)
     const formatPhone = (p: string | null) => {
       if (!p) return null;
       let num = p.replace(/\D/g, '');
@@ -47,52 +59,99 @@ export async function POST(req: Request) {
     }
 
     let formattedPhones = voters.map(v => formatPhone(v.phone)).filter((n): n is string => n !== null)
-    if (formattedPhones.length === 0) return NextResponse.json({ error: 'No valid phone numbers found.' }, { status: 400 })
+    
+    if (formattedPhones.length === 0) {
+      return NextResponse.json({ error: 'No valid phone numbers found for voters in your constituency.' }, { status: 400 })
+    }
 
+    // 4. Filter by specific selected recipients OR apply the limit
     if (phoneNumbers && Array.isArray(phoneNumbers) && phoneNumbers.length > 0) {
+      // Create a set of the raw numbers the user selected (e.g., "0801...")
       const selectedSet = new Set(phoneNumbers.map((p: string) => p.replace(/\D/g, '')))
+      
+      // Filter our secure LGA list to only include those selected numbers
       formattedPhones = formattedPhones.filter(num => {
+        // num is "234801...", we convert back to "0801..." to check if it's in the user's selection
         const rawNum = num.startsWith('234') ? '0' + num.slice(3) : num
-        return selectedSet.has(rawNum)
+        // Also check the 234 version just in case
+        return selectedSet.has(rawNum) || selectedSet.has(num)
       })
     } else if (limit && limit > 0 && limit < formattedPhones.length) {
+      // If no specific numbers selected, use the Limit dropdown
       formattedPhones = formattedPhones.slice(0, limit)
     }
 
+    // 🔴 CRITICAL SAFEGUARD: If the filtered list is empty, stop and return an error!
+    if (formattedPhones.length === 0) {
+      return NextResponse.json({ error: 'No valid recipients selected. Please ensure you select at least one valid voter.' }, { status: 400 })
+    }
+
+    // 5. Format message
     const candidateFullName = candidate.full_name || 'DICO';
     const fullMessage = `${candidateFullName} via DICO: ${message.trim()}`
 
+    // 6. Call the SMS API
     const smsApiUrl = process.env.SMS_API_URL || 'https://www.bulksmsnigeria.com/api/v2/sms'
     const apiToken = process.env.SMS_API_TOKEN
 
     if (!apiToken) {
       console.warn('⚠️ SMS_API_TOKEN is missing. Running in MOCK MODE.')
+      console.log(`[MOCK DIRECT SMS] Sending to ${formattedPhones.length} voters.`)
       await new Promise(resolve => setTimeout(resolve, 1000))
     } else {
       const recipients = formattedPhones.join(',')
+      
       const smsResponse = await fetch(smsApiUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': `Bearer ${apiToken}` },
-        body: JSON.stringify({ from: process.env.SMS_SENDER_ID || 'DICO', to: recipients, body: fullMessage, gateway: 'direct-corporate' })
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${apiToken}`
+        },
+        body: JSON.stringify({
+          from: process.env.SMS_SENDER_ID || 'DICO',
+          to: recipients,
+          body: fullMessage,
+          gateway: 'direct-corporate' // Forces delivery past DND
+        })
       })
+
       const smsData = await smsResponse.json()
+
+      // 🔴 IMPROVED ERROR HANDLING
       if (!smsResponse.ok || smsData.status === 'error') {
         console.error('SMS API Error:', smsData)
         const errMsg = smsData.error?.message || 'Failed to send SMS via provider.'
-        if (smsResponse.status === 402 || errMsg.toLowerCase().includes('insufficient') || errMsg.toLowerCase().includes('balance')) {
-          return NextResponse.json({ error: 'Insufficient SMS credits. Please top up your campaign SMS wallet.' }, { status: 402 })
+        
+        // Check for insufficient funds specifically
+        if (smsResponse.status === 402 || errMsg.toLowerCase().includes('insufficient') || errMsg.toLowerCase().includes('balance') || errMsg.toLowerCase().includes('disabled')) {
+          return NextResponse.json({ error: 'Insufficient SMS credits. Please top up your campaign SMS wallet to send to more voters.' }, { status: 402 })
         }
+        
         throw new Error(errMsg)
       }
     }
     
     const sentCount = formattedPhones.length;
+
+    // 7. Record the direct campaign in the database
     await supabaseAdmin.from('sms_campaigns').insert({
-      candidate_id: candidate.id, message: message.trim(), reward_civict: 0, target_state: candidate.state, target_lga: candidate.lga, status: 'completed'
+      candidate_id: candidate.id,
+      message: message.trim(),
+      reward_civict: 0,
+      target_state: candidate.state,
+      target_lga: candidate.lga,
+      status: 'completed'
     })
 
-    return NextResponse.json({ success: true, message: `SMS blast sent successfully to ${sentCount} voters!`, recipients: sentCount })
+    return NextResponse.json({ 
+      success: true, 
+      message: `SMS blast sent successfully to ${sentCount} voters!`,
+      recipients: sentCount
+    })
+
   } catch (err: any) {
+    console.error('Direct SMS Send Error:', err)
     return NextResponse.json({ error: err.message || 'Server error' }, { status: 500 })
   }
 }

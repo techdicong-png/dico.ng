@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { Loader2, Send, Smartphone, Megaphone, Users, X } from 'lucide-react'
+import { Loader2, Send, Smartphone, Megaphone, Users, X, ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
 
 type Campaign = {
@@ -28,11 +28,22 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
   const [showAudience, setShowAudience] = useState(false)
   const [voters, setVoters] = useState<any[]>([])
   const [loadingVoters, setLoadingVoters] = useState(false)
-  const [voterLga, setVoterLga] = useState('')
+  const [voterRegion, setVoterRegion] = useState('')
   
   // State for Blast Limit & Selected Voters
   const [blastLimit, setBlastLimit] = useState(10)
   const [selectedVoters, setSelectedVoters] = useState<string[]>([])
+  const [expandedLgas, setExpandedLgas] = useState<Record<string, boolean>>({})
+
+  // Group voters by LGA for the UI
+  const groupedVoters = useMemo(() => {
+    return voters.reduce((acc, v) => {
+      const lga = v.lga || 'Unknown LGA';
+      if (!acc[lga]) acc[lga] = [];
+      acc[lga].push(v);
+      return acc;
+    }, {} as Record<string, any[]>)
+  }, [voters])
 
   async function createCampaign() {
     if (message.trim().length < 10) return toast.error('Message must be at least 10 characters.')
@@ -65,7 +76,6 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
     try {
       const payload: any = { message: directMessage, limit: blastLimit }
       
-      // If they selected specific people, override the limit
       if (selectedVoters.length > 0) {
         payload.phoneNumbers = selectedVoters
         payload.limit = selectedVoters.length
@@ -80,7 +90,7 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
       if (!res.ok) throw new Error(data.error)
 
       setDirectMessage('')
-      setSelectedVoters([]) // Clear selection after sending
+      setSelectedVoters([])
       toast.success(data.message)
     } catch (err: any) {
       toast.error(err.message)
@@ -96,7 +106,7 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
       const data = await res.json()
       if (res.ok) {
         setVoters(data.voters || [])
-        setVoterLga(data.regionName || 'your constituency')
+        setVoterRegion(data.regionName || 'your constituency')
         setShowAudience(true)
       } else {
         throw new Error(data.error || 'Failed to load audience')
@@ -120,6 +130,23 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
     } else {
       setSelectedVoters(voters.map(v => v.phone))
     }
+  }
+
+  function toggleSelectLga(lga: string, votersInLga: any[]) {
+    const phonesInLga = votersInLga.map(v => v.phone)
+    const allSelected = phonesInLga.every(p => selectedVoters.includes(p))
+    
+    if (allSelected) {
+      // Deselect only this LGA
+      setSelectedVoters(prev => prev.filter(p => !phonesInLga.includes(p)))
+    } else {
+      // Select this LGA (add to existing)
+      setSelectedVoters(prev => Array.from(new Set([...prev, ...phonesInLga])))
+    }
+  }
+
+  function toggleExpandLga(lga: string) {
+    setExpandedLgas(prev => ({ ...prev, [lga]: !prev[lga] }))
   }
 
   return (
@@ -187,6 +214,7 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
                 <option value={10} className="text-ink">10 people</option>
                 <option value={20} className="text-ink">20 people</option>
                 <option value={50} className="text-ink">50 people</option>
+                <option value={100} className="text-ink">100 people</option>
               </select>
             </div>
           </div>
@@ -266,14 +294,14 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
         </div>
       </div>
 
-      {/* Target Audience Modal */}
+      {/* Target Audience Modal - Grouped by LGA */}
       {showAudience && (
         <div className="fixed inset-0 bg-black/50 dark:bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setShowAudience(false)}>
           <div className="bg-white dark:bg-[#11241b] rounded-2xl w-full max-w-lg max-h-[80vh] overflow-hidden border border-border dark:border-[#1f3a2c] shadow-xl flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="p-5 bg-forest text-white flex justify-between items-center sticky top-0 z-10">
               <div>
                 <h3 className="font-serif text-lg font-bold">Select Recipients</h3>
-                <p className="text-xs text-white/70">{voters.length} voters in {voterLga}</p>
+                <p className="text-xs text-white/70">{voters.length} voters in {voterRegion}</p>
               </div>
               <button onClick={() => setShowAudience(false)}><X className="h-6 w-6" /></button>
             </div>
@@ -285,32 +313,65 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
               </Button>
             </div>
 
-            <div className="p-4 overflow-y-auto space-y-2">
-              {voters.length === 0 ? (
+            <div className="p-4 overflow-y-auto space-y-4">
+              {Object.keys(groupedVoters).length === 0 ? (
                 <p className="text-center text-muted dark:text-[#c0d0c4] py-8">No voters with phone numbers found in your constituency yet.</p>
               ) : (
-                voters.map((v, i) => (
-                  <div key={i} className={`flex items-center gap-3 p-3 rounded-lg text-sm border cursor-pointer transition-colors ${
-                    selectedVoters.includes(v.phone) 
-                      ? 'bg-forest-light dark:bg-[#1b3a2b] border-forest dark:border-forest-700' 
-                      : 'bg-sand dark:bg-[#0f1d16] border-border-light dark:border-[#1f3a2c] hover:bg-forest-faint dark:hover:bg-[#1b3a2b]'
-                  }`} onClick={() => toggleVoter(v.phone)}>
-                    <input
-                      type="checkbox"
-                      checked={selectedVoters.includes(v.phone)}
-                      onChange={() => toggleVoter(v.phone)}
-                      className="h-4 w-4 accent-forest cursor-pointer"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <span className="text-ink dark:text-white font-medium block truncate">{v.full_name}</span>
-                      {/* 🔴 NEW: Show the LGA so the candidate knows exactly where they are from */}
-                      <span className="text-[10px] text-muted dark:text-[#c0d0c4] truncate">{v.lga} LGA</span>
+                Object.entries(groupedVoters).map(([lga, lgaVoters]) => {
+                  const phonesInLga = lgaVoters.map(v => v.phone)
+                  const allSelected = phonesInLga.every(p => selectedVoters.includes(p))
+                  const isExpanded = expandedLgas[lga]
+                  
+                  return (
+                    <div key={lga} className="border border-border dark:border-[#1f3a2c] rounded-xl overflow-hidden">
+                      {/* LGA Header */}
+                      <div className="p-3 bg-forest-light dark:bg-[#1b3a2b] flex items-center justify-between">
+                        <button onClick={() => toggleExpandLga(lga)} className="flex items-center gap-2 text-ink dark:text-white font-bold text-sm">
+                          <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? '' : '-rotate-90'}`} />
+                          {lga} LGA
+                          <span className="text-xs font-normal text-muted dark:text-[#c0d0c4]">({lgaVoters.length})</span>
+                        </button>
+                        <Button 
+                          size="sm" 
+                          variant={allSelected ? "destructive" : "outline"}
+                          className="h-7 text-xs"
+                          onClick={() => toggleSelectLga(lga, lgaVoters)}
+                        >
+                          {allSelected ? 'Clear LGA' : 'Select All'}
+                        </Button>
+                      </div>
+                      
+                      {/* Voter List (Collapsible for performance) */}
+                      {isExpanded && (
+                        <div className="p-2 space-y-1 max-h-60 overflow-y-auto bg-white dark:bg-[#11241b]">
+                          {lgaVoters.map((v) => (
+                            <div 
+                              key={v.phone} 
+                              className={`flex items-center gap-3 p-2 rounded-lg text-sm cursor-pointer transition-colors ${
+                                selectedVoters.includes(v.phone) 
+                                  ? 'bg-forest-light dark:bg-[#1b3a2b] border border-forest dark:border-forest-700' 
+                                  : 'hover:bg-sand dark:hover:bg-[#0f1d16]'
+                              }`}
+                              onClick={() => toggleVoter(v.phone)}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selectedVoters.includes(v.phone)}
+                                onChange={() => toggleVoter(v.phone)}
+                                className="h-4 w-4 accent-forest cursor-pointer"
+                              />
+                              <span className="text-ink dark:text-white font-medium flex-1 truncate">{v.full_name}</span>
+                              <span className="text-muted dark:text-[#c0d0c4] font-mono text-xs">{v.phone}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    <span className="text-muted dark:text-[#c0d0c4] font-mono text-xs shrink-0">{v.phone}</span>
-                  </div>
-                ))
+                  )
+                })
               )}
             </div>
+            
             <div className="p-4 border-t border-border dark:border-[#1f3a2c]">
               <Button onClick={() => setShowAudience(false)} className="w-full bg-forest hover:bg-forest-mid">
                 Done ({selectedVoters.length} selected)
