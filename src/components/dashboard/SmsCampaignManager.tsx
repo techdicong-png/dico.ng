@@ -28,7 +28,7 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
   
-  const [directMessage, setDirectMessage] = useState('')
+  const [directMessage, setDirectMessage] = useState("Okpe, Sapele & Uvwie deserve effective representation. Vote Hon. Henry Eyarefe for Federal House of Representatives. Let's move forward together!")
   const [sendingBlast, setSendingBlast] = useState(false)
 
   // State for Audience Modal
@@ -204,7 +204,7 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
           onChange={e => setDirectMessage(e.target.value)}
           rows={3}
           maxLength={160}
-          placeholder="e.g. I am hosting a live town hall on DICO tomorrow at 4PM. Join me to ask your questions!"
+          placeholder="Type your campaign message here..."
           className="bg-white/10 border-white/20 text-white placeholder:text-white/50 mb-2"
         />
         
