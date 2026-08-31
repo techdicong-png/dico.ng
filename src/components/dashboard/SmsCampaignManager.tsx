@@ -16,11 +16,18 @@ type Campaign = {
   target_state: string | null
 }
 
-// 🔴 NEW: Explicit Voter type to fix TypeScript squiggly lines
 type Voter = {
+  id: string
   full_name: string
   phone: string
   lga: string | null
+}
+
+// 🔴 NEW: Helper function to mask phone numbers for UI display
+function maskPhoneNumber(phone: string) {
+  if (!phone || phone.length < 4) return '****'
+  // Show only the last 4 digits, mask the rest
+  return '*'.repeat(phone.length - 4) + phone.slice(-4)
 }
 
 export function SmsCampaignManager({ candidateName, initialCampaigns }: { candidateName: string, initialCampaigns: Campaign[] }) {
@@ -33,7 +40,6 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
 
   // State for Audience Modal
   const [showAudience, setShowAudience] = useState(false)
-  // 🔴 Changed from any[] to Voter[]
   const [voters, setVoters] = useState<Voter[]>([])
   const [loadingVoters, setLoadingVoters] = useState(false)
   const [voterRegion, setVoterRegion] = useState('')
@@ -50,7 +56,7 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
       if (!acc[lga]) acc[lga] = [];
       acc[lga].push(v);
       return acc;
-    }, {} as Record<string, Voter[]>) // 🔴 Typed as Voter[]
+    }, {} as Record<string, Voter[]>)
   }, [voters])
 
   async function createCampaign() {
@@ -145,10 +151,8 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
     const allSelected = phonesInLga.every(p => selectedVoters.includes(p))
     
     if (allSelected) {
-      // Deselect only this LGA
       setSelectedVoters(prev => prev.filter(p => !phonesInLga.includes(p)))
     } else {
-      // Select this LGA (add to existing)
       setSelectedVoters(prev => Array.from(new Set([...prev, ...phonesInLga])))
     }
   }
@@ -352,9 +356,9 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
                       {/* Voter List (Collapsible for performance) */}
                       {isExpanded && (
                         <div className="p-2 space-y-1 max-h-60 overflow-y-auto bg-white dark:bg-[#11241b]">
-                          {lgaVoters.map((v) => (
+                          {lgaVoters.map((v, index) => (
                             <div 
-                              key={v.phone} 
+                              key={v.id || index} 
                               className={`flex items-center gap-3 p-2 rounded-lg text-sm cursor-pointer transition-colors ${
                                 selectedVoters.includes(v.phone) 
                                   ? 'bg-forest-light dark:bg-[#1b3a2b] border border-forest dark:border-forest-700' 
@@ -369,7 +373,10 @@ export function SmsCampaignManager({ candidateName, initialCampaigns }: { candid
                                 className="h-4 w-4 accent-forest cursor-pointer"
                               />
                               <span className="text-ink dark:text-white font-medium flex-1 truncate">{v.full_name}</span>
-                              <span className="text-muted dark:text-[#c0d0c4] font-mono text-xs">{v.phone}</span>
+                              {/* 🔴 CHANGED: Applied the maskPhoneNumber helper here */}
+                              <span className="text-muted dark:text-[#c0d0c4] font-mono text-xs tracking-wider">
+                                {maskPhoneNumber(v.phone)}
+                              </span>
                             </div>
                           ))}
                         </div>

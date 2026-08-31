@@ -29,20 +29,41 @@ export async function POST(req: Request) {
 
     // 2. SMART TARGETING: Fetch voters based on office level
     const target = getCandidateTargetAreas(candidate)
-    let query = supabaseAdmin.from('users')
-      .select('phone')
-      .eq('role', 'voter')
-      .not('phone', 'is', null)
+    
+    // 🔴 PAGINATION LOGIC TO BYPASS SUPABASE 1000 ROW LIMIT
+    let allVoters: any[] = []
+    const batchSize = 1000
+    let currentStart = 0
+    let hasMore = true
 
-    if (target.scope === 'state') query = query.eq('state', target.state)
-    else if (target.scope === 'lgas') query = query.in('lga', target.lgas)
-    else if (target.scope === 'lga') query = query.eq('lga', target.lga)
-    else if (target.scope === 'ward') query = query.eq('lga', target.lga).eq('ward', target.ward)
+    while (hasMore) {
+      let batchQuery = supabaseAdmin.from('users')
+        .select('phone')
+        .eq('role', 'voter')
+        .not('phone', 'is', null)
 
-    const { data: voters, error: votersErr } = await query
+      if (target.scope === 'state') batchQuery = batchQuery.eq('state', target.state)
+      else if (target.scope === 'lgas') batchQuery = batchQuery.in('lga', target.lgas)
+      else if (target.scope === 'lga') batchQuery = batchQuery.eq('lga', target.lga)
+      else if (target.scope === 'ward') batchQuery = batchQuery.eq('lga', target.lga).eq('ward', target.ward)
 
-    if (votersErr) throw votersErr
-    if (!voters || voters.length === 0) {
+      const { data: batch, error: votersErr } = await batchQuery.range(currentStart, currentStart + batchSize - 1)
+      
+      if (votersErr) throw votersErr
+
+      if (batch && batch.length > 0) {
+        allVoters = allVoters.concat(batch)
+      }
+
+      // If the batch was smaller than 1000, we've reached the end
+      if (!batch || batch.length < batchSize) {
+        hasMore = false
+      } else {
+        currentStart += batchSize
+      }
+    }
+
+    if (allVoters.length === 0) {
       // 🔴 TS FIX: Safely determine the region name based on scope
       const regionName = target.scope === 'state' ? target.state 
                        : target.scope === 'lga' ? target.lga 
@@ -63,7 +84,7 @@ export async function POST(req: Request) {
       return null;
     }
 
-    let formattedPhones = voters.map(v => formatPhone(v.phone)).filter((n): n is string => n !== null)
+    let formattedPhones = allVoters.map(v => formatPhone(v.phone)).filter((n): n is string => n !== null)
     
     if (formattedPhones.length === 0) {
       return NextResponse.json({ error: 'No valid phone numbers found for voters in your constituency.' }, { status: 400 })

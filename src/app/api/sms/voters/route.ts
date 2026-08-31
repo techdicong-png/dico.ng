@@ -21,30 +21,51 @@ export async function GET() {
 
     if (!candidate) return NextResponse.json({ error: 'Candidate profile not found.' }, { status: 404 })
 
-    // 🔴 SMART TARGETING
     const target = getCandidateTargetAreas(candidate)
-    let query = supabaseAdmin.from('users')
-      .select('full_name, phone, lga')
-      .eq('role', 'voter')
-      .not('phone', 'is', null)
+    
+    // 🔴 PAGINATION LOGIC TO BYPASS SUPABASE 1000 ROW LIMIT
+    let allVoters: any[] = []
+    const batchSize = 1000
+    let currentStart = 0
+    let hasMore = true
 
-    if (target.scope === 'state') query = query.eq('state', target.state)
-    else if (target.scope === 'lgas') query = query.in('lga', target.lgas)
-    else if (target.scope === 'lga') query = query.eq('lga', target.lga)
-    else if (target.scope === 'ward') query = query.eq('lga', target.lga).eq('ward', target.ward)
+    while (hasMore) {
+      // Build a fresh query for each batch
+      let batchQuery = supabaseAdmin.from('users')
+        .select('id, full_name, phone, lga')
+        .eq('role', 'voter')
+        .not('phone', 'is', null)
 
-    const { data: voters, error } = await query
-    if (error) throw error
+      if (target.scope === 'state') batchQuery = batchQuery.eq('state', target.state)
+      else if (target.scope === 'lgas') batchQuery = batchQuery.in('lga', target.lgas)
+      else if (target.scope === 'lga') batchQuery = batchQuery.eq('lga', target.lga)
+      else if (target.scope === 'ward') batchQuery = batchQuery.eq('lga', target.lga).eq('ward', target.ward)
 
-    // 🔴 TS FIX: Safely determine the region name based on scope
+      // Fetch this specific batch using .range()
+      const { data: batch, error } = await batchQuery.range(currentStart, currentStart + batchSize - 1)
+      
+      if (error) throw error
+
+      if (batch && batch.length > 0) {
+        allVoters = allVoters.concat(batch)
+      }
+
+      // If the batch was smaller than 1000, we've reached the end
+      if (!batch || batch.length < batchSize) {
+        hasMore = false
+      } else {
+        currentStart += batchSize
+      }
+    }
+
     const regionName = target.scope === 'state' ? `${target.state} State` 
                      : target.scope === 'lga' ? `${target.lga} LGA` 
                      : target.scope === 'ward' ? `${target.ward} Ward` 
-                     : 'your constituency';
+                     : 'your constituency'
 
     return NextResponse.json({ 
-      voters: voters || [], 
-      count: voters?.length || 0,
+      voters: allVoters, 
+      count: allVoters.length,
       regionName
     })
   } catch (err: any) {

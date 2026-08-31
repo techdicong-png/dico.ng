@@ -27,6 +27,8 @@ export async function POST(req: Request) {
 
     // 2. Generate new OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString()
+
+    console.log(`[DEV ONLY] OTP for ${email}: ${otp}`)
     const expiresAt = new Date()
     expiresAt.setMinutes(expiresAt.getMinutes() + 15)
 
