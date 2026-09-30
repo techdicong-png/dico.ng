@@ -65,7 +65,7 @@ export function PerformanceAnalytics() {
   
   const rivalsInRace = candidates.filter(c => c.office === me?.office && c.id !== me?.id)
 
-  if (loading) return <div className="p-8 text-center text-muted">Loading analytics...</div>
+  if (loading) return <div className="p-8 text-center text-muted dark:text-[#c0d0c4]">Loading analytics...</div>
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
@@ -74,36 +74,36 @@ export function PerformanceAnalytics() {
         <span className="inline-flex items-center gap-2 text-[11px] font-bold tracking-widest uppercase text-gold/80 bg-gold/10 border border-gold/20 px-3 py-1.5 rounded mb-4">
           Performance Analytics · Beta
         </span>
-        <h1 className="font-serif text-3xl md:text-4xl font-black text-ink mb-2">See how you <span className="text-gold">compare</span></h1>
-        <p className="text-muted max-w-xl mx-auto">Find your candidate profile to view your voter approval, responsiveness and civic engagement — measured against other candidates in your race.</p>
+        <h1 className="font-serif text-3xl md:text-4xl font-black text-ink dark:text-white mb-2">See how you <span className="text-gold">compare</span></h1>
+        <p className="text-muted dark:text-[#c0d0c4] max-w-xl mx-auto">Find your candidate profile to view your voter approval, responsiveness and civic engagement — measured against other candidates in your race.</p>
       </div>
 
       {/* Search Panel */}
-      <div className="bg-white border border-border rounded-xl p-6 shadow-sm max-w-2xl mx-auto">
-        <label className="text-xs font-semibold text-ink mb-2 block">Find your profile</label>
+      <div className="bg-white dark:bg-[#11241b] border border-border dark:border-[#1f3a2c] rounded-xl p-6 shadow-sm max-w-2xl mx-auto">
+        <label className="text-xs font-semibold text-ink dark:text-white mb-2 block">Find your profile</label>
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted dark:text-[#c0d0c4]" />
           <Input 
             placeholder="Start typing your name..." 
             value={search} 
             onChange={(e) => setSearch(e.target.value)} 
-            className="pl-9"
+            className="pl-9 dark:bg-[#0f1d16] dark:text-white dark:border-[#1f3a2c]"
           />
         </div>
         
         {search && (
-          <div className="mt-2 border border-border rounded-lg max-h-60 overflow-y-auto">
+          <div className="mt-2 border border-border dark:border-[#1f3a2c] rounded-lg max-h-60 overflow-y-auto bg-white dark:bg-[#11241b]">
             {candidates.filter(c => c.full_name.toLowerCase().includes(search.toLowerCase())).slice(0, 5).map(c => (
               <button 
                 key={c.id} 
                 onClick={() => { setSelectedId(c.id); setSearch(''); setRivalId(rivalsInRace[0]?.id || '') }}
-                className="w-full text-left p-3 hover:bg-forest-faint border-b border-border-light last:border-0 flex justify-between items-center"
+                className="w-full text-left p-3 hover:bg-forest-faint dark:hover:bg-[#0f1d16] border-b border-border-light dark:border-[#1f3a2c] last:border-0 flex justify-between items-center"
               >
                 <div>
-                  <p className="text-sm font-semibold text-ink">{c.full_name}</p>
-                  <p className="text-xs text-muted">{c.party} · {c.office}</p>
+                  <p className="text-sm font-semibold text-ink dark:text-white">{c.full_name}</p>
+                  <p className="text-xs text-muted dark:text-[#c0d0c4]">{c.party} · {c.office}</p>
                 </div>
-                <span className="text-xs font-bold text-forest bg-forest-light px-2 py-1 rounded">{c.metrics.overall}</span>
+                <span className="text-xs font-bold text-forest dark:text-gold bg-forest-light dark:bg-[#1b3a2b] px-2 py-1 rounded">{c.metrics.overall}</span>
               </button>
             ))}
           </div>
@@ -121,18 +121,18 @@ export function PerformanceAnalytics() {
               <p className="text-xs text-white/60 mt-2">#{candidates.findIndex(c => c.id === me.id) + 1} of {candidates.length} overall</p>
             </div>
             
-            <div className="bg-white border border-border rounded-xl p-6 space-y-4">
+            <div className="bg-white dark:bg-[#11241b] border border-border dark:border-[#1f3a2c] rounded-xl p-6 space-y-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-muted mb-1">Voter Approval</p>
-                <p className="font-serif text-2xl font-black text-ink">{me.metrics.approval}%</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-muted dark:text-[#c0d0c4] mb-1">Voter Approval</p>
+                <p className="font-serif text-2xl font-black text-ink dark:text-white">{me.metrics.approval}%</p>
               </div>
               <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-muted mb-1">Q&A Response Rate</p>
-                <p className="font-serif text-2xl font-black text-ink">{me.metrics.responseRate}%</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-muted dark:text-[#c0d0c4] mb-1">Q&A Response Rate</p>
+                <p className="font-serif text-2xl font-black text-ink dark:text-white">{me.metrics.responseRate}%</p>
               </div>
               <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-muted mb-1">Town Halls Hosted</p>
-                <p className="font-serif text-2xl font-black text-ink">{me.metrics.townHalls}</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-muted dark:text-[#c0d0c4] mb-1">Town Halls Hosted</p>
+                <p className="font-serif text-2xl font-black text-ink dark:text-white">{me.metrics.townHalls}</p>
               </div>
             </div>
           </div>
@@ -140,10 +140,14 @@ export function PerformanceAnalytics() {
           {/* Right: Comparison & Leaderboard */}
           <div className="md:col-span-2 space-y-6">
             {/* Comparison */}
-            <div className="bg-white border border-border rounded-xl p-6">
+            <div className="bg-white dark:bg-[#11241b] border border-border dark:border-[#1f3a2c] rounded-xl p-6">
               <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
-                <h3 className="font-serif text-lg font-bold text-ink">You vs. the field</h3>
-                <select value={rivalId} onChange={(e) => setRivalId(e.target.value)} className="h-9 px-3 text-sm bg-white border border-border rounded-lg">
+                <h3 className="font-serif text-lg font-bold text-ink dark:text-white">You vs. the field</h3>
+                <select 
+                  value={rivalId} 
+                  onChange={(e) => setRivalId(e.target.value)} 
+                  className="h-9 px-3 text-sm bg-white dark:bg-[#0f1d16] dark:text-white border border-border dark:border-[#1f3a2c] rounded-lg focus:outline-none"
+                >
                   <option value="">Select Rival...</option>
                   {rivalsInRace.map(r => <option key={r.id} value={r.id}>{r.full_name}</option>)}
                 </select>
@@ -158,21 +162,21 @@ export function PerformanceAnalytics() {
                   { label: 'Q&A Sessions', key: 'qna', max: 140, unit: '' },
                 ].map(metric => (
                   <div key={metric.key}>
-                    <p className="text-xs font-semibold text-ink mb-2">{metric.label}</p>
+                    <p className="text-xs font-semibold text-ink dark:text-white mb-2">{metric.label}</p>
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[10px] w-10 text-muted">You</span>
-                      <div className="flex-1 h-2 bg-sand rounded-full overflow-hidden">
+                      <span className="text-[10px] w-10 text-muted dark:text-[#c0d0c4]">You</span>
+                      <div className="flex-1 h-2 bg-sand dark:bg-[#0f1d16] rounded-full overflow-hidden">
                         <div className="h-full bg-forest rounded-full" style={{ width: `${Math.min(100, (me.metrics[metric.key] / metric.max) * 100)}%` }}></div>
                       </div>
-                      <span className="text-xs font-bold w-12 text-right text-ink">{me.metrics[metric.key]}{metric.unit}</span>
+                      <span className="text-xs font-bold w-12 text-right text-ink dark:text-white">{me.metrics[metric.key]}{metric.unit}</span>
                     </div>
                     {rival && (
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] w-10 text-muted truncate">{rival.full_name.split(' ')[0]}</span>
-                        <div className="flex-1 h-2 bg-sand rounded-full overflow-hidden">
+                        <span className="text-[10px] w-10 text-muted dark:text-[#c0d0c4] truncate">{rival.full_name.split(' ')[0]}</span>
+                        <div className="flex-1 h-2 bg-sand dark:bg-[#0f1d16] rounded-full overflow-hidden">
                           <div className="h-full bg-gold rounded-full" style={{ width: `${Math.min(100, (rival.metrics[metric.key] / metric.max) * 100)}%` }}></div>
                         </div>
-                        <span className="text-xs font-bold w-12 text-right text-ink">{rival.metrics[metric.key]}{metric.unit}</span>
+                        <span className="text-xs font-bold w-12 text-right text-ink dark:text-white">{rival.metrics[metric.key]}{metric.unit}</span>
                       </div>
                     )}
                   </div>
@@ -181,19 +185,19 @@ export function PerformanceAnalytics() {
             </div>
 
             {/* Leaderboard */}
-            <div className="bg-white border border-border rounded-xl p-6">
-              <h3 className="font-serif text-lg font-bold text-ink mb-4 flex items-center gap-2">
+            <div className="bg-white dark:bg-[#11241b] border border-border dark:border-[#1f3a2c] rounded-xl p-6">
+              <h3 className="font-serif text-lg font-bold text-ink dark:text-white mb-4 flex items-center gap-2">
                 <Trophy className="h-5 w-5 text-gold" /> Leaderboard
               </h3>
               <div className="space-y-2 max-h-64 overflow-y-auto">
                 {candidates.slice(0, 10).map((c, i) => (
-                  <div key={c.id} className={`flex items-center gap-3 p-2 rounded-lg ${c.id === me.id ? 'bg-forest-light' : ''}`}>
-                    <span className="font-bold text-muted w-6">{i + 1}</span>
+                  <div key={c.id} className={`flex items-center gap-3 p-2 rounded-lg ${c.id === me.id ? 'bg-forest-light dark:bg-[#1b3a2b]' : ''}`}>
+                    <span className="font-bold text-muted dark:text-[#c0d0c4] w-6">{i + 1}</span>
                     <div className="flex-1">
-                      <p className="text-sm font-semibold text-ink">{c.full_name} {c.id === me.id && <span className="text-[10px] text-forest font-bold ml-1">(You)</span>}</p>
-                      <p className="text-xs text-muted">{c.party}</p>
+                      <p className="text-sm font-semibold text-ink dark:text-white">{c.full_name} {c.id === me.id && <span className="text-[10px] text-forest dark:text-gold font-bold ml-1">(You)</span>}</p>
+                      <p className="text-xs text-muted dark:text-[#c0d0c4]">{c.party}</p>
                     </div>
-                    <span className="font-serif text-lg font-black text-ink">{c.metrics.overall}</span>
+                    <span className="font-serif text-lg font-black text-ink dark:text-white">{c.metrics.overall}</span>
                   </div>
                 ))}
               </div>
