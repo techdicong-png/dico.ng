@@ -22,11 +22,16 @@ export async function GET(req: Request) {
     .from('vouchers').select('denomination').eq('issuer_id', dist.id).neq('status', 'void')
   const used = (issued ?? []).reduce((s, v) => s + v.denomination, 0)
 
+  const { data: priceRows } = await supabaseAdmin
+    .from('voucher_pricing').select('denomination, distributor_price').eq('is_active', true).order('denomination')
+
   return NextResponse.json({
+    prices: priceRows ?? [],
     distributor: {
       level: dist.level, state: dist.state, vgi_active: dist.vgi_active,
       voucher_credit: dist.voucher_credit, voucher_used: used,
       voucher_remaining: dist.voucher_credit - used, sms_units: dist.sms_units,
+      balance_naira: dist.balance_naira ?? 0,
     },
     vouchers,
   })

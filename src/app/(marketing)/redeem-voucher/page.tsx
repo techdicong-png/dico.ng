@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { Ticket } from 'lucide-react'
 import { RedeemVoucherForm } from '@/components/marketing/RedeemVoucherForm'
 
@@ -13,6 +14,9 @@ export default function RedeemVoucherPage() {
           <p className="text-muted text-sm">No account needed. Enter the code from your DICO voucher.</p>
         </div>
         <RedeemVoucherForm />
+        <p className="text-center text-xs text-muted mt-4">
+          Don&apos;t have a voucher? <Link href="/buy-voucher" className="underline text-ink">Buy one from your state distributor</Link>.
+        </p>
       </div>
     </div>
   )

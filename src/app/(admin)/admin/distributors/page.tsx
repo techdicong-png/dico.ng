@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { verifyToken } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import { DistributorsAdmin } from '@/components/admin/DistributorsAdmin'
-import { STATES } from '@/data/nigeria'
+import { NG_STATES } from '@/data/ng-states'
 
 export default async function AdminDistributorsPage() {
   const token = (await cookies()).get('token')?.value
@@ -32,7 +32,7 @@ export default async function AdminDistributorsPage() {
           Could not load distributors. Has the voucher migration (001_voucher_network.sql) been run?
         </p>
       )}
-      <DistributorsAdmin initialData={(data || []) as any[]} states={STATES} />
+      <DistributorsAdmin initialData={(data || []) as any[]} states={NG_STATES} />
     </div>
   )
 }

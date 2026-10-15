@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 type Summary = {
   level: string; state: string; vgi_active: boolean
   voucher_credit: number; voucher_used: number; voucher_remaining: number; sms_units: number
+  balance_naira: number
 }
 type Voucher = { id: string; code: string; denomination: number; status: string; created_at: string; redeemed_at: string | null }
 
@@ -19,6 +20,7 @@ export function VoucherManager() {
   const [summary, setSummary] = useState<Summary | null>(null)
   const [vouchers, setVouchers] = useState<Voucher[]>([])
   const [denoms, setDenoms] = useState<number[]>([])
+  const [prices, setPrices] = useState<Record<number, number>>({})
   const [denom, setDenom] = useState('')
   const [qty, setQty] = useState('1')
   const [filter, setFilter] = useState<'all' | 'unused' | 'redeemed'>('unused')
@@ -30,6 +32,7 @@ export function VoucherManager() {
     if (v.ok) {
       const d = await v.json()
       setSummary(d.distributor)
+      setPrices(Object.fromEntries((d.prices ?? []).map((x: any) => [x.denomination, x.distributor_price])))
       setVouchers(d.vouchers)
     }
     if (p.ok) {
@@ -43,6 +46,7 @@ export function VoucherManager() {
   useEffect(() => { load() }, [load])
 
   const cost = (parseInt(denom, 10) || 0) * (parseInt(qty, 10) || 0)
+  const costNaira = (prices[parseInt(denom, 10)] || 0) * (parseInt(qty, 10) || 0)
 
   async function generate(e: React.FormEvent) {
     e.preventDefault()
@@ -77,9 +81,10 @@ export function VoucherManager() {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         {[
-          ['Voucher credit', `₡ ${summary.voucher_credit.toLocaleString()}`],
+          ['Balance to spend', `₦ ${summary.balance_naira.toLocaleString()}`],
+          ['Voucher cap', `₡ ${summary.voucher_credit.toLocaleString()}`],
           ['Issued', `₡ ${summary.voucher_used.toLocaleString()}`],
           ['Remaining', `₡ ${summary.voucher_remaining.toLocaleString()}`],
           ['SMS units', summary.sms_units.toLocaleString()],
@@ -114,8 +119,12 @@ export function VoucherManager() {
                 Quantity (max 500)
                 <input className={field} type="number" min={1} max={500} value={qty} onChange={e => setQty(e.target.value)} />
               </label>
-              <Button type="submit" disabled={busy || cost <= 0 || cost > summary.voucher_remaining}>Generate</Button>
+              <Button type="submit" disabled={busy || cost <= 0 || cost > summary.voucher_remaining || costNaira > summary.balance_naira}>Generate</Button>
             </form>
+            <p className={`text-xs ${costNaira > summary.balance_naira ? 'text-red-600' : 'text-muted dark:text-[#c0d0c4]'}`}>
+              You pay DICO: ₦ {costNaira.toLocaleString()} from your balance of ₦ {summary.balance_naira.toLocaleString()}
+              {costNaira > summary.balance_naira && ' (not enough, pay DICO to top up)'}
+            </p>
             <p className={`text-xs ${cost > summary.voucher_remaining ? 'text-red-600' : 'text-muted dark:text-[#c0d0c4]'}`}>
               This batch: ₡ {cost.toLocaleString()} of ₡ {summary.voucher_remaining.toLocaleString()} remaining
               {cost > summary.voucher_remaining && ' (exceeds your funded CIVICT)'}

@@ -49,6 +49,7 @@ const navItems: NavItem[] = [
       { href: '/token-civict', label: 'CIVICT Token', icon: 'fa-coins' },
       { href: '/active-marketplace', label: 'DICO Marketplace', icon: 'fa-store' },
       { href: '/advertise', label: 'Advertise on DICO', icon: 'fa-bullhorn' },
+      { href: '/buy-voucher', label: 'Buy a Voucher', icon: 'fa-cart-shopping' },
       { href: '/redeem-voucher', label: 'Redeem Voucher', icon: 'fa-ticket' },
     ],
   },
