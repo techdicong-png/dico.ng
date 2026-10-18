@@ -1,29 +1,33 @@
-// Exact LGA mappings for Delta State Senatorial Districts
-const DELTA_SENATORIAL_DISTRICTS: Record<string, string[]> = {
-  "Delta North": ["Aniocha North", "Aniocha South", "Oshimili North", "Oshimili South", "Ika North East", "Ika South", "Ndokwa East", "Ndokwa West", "Ukwuani"],
-  "Delta South": ["Bomadi", "Patani", "Isoko North", "Isoko South", "Warri North", "Warri South", "Warri South West", "Burutu"],
-  "Delta Central": ["Okpe", "Sapele", "Uvwie", "Ethiope West", "Ethiope East", "Ughelli North", "Ughelli South", "Udu"]
-};
+import { SENATORIAL_DISTRICT_LGAS, FEDERAL_CONSTITUENCY_LGAS } from '@/data/political-areas'
 
-// Exact LGA mappings for Delta State Federal Constituencies
-const DELTA_FEDERAL_CONSTITUENCIES: Record<string, string[]> = {
-  "Aniocha/Oshimili": ["Aniocha North", "Aniocha South", "Oshimili North", "Oshimili South"],
-  "Ika North/South": ["Ika North East", "Ika South"],
-  "Ndokwa East/West": ["Ndokwa East", "Ndokwa West", "Ukwuani"],
-  "Bomadi/Patani": ["Bomadi", "Patani"],
-  "Isoko North/South": ["Isoko North", "Isoko South"],
-  "Ethiope East/West": ["Ethiope East", "Ethiope West"],
-  "Okpe/Uvwie/Sapele": ["Okpe", "Sapele", "Uvwie"],
-  "Ughelli North/South": ["Ughelli North", "Ughelli South", "Udu"],
-  "Warri North/South/South-West": ["Warri North", "Warri South", "Warri South West"]
-};
-
-export type CandidateTarget = 
+export type CandidateTarget =
   | { scope: 'all' }
   | { scope: 'state', state: string }
-  | { scope: 'lgas', lgas: string[] }
-  | { scope: 'lga', lga: string }
-  | { scope: 'ward', lga: string, ward: string };
+  | { scope: 'lgas', state: string, lgas: string[] }
+  | { scope: 'lga', state: string, lga: string }
+  | { scope: 'ward', state: string, lga: string, ward: string };
+
+export type VoterLocation = { state?: string | null, lga?: string | null, ward?: string | null }
+
+const norm = (x?: string | null) => (x || '').toLowerCase().replace(/[^a-z0-9]/g, '')
+const parts = (x: string) => x.split('/').map(norm).filter(Boolean)
+
+// Finds the LGAs of a senatorial district / federal constituency by name. Names saved by older
+// registrations (e.g. "Oredo/Orhionmwon") are matched by the parts they share with the official name.
+function findAreaLgas(table: Record<string, string[]> | undefined, name?: string | null): string[] | null {
+  if (!table || !name) return null
+  const n = norm(name)
+  for (const k of Object.keys(table)) if (norm(k) === n) return table[k]
+  const mine = new Set(parts(name))
+  let best: string[] | null = null, score = 0
+  for (const k of Object.keys(table)) {
+    const kp = parts(k)
+    const inter = kp.filter(p => mine.has(p)).length
+    const s = inter / new Set([...kp, ...mine]).size
+    if (s > score) { score = s; best = table[k] }
+  }
+  return score >= 0.5 ? best : null
+}
 
 export function getCandidateTargetAreas(candidate: any): CandidateTarget {
   const office = (candidate.office || '').toLowerCase();
@@ -31,47 +35,52 @@ export function getCandidateTargetAreas(candidate: any): CandidateTarget {
   const lga = candidate.lga || '';
   const ward = candidate.ward || '';
 
-  // President: Target everyone
+  // President: everyone
   if (office.includes('president')) return { scope: 'all' };
 
-  // Governor / State House of Assembly: Target whole state
-  if (office.includes('governor') || office.includes('assembly')) return { scope: 'state', state: state };
+  // Governor / State House of Assembly: the whole state
+  if (office.includes('governor') || office.includes('assembly')) return { scope: 'state', state };
 
-  // Senatorial: Target specific LGAs in the district (if mapped), else fallback to state
+  // Senator: the LGAs of their senatorial district (whole state if the district is unknown)
   if (office.includes('senator')) {
-    if (state === 'Delta' && candidate.senatorial_district) {
-      const lgas = DELTA_SENATORIAL_DISTRICTS[candidate.senatorial_district];
-      if (lgas) return { scope: 'lgas', lgas: lgas };
-    }
-    return { scope: 'state', state: state };
+    const lgas = findAreaLgas(SENATORIAL_DISTRICT_LGAS[state], candidate.senatorial_district);
+    if (lgas) return { scope: 'lgas', state, lgas };
+    return { scope: 'state', state };
   }
 
-  // House of Reps: Target specific LGAs in the federal constituency (if mapped), else fallback to state
+  // House of Reps: the LGAs of their federal constituency (whole state if the constituency is unknown)
   if (office.includes('rep') || office.includes('federal')) {
-    if (state === 'Delta' && candidate.federal_constituency) {
-      const constituency = candidate.federal_constituency;
-      const key = Object.keys(DELTA_FEDERAL_CONSTITUENCIES).find(k => 
-        k.split('/').sort().join('/') === constituency.split('/').sort().join('/')
-      );
-      if (key) return { scope: 'lgas', lgas: DELTA_FEDERAL_CONSTITUENCIES[key] };
-    }
-    return { scope: 'state', state: state };
+    const lgas = findAreaLgas(FEDERAL_CONSTITUENCY_LGAS[state], candidate.federal_constituency);
+    if (lgas) return { scope: 'lgas', state, lgas };
+    return { scope: 'state', state };
   }
 
-  // LGA Chairman: Target specific LGA (fallback to state if LGA is missing)
+  // LGA chairman: their LGA
   if (office.includes('chairman') || office.includes('lga')) {
-    if (lga) return { scope: 'lga', lga: lga };
-    return { scope: 'state', state: state };
+    if (lga) return { scope: 'lga', state, lga };
+    return { scope: 'state', state };
   }
 
-  // Councillor: Target specific Ward (fallback to LGA or state if missing)
+  // Councillor: their ward
   if (office.includes('councillor') || office.includes('ward')) {
-    if (lga && ward) return { scope: 'ward', lga: lga, ward: ward };
-    if (lga) return { scope: 'lga', lga: lga };
-    return { scope: 'state', state: state };
+    if (lga && ward) return { scope: 'ward', state, lga, ward };
+    if (lga) return { scope: 'lga', state, lga };
+    return { scope: 'state', state };
   }
 
-  // Default fallback
-  if (lga) return { scope: 'lga', lga: lga };
-  return { scope: 'state', state: state };
+  // Unknown office
+  if (lga) return { scope: 'lga', state, lga };
+  return { scope: 'state', state };
+}
+
+// Is this voter inside the area the candidate stands for?
+export function voterMatchesTarget(target: CandidateTarget, voter: VoterLocation): boolean {
+  const same = (a?: string | null, b?: string | null) => !!norm(a) && norm(a) === norm(b)
+  switch (target.scope) {
+    case 'all': return true
+    case 'state': return same(voter.state, target.state)
+    case 'lgas': return same(voter.state, target.state) && target.lgas.some(l => same(l, voter.lga))
+    case 'lga': return same(voter.state, target.state) && same(voter.lga, target.lga)
+    case 'ward': return same(voter.state, target.state) && same(voter.lga, target.lga) && same(voter.ward, target.ward)
+  }
 }

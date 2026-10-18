@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyToken } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
+import { getSession } from '@/lib/voucher-auth'
+import { getVoterScope, getVisibleCandidateIds } from '@/lib/candidate-visibility'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -15,6 +17,18 @@ export async function GET(request: NextRequest) {
     .range(offset, offset + limit - 1)
 
   if (candidateId) query = query.eq('candidate_id', candidateId)
+  else if (searchParams.get('scope') !== 'all') {
+    // voters only see posts from candidates in their own area
+    const session = await getSession(request)
+    if (session) {
+      const { restrict, voter } = await getVoterScope(session.userId)
+      if (restrict) {
+        const ids = await getVisibleCandidateIds(voter)
+        if (ids.length === 0) return NextResponse.json({ posts: [] })
+        query = query.in('candidate_id', ids)
+      }
+    }
+  }
 
   const { data } = await query
 

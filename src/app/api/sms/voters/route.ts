@@ -37,9 +37,9 @@ export async function GET() {
         .not('phone', 'is', null)
 
       if (target.scope === 'state') batchQuery = batchQuery.eq('state', target.state)
-      else if (target.scope === 'lgas') batchQuery = batchQuery.in('lga', target.lgas)
-      else if (target.scope === 'lga') batchQuery = batchQuery.eq('lga', target.lga)
-      else if (target.scope === 'ward') batchQuery = batchQuery.eq('lga', target.lga).eq('ward', target.ward)
+      else if (target.scope === 'lgas') batchQuery = batchQuery.eq('state', target.state).in('lga', target.lgas)
+      else if (target.scope === 'lga') batchQuery = batchQuery.eq('state', target.state).eq('lga', target.lga)
+      else if (target.scope === 'ward') batchQuery = batchQuery.eq('state', target.state).eq('lga', target.lga).eq('ward', target.ward)
 
       // Fetch this specific batch using .range()
       const { data: batch, error } = await batchQuery.range(currentStart, currentStart + batchSize - 1)

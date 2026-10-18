@@ -34,6 +34,7 @@ function SkeletonCard() {
 export default function FeedPage() {
   const router = useRouter()
   const [posts, setPosts] = useState<any[]>([])
+  const [allAreas, setAllAreas] = useState(false)
   const [loading, setLoading] = useState(true)
   const [comments, setComments] = useState<Record<string, any[]>>({})
   const [commentText, setCommentText] = useState<Record<string, string>>({})
@@ -46,7 +47,7 @@ export default function FeedPage() {
     const token = localStorage.getItem('dico_token')
     if (!token) { router.push('/login'); return }
     loadPosts()
-  }, [router])
+  }, [router, allAreas])
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -69,7 +70,7 @@ export default function FeedPage() {
     setLoading(true)
     const token = localStorage.getItem('dico_token')
     try {
-      const data = await (await fetch('/api/posts', { headers: { 'Authorization': `Bearer ${token}` } })).json()
+      const data = await (await fetch(`/api/posts?scope=${allAreas ? 'all' : 'mine'}`, { headers: { 'Authorization': `Bearer ${token}` } })).json()
       setPosts(data.posts || [])
     } catch {}
     setLoading(false)
@@ -142,6 +143,10 @@ export default function FeedPage() {
           Feed
         </span>
         <h1 className="font-serif text-2xl font-black text-ink dark:text-white">Latest from Candidates</h1>
+        <div className="flex gap-2 mt-3">
+          <button onClick={() => setAllAreas(false)} className={`text-xs font-semibold px-3 py-1.5 rounded-full border ${!allAreas ? 'bg-forest text-white border-forest' : 'border-border text-muted dark:text-[#c0d0c4]'}`}>My area</button>
+          <button onClick={() => setAllAreas(true)} className={`text-xs font-semibold px-3 py-1.5 rounded-full border ${allAreas ? 'bg-forest text-white border-forest' : 'border-border text-muted dark:text-[#c0d0c4]'}`}>Everywhere</button>
+        </div>
       </div>
 
       {loading && (
@@ -154,7 +159,7 @@ export default function FeedPage() {
 
       {!loading && posts.length === 0 && (
         <div className="bg-card border border-border rounded-xl py-16 text-center">
-          <p className="text-sm text-muted dark:text-[#c0d0c4]">No posts yet. Follow candidates to see their updates.</p>
+          <p className="text-sm text-muted dark:text-[#c0d0c4]">{allAreas ? 'No posts yet.' : 'No posts yet from candidates in your area. Try Everywhere, or check that your state, LGA and ward are set in your profile.'}</p>
         </div>
       )}
 

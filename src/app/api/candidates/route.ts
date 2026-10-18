@@ -2,6 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { verifyToken } from '@/lib/auth'
+import { getSession } from '@/lib/voucher-auth'
+import { getVoterScope, getVisibleCandidateIds } from '@/lib/candidate-visibility'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -17,6 +19,19 @@ export async function GET(request: NextRequest) {
     .eq('is_active', true)
     .range(from, from + limit - 1)
     .order('reputation_score', { ascending: false })
+
+  if (searchParams.get('scope') !== 'all') {
+    // signed-in voters only see candidates for their own area
+    const session = await getSession(request)
+    if (session) {
+      const { restrict, voter } = await getVoterScope(session.userId)
+      if (restrict) {
+        const ids = await getVisibleCandidateIds(voter)
+        if (ids.length === 0) return NextResponse.json({ candidates: [], total: 0, page, limit })
+        query = query.in('id', ids)
+      }
+    }
+  }
 
   if (state) query = query.eq('state', state)
   if (party) query = query.eq('party', party)

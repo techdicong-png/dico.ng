@@ -4,18 +4,26 @@ import { redirect } from 'next/navigation'
 import { verifyToken } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import Link from 'next/link'
+import { getVoterScope, getVisibleCandidateIds } from '@/lib/candidate-visibility'
 
-export default async function CandidatesPage() {
+export default async function CandidatesPage({ searchParams }: { searchParams: Promise<{ scope?: string }> }) {
   const cookieStore = await cookies()
   const token = cookieStore.get('token')?.value
   if (!token) redirect('/login')
-  await verifyToken(token)
+  const payload = await verifyToken(token)
+  const showAll = (await searchParams).scope === 'all'
 
-  const { data: candidates } = await supabaseAdmin.from('candidates')
+  // voters see the candidates for their own area (switch to Everywhere to browse the rest)
+  const { restrict, voter } = payload ? await getVoterScope(payload.userId) : { restrict: false, voter: {} }
+  const visibleIds = restrict && !showAll ? await getVisibleCandidateIds(voter) : null
+
+  let query = supabaseAdmin.from('candidates')
     .select('*, users!inner(email)')
     .eq('is_active', true)
     .order('reputation_score', { ascending: false })
     .limit(30)
+  if (visibleIds) query = query.in('id', visibleIds.length ? visibleIds : ['00000000-0000-0000-0000-000000000000'])
+  const { data: candidates } = await query
 
   return (
     <div className="space-y-6">
@@ -25,11 +33,17 @@ export default async function CandidatesPage() {
         </span>
         <h1 className="font-serif text-2xl md:text-3xl font-black text-ink dark:text-white">Find Your Representatives</h1>
         <p className="text-sm text-muted dark:text-[#c0d0c4] max-w-lg">Browse candidates, ask questions, follow their progress.</p>
+        {restrict && (
+          <div className="flex gap-2 mt-3">
+            <Link href="/candidates" className={`text-xs font-semibold px-3 py-1.5 rounded-full border ${!showAll ? 'bg-forest text-white border-forest' : 'border-border text-muted dark:text-[#c0d0c4]'}`}>My area</Link>
+            <Link href="/candidates?scope=all" className={`text-xs font-semibold px-3 py-1.5 rounded-full border ${showAll ? 'bg-forest text-white border-forest' : 'border-border text-muted dark:text-[#c0d0c4]'}`}>Everywhere</Link>
+          </div>
+        )}
       </div>
 
       {(!candidates || candidates.length === 0) ? (
         <div className="bg-card dark:bg-[#11241b] border border-border dark:border-[#1f3a2c] rounded-xl py-12 text-center">
-          <p className="text-sm text-muted dark:text-[#c0d0c4]">No candidates found.</p>
+          <p className="text-sm text-muted dark:text-[#c0d0c4]">{restrict && !showAll ? 'No candidates found for your area yet. Check that your state, LGA and ward are set in your profile, or switch to Everywhere.' : 'No candidates found.'}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

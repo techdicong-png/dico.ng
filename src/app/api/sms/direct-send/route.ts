@@ -43,9 +43,9 @@ export async function POST(req: Request) {
         .not('phone', 'is', null)
 
       if (target.scope === 'state') batchQuery = batchQuery.eq('state', target.state)
-      else if (target.scope === 'lgas') batchQuery = batchQuery.in('lga', target.lgas)
-      else if (target.scope === 'lga') batchQuery = batchQuery.eq('lga', target.lga)
-      else if (target.scope === 'ward') batchQuery = batchQuery.eq('lga', target.lga).eq('ward', target.ward)
+      else if (target.scope === 'lgas') batchQuery = batchQuery.eq('state', target.state).in('lga', target.lgas)
+      else if (target.scope === 'lga') batchQuery = batchQuery.eq('state', target.state).eq('lga', target.lga)
+      else if (target.scope === 'ward') batchQuery = batchQuery.eq('state', target.state).eq('lga', target.lga).eq('ward', target.ward)
 
       const { data: batch, error: votersErr } = await batchQuery.range(currentStart, currentStart + batchSize - 1)
       
