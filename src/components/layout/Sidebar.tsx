@@ -7,7 +7,7 @@ import {
   LayoutGrid, Users, Video, Vote, FileText, CircleDollarSign, Rss,
   UserCircle, Settings, BarChart3, Shield, Store, LogOut, TrendingUp,
   Compass, Wallet,
-  MessageSquare, Ticket,
+  MessageSquare, Ticket, Coins,
   type LucideIcon
 } from 'lucide-react'
 
@@ -55,7 +55,7 @@ const accountLinks: NavLink[] = [
   { href: '/login', label: 'Logout', icon: LogOut, logout: true },
 ]
 
-export function Sidebar({ role, user, isDistributor = false }: { role: string; user: any; isDistributor?: boolean }) {
+export function Sidebar({ role, user, isDistributor = false, hasRoyalty = false }: { role: string; user: any; isDistributor?: boolean; hasRoyalty?: boolean }) {
   const pathname = usePathname()
 
   // Dynamic data from user object
@@ -68,9 +68,10 @@ export function Sidebar({ role, user, isDistributor = false }: { role: string; u
     role === 'candidate' || role === 'campaign_team' ? candidateLinks
     : role === 'admin' ? adminLinks
     : voterLinks
-  const navLinks: NavLink[] = isDistributor
-    ? [...baseLinks, { href: '/vouchers', label: 'Vouchers', icon: Ticket }]
-    : baseLinks
+  const extraLinks: NavLink[] = []
+  if (isDistributor) extraLinks.push({ href: '/vouchers', label: 'Vouchers', icon: Ticket })
+  if (hasRoyalty) extraLinks.push({ href: '/royalty', label: 'Royalty', icon: Coins })
+  const navLinks: NavLink[] = [...baseLinks, ...extraLinks]
 
   function closeSidebar() {
     const sidebar = document.getElementById('sidebar')

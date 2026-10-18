@@ -2,7 +2,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { Shield, Users, FileText, CircleDollarSign, Wallet, UserCheck, Image, TrendingUp, ArrowRightLeft, BarChart3, Ticket } from 'lucide-react'
+import { Shield, Users, FileText, CircleDollarSign, Wallet, UserCheck, Image, TrendingUp, ArrowRightLeft, BarChart3, Ticket, Coins } from 'lucide-react'
 
 const links = [
   { href: '/admin', label: 'Overview', icon: Shield },
@@ -13,6 +13,7 @@ const links = [
   { href: '/admin/transfers', label: 'Transfer Approvals', icon: ArrowRightLeft },
   { href: '/admin/market', label: 'Trade Matching', icon: TrendingUp },
   { href: '/admin/distributors', label: 'Distributors & VGI', icon: Ticket },
+  { href: '/admin/royalty', label: 'Loyalty Royalty', icon: Coins },
 ]
 
 export function AdminSidebar() {
