@@ -25,7 +25,11 @@ export async function GET(req: Request) {
   const { data: priceRows } = await supabaseAdmin
     .from('voucher_pricing').select('denomination, distributor_price').eq('is_active', true).order('denomination')
 
+  const { data: dicoAccount } = await supabaseAdmin
+    .from('dico_bank_account').select('bank_name, account_number, account_name').maybeSingle()
+
   return NextResponse.json({
+    dico_account: dicoAccount ?? null,
     prices: priceRows ?? [],
     distributor: {
       level: dist.level, state: dist.state, vgi_active: dist.vgi_active,

@@ -21,6 +21,7 @@ export function VoucherManager() {
   const [vouchers, setVouchers] = useState<Voucher[]>([])
   const [denoms, setDenoms] = useState<number[]>([])
   const [prices, setPrices] = useState<Record<number, number>>({})
+  const [dico, setDico] = useState<{ bank_name: string; account_number: string; account_name: string } | null>(null)
   const [denom, setDenom] = useState('')
   const [qty, setQty] = useState('1')
   const [filter, setFilter] = useState<'all' | 'unused' | 'redeemed'>('unused')
@@ -32,6 +33,7 @@ export function VoucherManager() {
     if (v.ok) {
       const d = await v.json()
       setSummary(d.distributor)
+      setDico(d.dico_account ?? null)
       setPrices(Object.fromEntries((d.prices ?? []).map((x: any) => [x.denomination, x.distributor_price])))
       setVouchers(d.vouchers)
     }
@@ -97,6 +99,24 @@ export function VoucherManager() {
           </Card>
         ))}
       </div>
+
+      <Card className="border-gold dark:bg-[#11241b]">
+        <CardContent className="p-4 space-y-2">
+          <h2 className="font-bold text-ink dark:text-white">Pay DICO to top up your balance</h2>
+          {dico ? (
+            <>
+              <p className="text-sm text-ink dark:text-white">{dico.account_name} · {dico.bank_name}</p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="font-mono text-xl font-black tracking-wider text-ink dark:text-white">{dico.account_number}</p>
+                <Button size="sm" variant="outline" onClick={() => copy(dico.account_number)}>Copy</Button>
+              </div>
+              <p className="text-xs text-muted dark:text-[#c0d0c4]">After you pay, send your payment proof to DICO. Your balance is updated once the payment is confirmed.</p>
+            </>
+          ) : (
+            <p className="text-sm text-muted dark:text-[#c0d0c4]">DICO&apos;s payment account has not been set yet. Please contact DICO admin.</p>
+          )}
+        </CardContent>
+      </Card>
 
       {!summary.vgi_active ? (
         <Card className="border-gold dark:bg-[#11241b]">

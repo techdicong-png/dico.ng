@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { verifyToken } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import { DistributorsAdmin } from '@/components/admin/DistributorsAdmin'
+import { DicoBankAccount } from '@/components/admin/DicoBankAccount'
 import { NG_STATES } from '@/data/ng-states'
 
 export default async function AdminDistributorsPage() {
@@ -15,6 +16,11 @@ export default async function AdminDistributorsPage() {
     .from('distributors')
     .select('*, users:user_id(full_name, email, phone)')
     .order('state')
+
+  const { data: dicoAccount } = await supabaseAdmin
+    .from('dico_bank_account')
+    .select('bank_name, account_number, account_name')
+    .maybeSingle()
 
   return (
     <div className="space-y-6">
@@ -32,6 +38,7 @@ export default async function AdminDistributorsPage() {
           Could not load distributors. Has the voucher migration (001_voucher_network.sql) been run?
         </p>
       )}
+      <DicoBankAccount initial={dicoAccount ?? null} />
       <DistributorsAdmin initialData={(data || []) as any[]} states={NG_STATES} />
     </div>
   )
