@@ -10,6 +10,11 @@ const supabaseServer = createClient(
   { auth: { autoRefreshToken: false, persistSession: false } }
 )
 
+const OFFICE_LABELS: Record<string, string> = {
+  ward: 'Ward Councillor', lga: 'LGA Chairman', state_house: 'State House of Assembly',
+  house_of_reps: 'House of Representatives', senatorial: 'Senator', governor: 'Governor', president: 'President',
+}
+
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
@@ -87,7 +92,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
             full_name: reg.full_name,
             avatar_url: reg.avatar_url,
             party: reg.party,
-            office: reg.position,
+            office: OFFICE_LABELS[reg.position] ?? reg.position,
+            senatorial_district: reg.senatorial_district || null,
+            federal_constituency: reg.federal_constituency || null,
             state: reg.state_constituency,
             lga: reg.lga_constituency,
             ward: reg.ward,

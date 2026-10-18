@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { Vote, Video, CircleDollarSign, FileText, ChevronRight, MapPin } from 'lucide-react'
 import Image from 'next/image'
 import { SmsTaskWidget } from '@/components/dashboard/SmsTaskWidget'
-import { getCandidateTargetAreas } from '@/lib/political-mapping'
+import { getCandidateTargetAreas, voterMatchesTarget } from '@/lib/political-mapping'
 
 const supabaseServer = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -18,7 +18,7 @@ const supabaseServer = createClient(
 function classifyCandidate(office: string): 'national' | 'state' | 'lga' | 'ward' | 'other' {
   const o = (office || '').toLowerCase()
   if (o.includes('president') || o.includes('senator') || o.includes('rep')) return 'national'
-  if (o.includes('governor') || o.includes('assembly')) return 'state'
+  if (o.includes('governor') || o.includes('assembly') || o.includes('state_house') || o.includes('state house')) return 'state'
   if (o.includes('chairman') || o.includes('lga')) return 'lga'
   if (o.includes('councillor') || o.includes('ward')) return 'ward'
   return 'other'
@@ -56,13 +56,7 @@ export default async function VoterDashboardPage() {
   const candidates = (rawCandidates || []).filter(c => {
     const target = getCandidateTargetAreas(c)
     
-    if (target.scope === 'all') return true // President
-    if (target.scope === 'state') return true // Governor / State Assembly / Senator fallback (already filtered by state)
-    if (target.scope === 'lgas') return target.lgas.includes(user.lga) // Senator / Rep exact match
-    if (target.scope === 'lga') return c.lga === user.lga // Chairman
-    if (target.scope === 'ward') return c.lga === user.lga && c.ward === user.ward // Councillor
-    
-    return false
+    return voterMatchesTarget(target, user) // same rule used everywhere: president, state, district, constituency, LGA, ward
   })
 
   // Safety net — dedupe by ID

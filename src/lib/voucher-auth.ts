@@ -29,7 +29,7 @@ export async function getMyDistributor(userId: string) {
 }
 
 // Postgres `raise exception` messages from our functions are safe to show; anything else is not.
-const SAFE = /^(Unknown state|Transaction reference|Insufficient balance|Exceeds funded CIVICT|Quantity must|Invalid denomination|VGI|Distributor not found|Sole distributor|Amount must|Invalid or already used)/
+const SAFE = /^(State code missing|Unknown state|Transaction reference|Insufficient balance|Exceeds funded CIVICT|Quantity must|Invalid denomination|VGI|Distributor not found|Sole distributor|Amount must|Invalid or already used)/
 export function rpcError(message: string) {
   return SAFE.test(message) ? message : 'Request failed'
 }

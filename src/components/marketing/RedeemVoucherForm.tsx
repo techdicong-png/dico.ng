@@ -49,7 +49,7 @@ export function RedeemVoucherForm() {
       <label className="block text-xs font-medium text-muted space-y-1">
         Voucher code
         <input className={`${field} font-mono tracking-wider uppercase`} value={code}
-          onChange={e => setCode(e.target.value)} placeholder="XXXXXXXXXXXXXXXX" autoComplete="off" />
+          onChange={e => setCode(e.target.value.toUpperCase())} placeholder="ED-XXXX-XXXX-XXXX" autoComplete="off" />
       </label>
       <label className="block text-xs font-medium text-muted space-y-1">
         Phone number

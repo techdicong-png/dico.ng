@@ -16,6 +16,9 @@ type Voucher = { id: string; code: string; denomination: number; status: string;
 const field =
   'h-9 w-full rounded-lg border border-border bg-white dark:bg-[#0f1d16] dark:border-[#1f3a2c] dark:text-white px-3 text-sm outline-none focus:border-gold'
 
+// ED K7QM 2XTP 9WCD -> ED-K7QM-2XTP-9WCD (older codes are shown as they are)
+const fmt = (c: string) => /^[A-Z]{2}[A-Z0-9]{12}$/.test(c) ? `${c.slice(0, 2)}-${c.slice(2, 6)}-${c.slice(6, 10)}-${c.slice(10)}` : c
+
 export function VoucherManager() {
   const [summary, setSummary] = useState<Summary | null>(null)
   const [vouchers, setVouchers] = useState<Voucher[]>([])
@@ -161,7 +164,7 @@ export function VoucherManager() {
             ))}
           </div>
           <Button size="sm" variant="outline" disabled={shown.length === 0}
-            onClick={() => copy(shown.map(v => `${v.code} (${v.denomination})`).join('\n'))}>
+            onClick={() => copy(shown.map(v => `${fmt(v.code)} (${v.denomination})`).join('\n'))}>
             Copy {shown.length} listed
           </Button>
         </div>
@@ -171,12 +174,12 @@ export function VoucherManager() {
             <Card key={v.id} className="dark:bg-[#11241b] dark:border-[#1f3a2c]">
               <CardContent className="p-3 flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="font-mono text-sm font-bold text-ink dark:text-white tracking-wider">{v.code}</p>
+                  <p className="font-mono text-sm font-bold text-ink dark:text-white tracking-wider">{fmt(v.code)}</p>
                   <p className="text-xs text-muted">₡ {v.denomination} · {new Date(v.created_at).toLocaleDateString()}</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <Badge variant={v.status === 'unused' ? 'default' : 'secondary'}>{v.status}</Badge>
-                  {v.status === 'unused' && <Button size="sm" variant="outline" onClick={() => copy(v.code)}>Copy</Button>}
+                  {v.status === 'unused' && <Button size="sm" variant="outline" onClick={() => copy(fmt(v.code))}>Copy</Button>}
                 </div>
               </CardContent>
             </Card>

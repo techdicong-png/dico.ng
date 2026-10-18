@@ -39,7 +39,7 @@ export function getCandidateTargetAreas(candidate: any): CandidateTarget {
   if (office.includes('president')) return { scope: 'all' };
 
   // Governor / State House of Assembly: the whole state
-  if (office.includes('governor') || office.includes('assembly')) return { scope: 'state', state };
+  if (office.includes('governor') || office.includes('assembly') || office.includes('state_house') || office.includes('state house')) return { scope: 'state', state };
 
   // Senator: the LGAs of their senatorial district (whole state if the district is unknown)
   if (office.includes('senator')) {

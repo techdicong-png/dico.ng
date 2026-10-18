@@ -26,7 +26,8 @@ export const OFFICE_LEVELS = [
   { value: 'ward', label: 'Ward Councillor' },
   { value: 'lga', label: 'LGA Chairman' },
   { value: 'state_house', label: 'State House of Assembly' },
-  { value: 'senatorial', label: 'Senatorial District' },
+  { value: 'house_of_reps', label: 'House of Representatives' },
+  { value: 'senatorial', label: 'Senator' },
   { value: 'governor', label: 'Governor' },
   { value: 'president', label: 'President' },
 ] as const

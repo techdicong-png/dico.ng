@@ -63,9 +63,11 @@ export function CandidateRegisterForm() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target
     if (name === 'state_constituency') {
-      setForm(prev => ({ ...prev, state_constituency: value, lga_constituency: '', ward: '' }))
+      setForm(prev => ({ ...prev, state_constituency: value, lga_constituency: '', ward: '', senatorial_district: '', federal_constituency: '' }))
     } else if (name === 'lga_constituency') {
       setForm(prev => ({ ...prev, lga_constituency: value, ward: '' }))
+    } else if (name === 'office_level') {
+      setForm(prev => ({ ...prev, office_level: value, senatorial_district: '', federal_constituency: '' }))
     } else {
       setForm(prev => ({ ...prev, [name]: value }))
     }
@@ -106,6 +108,12 @@ export function CandidateRegisterForm() {
     }
     if (step === 3 && (!form.party || !form.office_level)) {
       setError('Please select your party and position.'); return false
+    }
+    if (step === 3 && form.office_level === 'senatorial' && !form.senatorial_district) {
+      setError('Please select your senatorial district.'); return false
+    }
+    if (step === 3 && form.office_level === 'house_of_reps' && !form.federal_constituency) {
+      setError('Please select your federal constituency.'); return false
     }
     setError('')
     return true
@@ -305,33 +313,7 @@ export function CandidateRegisterForm() {
                   {wards.map(w => <option key={w} value={w}>{w}</option>)}
                 </select>
               </div>
-               <div>
-                <label className="block text-xs font-semibold text-ink dark:text-white mb-1.5">Senatorial District</label>
-                <select 
-                  name="senatorial_district" 
-                  value={form.senatorial_district} 
-                  onChange={handleInputChange} 
-                  disabled={!form.state_constituency} 
-                  className="w-full h-10 px-3 text-sm bg-white dark:bg-[#0f1d16] dark:text-white border border-border dark:border-[#1f3a2c] rounded-lg focus:outline-none focus:border-forest disabled:opacity-50"
-                >
-                  <option value="">Select District…</option>
-                  {districts.map(d => <option key={d} value={d}>{d}</option>)}
-                </select>
-              </div>
             </div>
-             <div>
-                <label className="block text-xs font-semibold text-ink dark:text-white mb-1.5">Federal Constituency</label>
-                <select 
-                  name="federal_constituency" 
-                  value={form.federal_constituency} 
-                  onChange={handleInputChange} 
-                  disabled={!form.state_constituency} 
-                  className="w-full h-10 px-3 text-sm bg-white dark:bg-[#0f1d16] dark:text-white border border-border dark:border-[#1f3a2c] rounded-lg focus:outline-none focus:border-forest disabled:opacity-50"
-                >
-                  <option value="">Select Constituency…</option>
-                  {constituencies.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
           </div>
         )}
 
@@ -356,6 +338,24 @@ export function CandidateRegisterForm() {
                 </select>
               </div>
             </div>
+            {form.office_level === 'senatorial' && (
+              <div>
+                <label className="block text-xs font-semibold text-ink dark:text-white mb-1.5">Senatorial District *</label>
+                <select name="senatorial_district" value={form.senatorial_district} onChange={handleInputChange} className="w-full h-10 px-3 text-sm bg-white dark:bg-[#0f1d16] dark:text-white border border-border dark:border-[#1f3a2c] rounded-lg focus:outline-none focus:border-forest disabled:opacity-50">
+                  <option value="">Select senatorial district…</option>
+                  {districts.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </div>
+            )}
+            {form.office_level === 'house_of_reps' && (
+              <div>
+                <label className="block text-xs font-semibold text-ink dark:text-white mb-1.5">Federal Constituency *</label>
+                <select name="federal_constituency" value={form.federal_constituency} onChange={handleInputChange} className="w-full h-10 px-3 text-sm bg-white dark:bg-[#0f1d16] dark:text-white border border-border dark:border-[#1f3a2c] rounded-lg focus:outline-none focus:border-forest disabled:opacity-50">
+                  <option value="">Select federal constituency…</option>
+                  {constituencies.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+            )}
             <div>
               <label className="block text-xs font-semibold text-ink dark:text-white mb-1.5">Campaign Slogan</label>
               <Input name="campaign_slogan" value={form.campaign_slogan} onChange={handleInputChange} placeholder="e.g. A New Dawn for Edo State" className="bg-white dark:bg-[#0f1d16] dark:text-white dark:border-[#1f3a2c]" />
@@ -407,7 +407,7 @@ export function CandidateRegisterForm() {
                 <div><strong className="block text-muted dark:text-[#c0d0c4] text-xs uppercase mb-1">Email</strong> <span className="text-ink dark:text-white">{form.email}</span></div>
                 <div><strong className="block text-muted dark:text-[#c0d0c4] text-xs uppercase mb-1">Phone</strong> <span className="text-ink dark:text-white">{form.phone}</span></div>
                 <div><strong className="block text-muted dark:text-[#c0d0c4] text-xs uppercase mb-1">Party</strong> <span className="text-ink dark:text-white">{form.party}</span></div>
-                <div><strong className="block text-muted dark:text-[#c0d0c4] text-xs uppercase mb-1">Position</strong> <span className="text-ink dark:text-white">{OFFICE_LEVELS.find(o => o.value === form.office_level)?.label}</span></div>
+                <div><strong className="block text-muted dark:text-[#c0d0c4] text-xs uppercase mb-1">Position</strong> <span className="text-ink dark:text-white">{OFFICE_LEVELS.find(o => o.value === form.office_level)?.label}{form.senatorial_district ? ` · ${form.senatorial_district}` : ''}{form.federal_constituency ? ` · ${form.federal_constituency}` : ''}</span></div>
                 <div><strong className="block text-muted dark:text-[#c0d0c4] text-xs uppercase mb-1">Constituency</strong> <span className="text-ink dark:text-white">{form.lga_constituency}, {form.state_constituency}</span></div>
               </div>
               {form.manifesto_summary && (
