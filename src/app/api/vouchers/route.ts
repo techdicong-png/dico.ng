@@ -37,7 +37,7 @@ export async function GET(req: Request) {
       voucher_remaining: dist.voucher_credit - used, sms_units: dist.sms_units,
       balance_naira: dist.balance_naira ?? 0,
     },
-    vouchers,
+    vouchers: (vouchers ?? []).map(v => (v.status === 'reserved' || v.status === 'sold') ? { ...v, code: null } : v),
   })
 }
 

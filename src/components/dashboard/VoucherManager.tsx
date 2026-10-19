@@ -11,7 +11,8 @@ type Summary = {
   voucher_credit: number; voucher_used: number; voucher_remaining: number; sms_units: number
   balance_naira: number
 }
-type Voucher = { id: string; code: string; denomination: number; status: string; created_at: string; redeemed_at: string | null }
+type Order = { id: string; ref: string; denomination: number; amount_naira: number; buyer_phone: string; buyer_name: string | null; status: string; created_at: string; expires_at: string; paid_claimed_at: string | null; confirmed_at: string | null }
+type Voucher = { id: string; code: string | null; denomination: number; status: string; created_at: string; redeemed_at: string | null }
 
 const field =
   'h-9 w-full rounded-lg border border-border bg-white dark:bg-[#0f1d16] dark:border-[#1f3a2c] dark:text-white px-3 text-sm outline-none focus:border-gold'
@@ -27,6 +28,7 @@ export function VoucherManager() {
   const [dico, setDico] = useState<{ bank_name: string; account_number: string; account_name: string } | null>(null)
   const [denom, setDenom] = useState('')
   const [qty, setQty] = useState('1')
+  const [orders, setOrders] = useState<{ open: Order[]; paid: Order[] }>({ open: [], paid: [] })
   const [filter, setFilter] = useState<'all' | 'unused' | 'redeemed'>('unused')
   const [busy, setBusy] = useState(false)
   const [loaded, setLoaded] = useState(false)
@@ -49,6 +51,27 @@ export function VoucherManager() {
   }, [])
 
   useEffect(() => { load() }, [load])
+
+  const loadOrders = useCallback(async () => {
+    const res = await fetch('/api/vouchers/orders')
+    if (res.ok) setOrders(await res.json())
+  }, [])
+  useEffect(() => { loadOrders(); const id = setInterval(loadOrders, 15000); return () => clearInterval(id) }, [loadOrders])
+
+  async function actOnOrder(o: Order, action: 'confirm' | 'reject') {
+    const q = action === 'confirm'
+      ? `Confirm ${o.ref}?\n\nOnly do this after ₦${o.amount_naira.toLocaleString()} has reached your bank account. The buyer will then receive their code.`
+      : `Reject ${o.ref}? Use this if no payment arrived. The code goes back into your stock.`
+    if (!confirm(q)) return
+    setBusy(true)
+    try {
+      const res = await fetch(`/api/vouchers/orders/${o.id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }) })
+      const d = await res.json()
+      if (!res.ok) throw new Error(d.error || 'Failed')
+      toast.success(action === 'confirm' ? 'Payment confirmed. The buyer can now see their code.' : 'Order rejected')
+      await Promise.all([loadOrders(), load()])
+    } catch (err: any) { toast.error(err.message) } finally { setBusy(false) }
+  }
 
   const cost = (parseInt(denom, 10) || 0) * (parseInt(qty, 10) || 0)
   const costNaira = (prices[parseInt(denom, 10)] || 0) * (parseInt(qty, 10) || 0)
@@ -156,6 +179,39 @@ export function VoucherManager() {
         </Card>
       )}
 
+      <Card className="dark:bg-[#11241b] dark:border-[#1f3a2c]">
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="font-bold text-ink dark:text-white">Orders from buyers</h2>
+            <span className="text-xs text-muted">{orders.open.filter(o => o.status === 'awaiting_confirmation').length} waiting for you</span>
+          </div>
+          <p className="text-xs text-muted dark:text-[#c0d0c4]">Buyers pay your bank account. When the money is in, confirm the order and they receive their code.</p>
+          {orders.open.length === 0 && <p className="text-sm text-muted py-2">No open orders.</p>}
+          {orders.open.map(o => (
+            <div key={o.id} className={`rounded-lg border p-3 space-y-2 ${o.status === 'awaiting_confirmation' ? 'border-gold bg-gold/5' : 'border-border dark:border-[#1f3a2c]'}`}>
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="text-sm font-semibold text-ink dark:text-white">{o.denomination} CIVICT · ₦{o.amount_naira.toLocaleString()}</p>
+                  <p className="text-xs text-muted">{o.ref} · {new Date(o.created_at).toLocaleString()}</p>
+                  <p className="text-xs text-ink dark:text-white">{o.buyer_name ? `${o.buyer_name} · ` : ''}<a href={`tel:${o.buyer_phone}`} className="underline">{o.buyer_phone}</a></p>
+                </div>
+                <Badge variant={o.status === 'awaiting_confirmation' ? 'default' : 'secondary'}>{o.status === 'awaiting_confirmation' ? 'Says paid' : o.status === 'pending' ? 'Not paid yet' : 'Expired'}</Badge>
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" disabled={busy} onClick={() => actOnOrder(o, 'confirm')}>Confirm payment</Button>
+                <Button size="sm" variant="outline" disabled={busy} onClick={() => actOnOrder(o, 'reject')}>Reject</Button>
+              </div>
+            </div>
+          ))}
+          {orders.paid.length > 0 && (
+            <details className="text-xs text-muted">
+              <summary className="cursor-pointer">Recently confirmed ({orders.paid.length})</summary>
+              <ul className="mt-2 space-y-1">{orders.paid.map(o => <li key={o.id}>{o.ref} · {o.denomination} CIVICT · ₦{o.amount_naira.toLocaleString()} · {o.buyer_phone}</li>)}</ul>
+            </details>
+          )}
+        </CardContent>
+      </Card>
+
       <div className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex gap-1">
@@ -164,7 +220,7 @@ export function VoucherManager() {
             ))}
           </div>
           <Button size="sm" variant="outline" disabled={shown.length === 0}
-            onClick={() => copy(shown.map(v => `${fmt(v.code)} (${v.denomination})`).join('\n'))}>
+            onClick={() => copy(shown.filter(v => v.code).map(v => `${fmt(v.code!)} (${v.denomination})`).join('\n'))}>
             Copy {shown.length} listed
           </Button>
         </div>
@@ -174,12 +230,12 @@ export function VoucherManager() {
             <Card key={v.id} className="dark:bg-[#11241b] dark:border-[#1f3a2c]">
               <CardContent className="p-3 flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="font-mono text-sm font-bold text-ink dark:text-white tracking-wider">{fmt(v.code)}</p>
+                  <p className="font-mono text-sm font-bold text-ink dark:text-white tracking-wider">{v.code ? fmt(v.code) : '••••-••••-••••'}</p>
                   <p className="text-xs text-muted">₡ {v.denomination} · {new Date(v.created_at).toLocaleDateString()}</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <Badge variant={v.status === 'unused' ? 'default' : 'secondary'}>{v.status}</Badge>
-                  {v.status === 'unused' && <Button size="sm" variant="outline" onClick={() => copy(fmt(v.code))}>Copy</Button>}
+                  {v.status === 'unused' && <Button size="sm" variant="outline" onClick={() => v.code && copy(fmt(v.code))}>Copy</Button>}
                 </div>
               </CardContent>
             </Card>
