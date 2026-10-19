@@ -10,7 +10,7 @@ export async function GET(req: Request) {
   if (!state) {
     const { data, error } = await supabaseAdmin
       .from('distributors').select('state')
-      .eq('level', 'sole').eq('vgi_active', true).not('bank_verified_at', 'is', null)
+      .eq('level', 'sole').eq('vgi_active', true).eq('is_active', true).not('bank_verified_at', 'is', null)
     if (error) return NextResponse.json({ error: 'Failed to load' }, { status: 500 })
     return NextResponse.json({ states: (data ?? []).map(d => d.state).sort() })
   }
@@ -18,7 +18,7 @@ export async function GET(req: Request) {
   const { data, error } = await supabaseAdmin
     .from('distributors')
     .select('state, bank_name, account_number, account_name, users:user_id(full_name, phone)')
-    .eq('level', 'sole').eq('vgi_active', true).not('bank_verified_at', 'is', null)
+    .eq('level', 'sole').eq('vgi_active', true).eq('is_active', true).not('bank_verified_at', 'is', null)
     .eq('state', state)
     .maybeSingle()
   if (error) return NextResponse.json({ error: 'Failed to load' }, { status: 500 })

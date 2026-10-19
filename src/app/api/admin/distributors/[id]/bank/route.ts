@@ -1,17 +1,20 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import axios from 'axios'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getSession } from '@/lib/voucher-auth'
+import { resolveBankAccount } from '@/lib/paystack'
 
 const schema = z.object({
   bankCode: z.string().min(2).max(10),
   bankName: z.string().min(2).max(100),
   accountNumber: z.string().regex(/^\d{10}$/, 'Account number must be 10 digits'),
+  skipVerify: z.boolean().optional(),                 // admin types the name instead of asking the bank
+  accountName: z.string().trim().min(3).max(100).optional(),
 })
 
-// Admin saves a Sole Distributor's bank account. The account name is looked up from the bank
-// (via Paystack), so what end users see is what the bank says, not what someone typed.
+// Admin saves a Sole Distributor's bank account. Normally the account name comes from the bank
+// (via Paystack). If the bank check is unavailable, the admin can enter the name by hand; those
+// accounts are flagged as not checked.
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const session = await getSession(req)
@@ -19,24 +22,23 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   const parsed = schema.safeParse(await req.json().catch(() => null))
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
-  const { bankCode, bankName, accountNumber } = parsed.data
+  const { bankCode, bankName, accountNumber, skipVerify, accountName: typedName } = parsed.data
 
   let accountName: string
-  try {
-    const { data } = await axios.get('https://api.paystack.co/bank/resolve', {
-      headers: { Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}` },
-      params: { account_number: accountNumber, bank_code: bankCode },
-    })
-    accountName = data.data.account_name
-  } catch (err: any) {
-    return NextResponse.json({ error: err.response?.data?.message || 'Could not verify that account' }, { status: 400 })
+  if (skipVerify) {
+    if (!typedName) return NextResponse.json({ error: 'Enter the account name exactly as the bank shows it' }, { status: 400 })
+    accountName = typedName
+  } else {
+    const r = await resolveBankAccount(accountNumber, bankCode)
+    if ('error' in r) return NextResponse.json({ error: r.error }, { status: 400 })
+    accountName = r.name
   }
 
   const { data, error } = await supabaseAdmin
     .from('distributors')
     .update({
       bank_name: bankName, bank_code: bankCode, account_number: accountNumber,
-      account_name: accountName, bank_verified_at: new Date().toISOString(),
+      account_name: accountName, bank_verified_at: new Date().toISOString(), bank_verified_manually: !!skipVerify,
     })
     .eq('id', id)
     .eq('level', 'sole')

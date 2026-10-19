@@ -24,6 +24,7 @@ export async function getMyDistributor(userId: string) {
     .from('distributors')
     .select('*')
     .eq('user_id', userId)
+    .eq('is_active', true)
     .maybeSingle()
   return data
 }
