@@ -7,7 +7,7 @@ import {
   LayoutGrid, Users, Video, Vote, FileText, CircleDollarSign, Rss,
   UserCircle, Settings, BarChart3, Shield, Store, LogOut, TrendingUp,
   Compass, Wallet,
-  MessageSquare, Ticket, Coins,
+  MessageSquare, Ticket, Coins, Eye,
   type LucideIcon
 } from 'lucide-react'
 
@@ -55,7 +55,7 @@ const accountLinks: NavLink[] = [
   { href: '/login', label: 'Logout', icon: LogOut, logout: true },
 ]
 
-export function Sidebar({ role, user, isDistributor = false, hasRoyalty = false }: { role: string; user: any; isDistributor?: boolean; hasRoyalty?: boolean }) {
+export function Sidebar({ role, user, isDistributor = false, hasRoyalty = false, hasSupervision = false }: { role: string; user: any; isDistributor?: boolean; hasRoyalty?: boolean; hasSupervision?: boolean }) {
   const pathname = usePathname()
 
   // Dynamic data from user object
@@ -71,6 +71,7 @@ export function Sidebar({ role, user, isDistributor = false, hasRoyalty = false 
   const extraLinks: NavLink[] = []
   if (isDistributor) extraLinks.push({ href: '/vouchers', label: 'Vouchers', icon: Ticket })
   if (hasRoyalty) extraLinks.push({ href: '/royalty', label: 'Royalty', icon: Coins })
+  if (hasSupervision) extraLinks.push({ href: '/supervision', label: 'Supervision', icon: Eye })
   const navLinks: NavLink[] = [...baseLinks, ...extraLinks]
 
   function closeSidebar() {
