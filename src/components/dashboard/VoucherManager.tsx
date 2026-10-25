@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
+import { VoucherNetwork } from '@/components/dashboard/VoucherNetwork'
 
 type Summary = {
   level: string; state: string; vgi_active: boolean
@@ -28,6 +29,7 @@ export function VoucherManager() {
   const [dico, setDico] = useState<{ bank_name: string; account_number: string; account_name: string } | null>(null)
   const [denom, setDenom] = useState('')
   const [qty, setQty] = useState('1')
+  const [stock, setStock] = useState<Record<string, number>>({})
   const [orders, setOrders] = useState<{ open: Order[]; paid: Order[] }>({ open: [], paid: [] })
   const [filter, setFilter] = useState<'all' | 'unused' | 'redeemed'>('unused')
   const [busy, setBusy] = useState(false)
@@ -38,6 +40,7 @@ export function VoucherManager() {
     if (v.ok) {
       const d = await v.json()
       setSummary(d.distributor)
+      setStock(d.stock ?? {})
       setDico(d.dico_account ?? null)
       setPrices(Object.fromEntries((d.prices ?? []).map((x: any) => [x.denomination, x.distributor_price])))
       setVouchers(d.vouchers)
@@ -56,7 +59,10 @@ export function VoucherManager() {
     const res = await fetch('/api/vouchers/orders')
     if (res.ok) setOrders(await res.json())
   }, [])
-  useEffect(() => { loadOrders(); const id = setInterval(loadOrders, 15000); return () => clearInterval(id) }, [loadOrders])
+  useEffect(() => {
+    if (summary && summary.level !== 'sole') return   // only the Sole Distributor receives buyer orders
+    loadOrders(); const id = setInterval(loadOrders, 15000); return () => clearInterval(id)
+  }, [loadOrders, summary?.level]) // eslint-disable-line
 
   async function actOnOrder(o: Order, action: 'confirm' | 'reject') {
     const q = action === 'confirm'
@@ -106,9 +112,12 @@ export function VoucherManager() {
 
   if (!loaded) return <p className="text-sm text-muted">Loading...</p>
   if (!summary) return <p className="text-sm text-red-600">Could not load your voucher data.</p>
+  const isSole = summary.level === 'sole'
 
   return (
     <div className="space-y-6">
+      {isSole && (
+        <>
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         {[
           ['Balance to spend', `₦ ${summary.balance_naira.toLocaleString()}`],
@@ -211,6 +220,11 @@ export function VoucherManager() {
           )}
         </CardContent>
       </Card>
+
+        </>
+      )}
+
+      <VoucherNetwork level={summary.level} stock={stock} onChanged={load} />
 
       <div className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">

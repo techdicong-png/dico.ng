@@ -25,9 +25,9 @@ export default async function VouchersPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-serif text-2xl font-black text-ink dark:text-white">Voucher Generator</h1>
+        <h1 className="font-serif text-2xl font-black text-ink dark:text-white">{dist.level === 'sole' ? 'Voucher Generator' : 'My Vouchers'}</h1>
         <p className="text-sm text-muted dark:text-[#c0d0c4]">
-          {dist.state} · <span className="capitalize">{dist.level}</span> Distributor
+          {dist.level === 'sole' ? `${dist.state} · State Sole Distributor` : dist.level === 'major' ? `${dist.lga}, ${dist.state} · LGA distributor` : `${dist.ward}, ${dist.lga}, ${dist.state} · Ward distributor`}
         </p>
       </div>
       <VoucherManager />

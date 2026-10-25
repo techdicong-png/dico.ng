@@ -25,11 +25,19 @@ export async function GET(req: Request) {
   const { data: priceRows } = await supabaseAdmin
     .from('voucher_pricing').select('denomination, distributor_price').eq('is_active', true).order('denomination')
 
+  const stock: Record<string, number> = {}
+  await Promise.all((priceRows ?? []).map(async p => {
+    const { count } = await supabaseAdmin.from('vouchers').select('id', { count: 'exact', head: true })
+      .eq('holder_id', dist.id).eq('status', 'unused').eq('denomination', p.denomination)
+    stock[String(p.denomination)] = count ?? 0
+  }))
+
   const { data: dicoAccount } = await supabaseAdmin
     .from('dico_bank_account').select('bank_name, account_number, account_name').maybeSingle()
 
   return NextResponse.json({
     dico_account: dicoAccount ?? null,
+    stock,
     prices: priceRows ?? [],
     distributor: {
       level: dist.level, state: dist.state, vgi_active: dist.vgi_active,
