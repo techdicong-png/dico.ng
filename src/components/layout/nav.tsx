@@ -51,6 +51,7 @@ const navItems: NavItem[] = [
       { href: '/advertise', label: 'Advertise on DICO', icon: 'fa-bullhorn' },
       { href: '/buy-voucher', label: 'Buy a Voucher', icon: 'fa-cart-shopping' },
       { href: '/redeem-voucher', label: 'Redeem Voucher', icon: 'fa-ticket' },
+      { href: '/spacify', label: 'DICO Spacify', icon: 'fa-location-dot' },
     ],
   },
   { href: '/pricing', label: 'Pricing', icon: 'fa-tag' },
