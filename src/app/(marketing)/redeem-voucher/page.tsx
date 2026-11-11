@@ -11,7 +11,7 @@ export default function RedeemVoucherPage() {
             <Ticket className="h-6 w-6 text-gold" />
           </div>
           <h1 className="font-serif text-3xl font-black text-ink mb-2">Redeem a Voucher</h1>
-          <p className="text-muted text-sm">No account needed. Enter the code from your DICO voucher.</p>
+          <p className="text-muted text-sm">No account needed. Enter your voucher code to unlock DICO services such as Spacify.</p>
         </div>
         <RedeemVoucherForm />
         <p className="text-center text-xs text-muted mt-4">

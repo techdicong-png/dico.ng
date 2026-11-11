@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { nearestWards, inNigeria } from '@/lib/spacify'
 import { supabaseAdmin } from '@/lib/supabase'
+import { getServiceAccess } from '@/lib/service-access'
 
 // Public. Given the caller's coordinates, returns the nearest wards (and nearest polling units once
 // polling-unit data has been imported). The coordinates are used for this one lookup only:
@@ -17,6 +18,10 @@ function throttled(ip: string) {
 export async function GET(req: Request) {
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
   if (throttled(ip)) return NextResponse.json({ error: 'Too many requests. Please wait a moment.' }, { status: 429, headers: NO_STORE })
+
+  // DICO Spacify is a paid service: it needs a redeemed voucher (admins are exempt)
+  const access = await getServiceAccess(req, 'spacify')
+  if (!access.active) return NextResponse.json({ error: 'DICO Spacify needs a voucher.', locked: true }, { status: 402, headers: NO_STORE })
 
   const sp = new URL(req.url).searchParams
   const lat = Number(sp.get('lat')), lon = Number(sp.get('lon'))
