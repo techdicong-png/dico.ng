@@ -48,6 +48,7 @@ const navItems: NavItem[] = [
     children: [
       { href: '/services', label: 'All Services', icon: 'fa-layer-group' },
       { href: '/spacify', label: 'DICO Spacify', icon: 'fa-location-dot' },
+      { href: '/housing', label: 'Housing Contractor', icon: 'fa-house' },
       { href: '/advertise', label: 'Advertise on DICO', icon: 'fa-bullhorn' },
     ],
   },

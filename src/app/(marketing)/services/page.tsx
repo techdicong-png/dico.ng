@@ -1,15 +1,15 @@
 import Link from 'next/link'
-import { MapPin, Megaphone, Layers } from 'lucide-react'
+import { MapPin, Megaphone, Layers, Home } from 'lucide-react'
 import { supabaseAdmin } from '@/lib/supabase'
 
 export const revalidate = 300
 
 type Plan = { denomination: number; days: number; price: number | null }
 
-async function spacifyPlans(): Promise<Plan[]> {
+async function plansFor(service: string): Promise<Plan[]> {
   try {
     const [rules, prices] = await Promise.all([
-      supabaseAdmin.from('service_access_rules').select('denomination, days').eq('service', 'spacify').order('denomination'),
+      supabaseAdmin.from('service_access_rules').select('denomination, days').eq('service', service).order('denomination'),
       supabaseAdmin.from('voucher_pricing').select('denomination, end_user_price').eq('is_active', true),
     ])
     const price = new Map((prices.data ?? []).map(p => [p.denomination, p.end_user_price]))
@@ -21,7 +21,7 @@ const days = (n: number) => (n === 1 ? '1 day' : `${n} days`)
 const btn = 'inline-block text-center font-semibold py-2.5 px-4 rounded-lg text-sm'
 
 export default async function ServicesPage() {
-  const plans = await spacifyPlans()
+  const [plans, housingPlans] = await Promise.all([plansFor('spacify'), plansFor('housing')])
 
   return (
     <div className="min-h-screen bg-sand pt-24 pb-12 px-4">
@@ -63,6 +63,35 @@ export default async function ServicesPage() {
               <Link href="/spacify" className={`${btn} bg-forest text-white`}>Open Spacify</Link>
               <Link href="/buy-voucher" className={`${btn} border border-forest text-forest`}>Buy a voucher</Link>
             </div>
+          </section>
+
+          <section className="bg-white border border-mint-line rounded-xl p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-gold/10 flex items-center justify-center shrink-0"><Home className="h-5 w-5 text-gold" /></div>
+              <div>
+                <h2 className="font-serif text-xl font-black text-ink">DICO Housing Contractor Reseller Service</h2>
+                <p className="text-sm text-muted">Become a DICO Contractor with a voucher. Choose a housing contract, see the cost of materials, logistics and delivery, the total contract value, your expected gross profit and the payment due date before you pay. Monitored by quantity surveyors, architects, engineers, lawyers and accountants.</p>
+              </div>
+            </div>
+            {housingPlans.length > 0 && (
+              <div>
+                <p className="text-xs font-medium text-muted mb-2">What a voucher gives you</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {housingPlans.map(p => (
+                    <div key={p.denomination} className="rounded-lg bg-mint/50 px-3 py-2 text-xs">
+                      <span className="font-bold text-ink">{p.denomination} CIVICT</span>
+                      <span className="block text-muted">{days(p.days)} of access</span>
+                      {p.price ? <span className="block text-muted">₦{p.price.toLocaleString()}</span> : null}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="flex flex-wrap gap-2">
+              <Link href="/housing" className={`${btn} bg-forest text-white`}>Open the service</Link>
+              <Link href="/buy-voucher" className={`${btn} border border-forest text-forest`}>Buy a voucher</Link>
+            </div>
+            <p className="text-[11px] text-muted">Profit figures shown are estimates under each contract&apos;s terms, not guarantees.</p>
           </section>
 
           <section className="bg-white border border-mint-line rounded-xl p-6 space-y-4">

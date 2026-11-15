@@ -3,7 +3,7 @@ import { randomBytes } from 'crypto'
 import { z } from 'zod'
 import { supabaseAdmin } from '@/lib/supabase'
 import { rpcError } from '@/lib/voucher-auth'
-import { ACCESS_COOKIE } from '@/lib/service-access'
+import { cookieName } from '@/lib/service-access'
 
 // Public, no account needed. Redeems a voucher for a service and opens access on this browser.
 // The same code + phone number can reopen access on up to 3 devices while it is still valid.
@@ -15,7 +15,7 @@ function throttled(ip: string) {
   return a.n > 10
 }
 
-const SERVICES = ['spacify'] as const
+const SERVICES = ['spacify', 'housing'] as const
 const schema = z.object({
   code: z.string().trim().min(8).max(32),
   phone: z.string().min(10).max(20),
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
   if (error || !row) return NextResponse.json({ error: rpcError(error?.message ?? '') }, { status: 400 })
 
   const res = NextResponse.json({ success: true, service: parsed.data.service, expires_at: row.expires_at, days: row.days, denomination: row.denomination, restored: row.restored })
-  res.cookies.set(ACCESS_COOKIE, token, {
+  res.cookies.set(cookieName(parsed.data.service), token, {
     httpOnly: true, sameSite: 'lax', path: '/', secure: process.env.NODE_ENV === 'production',
     maxAge: Math.max(60, Math.floor((new Date(row.expires_at).getTime() - Date.now()) / 1000)),
   })

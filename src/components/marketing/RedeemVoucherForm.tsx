@@ -10,6 +10,7 @@ const field =
 export function RedeemVoucherForm() {
   const [code, setCode] = useState('')
   const [phone, setPhone] = useState('')
+  const [service, setService] = useState<'spacify' | 'housing'>('spacify')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [done, setDone] = useState<{ days: number; expires_at: string; restored: boolean } | null>(null)
@@ -22,7 +23,7 @@ export function RedeemVoucherForm() {
       const res = await fetch('/api/services/redeem', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, phone, service: 'spacify' }),
+        body: JSON.stringify({ code, phone, service }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Could not redeem voucher')
@@ -38,12 +39,12 @@ export function RedeemVoucherForm() {
     return (
       <div className="bg-white border border-mint-line rounded-xl p-6 text-center space-y-3">
         <p className="text-4xl">🎉</p>
-        <h2 className="font-serif text-xl font-black text-ink">DICO Spacify unlocked</h2>
+        <h2 className="font-serif text-xl font-black text-ink">{service === 'housing' ? 'Housing Contractor access unlocked' : 'DICO Spacify unlocked'}</h2>
         <p className="text-sm text-muted">
           {done.restored ? 'Access is open on this device.' : `Your voucher gives you ${done.days === 1 ? '1 day' : `${done.days} days`} of access.`}
           {' '}It runs until <b className="text-ink">{new Date(done.expires_at).toLocaleString()}</b>.
         </p>
-        <Link href="/spacify" className="block bg-forest text-white font-semibold py-2.5 rounded-lg text-sm">Open Spacify</Link>
+        <Link href={service === 'housing' ? '/housing' : '/spacify'} className="block bg-forest text-white font-semibold py-2.5 rounded-lg text-sm">{service === 'housing' ? 'Open Housing Contractor service' : 'Open Spacify'}</Link>
         <p className="text-[11px] text-muted">Keep your code and phone number. You can use them to open Spacify on another device.</p>
       </div>
     )
@@ -51,6 +52,13 @@ export function RedeemVoucherForm() {
 
   return (
     <form onSubmit={submit} className="bg-white border border-mint-line rounded-xl p-6 space-y-4">
+      <label className="block text-xs font-medium text-muted space-y-1">
+        Unlock
+        <select className={field} value={service} onChange={e => setService(e.target.value as 'spacify' | 'housing')}>
+          <option value="spacify">DICO Spacify</option>
+          <option value="housing">Housing Contractor Reseller Service</option>
+        </select>
+      </label>
       <label className="block text-xs font-medium text-muted space-y-1">
         Voucher code
         <input className={`${field} font-mono tracking-wider uppercase`} value={code}
@@ -64,7 +72,7 @@ export function RedeemVoucherForm() {
       <Button type="submit" className="w-full h-11" disabled={busy || code.trim().length < 8 || phone.replace(/\D/g, '').length < 10}>
         {busy ? 'Checking...' : 'Redeem voucher'}
       </Button>
-      <p className="text-[11px] text-muted">A voucher unlocks DICO services. Right now it opens DICO Spacify. Voucher value is for services and is not cash.</p>
+      <p className="text-[11px] text-muted">A voucher unlocks DICO services. Voucher value is for services and is not cash.</p>
     </form>
   )
 }
