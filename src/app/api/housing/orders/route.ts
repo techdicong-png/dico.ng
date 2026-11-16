@@ -4,7 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { rpcError } from '@/lib/voucher-auth'
 import { housingGate, housingToken, contractorId } from '@/lib/housing'
 
-const COLS = 'ref, status, materials_cost, logistics_fee, delivery_fee, total_cost, contract_value, expected_profit, completion_days, payment_due_days, due_date, created_at, expires_at, housing_contracts(code, title), merchants(name, phone, bank_name, account_number, account_name)'
+const COLS = 'ref, status, delivery_status, materials_cost, logistics_fee, delivery_fee, total_cost, contract_value, expected_profit, completion_days, payment_due_days, due_date, created_at, expires_at, housing_contracts(code, title), merchants(name, phone, bank_name, account_number, account_name)'
 
 const shape = (o: any) => {
   const c = Array.isArray(o.housing_contracts) ? o.housing_contracts[0] : o.housing_contracts

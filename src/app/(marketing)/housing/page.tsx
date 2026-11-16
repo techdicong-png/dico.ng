@@ -15,6 +15,7 @@ export default function HousingPage() {
           </p>
         </div>
         <HousingContractor />
+        <p className="text-center text-xs text-muted mt-6"><a href="/housing/projects" className="underline text-ink">See the announced housing projects</a></p>
       </div>
     </div>
   )

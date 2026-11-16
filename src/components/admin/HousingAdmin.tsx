@@ -13,20 +13,24 @@ const box = 'dark:bg-[#11241b] dark:border-[#1f3a2c]'
 const naira = (n: number) => (n < 0 ? '-₦' : '₦') + Math.abs(n).toLocaleString()
 const one = (x: any) => (Array.isArray(x) ? x[0] : x)
 
-const EMPTY_C = { code: '', title: '', design: '', size: '', projectName: '', state: '', lga: '', durationDays: '', contractValue: '', paymentDays: '30', slots: '1', paymentTerms: '', isPublished: false, materialsText: '' }
+const EMPTY_P = { name: '', state: '', lga: '', description: '', status: 'planned', landSize: '', designSummary: '', buildingsCount: '', constructionSize: '', purpose: '', startDate: '', completionDate: '', drawingsUrl: '', isPublished: false }
+const EMPTY_C = { code: '', title: '', design: '', size: '', category: '', volume: '', requirements: '', projectId: '', projectName: '', state: '', lga: '', durationDays: '', contractValue: '', paymentDays: '30', slots: '1', paymentTerms: '', isPublished: false, materialsText: '' }
 const EMPTY_M = { id: '', name: '', state: '', phone: '', bankName: '', accountNumber: '', accountName: '', logisticsFee: '0', deliveryPercent: '0', isActive: true, pricesText: '' }
 
 export function HousingAdmin() {
-  const [tab, setTab] = useState<'orders' | 'contracts' | 'merchants'>('orders')
+  const [tab, setTab] = useState<'orders' | 'projects' | 'contracts' | 'merchants'>('orders')
   const [orders, setOrders] = useState<any[]>([])
   const [contracts, setContracts] = useState<any[]>([])
   const [merchants, setMerchants] = useState<any[]>([])
+  const [projects, setProjects] = useState<any[]>([])
+  const [p, setP] = useState({ ...EMPTY_P })
   const [c, setC] = useState({ ...EMPTY_C })
   const [m, setM] = useState({ ...EMPTY_M })
   const [busy, setBusy] = useState(false)
 
   const load = useCallback(async () => {
-    const [o, k, mm] = await Promise.all([fetch('/api/admin/housing/orders'), fetch('/api/admin/housing/contracts'), fetch('/api/admin/housing/merchants')])
+    const [o, k, mm, pj] = await Promise.all([fetch('/api/admin/housing/orders'), fetch('/api/admin/housing/contracts'), fetch('/api/admin/housing/merchants'), fetch('/api/admin/housing/projects')])
+    if (pj.ok) setProjects((await pj.json()).projects)
     if (o.ok) setOrders((await o.json()).orders)
     if (k.ok) setContracts((await k.json()).contracts)
     if (mm.ok) setMerchants((await mm.json()).merchants)
@@ -46,7 +50,7 @@ export function HousingAdmin() {
   const saveContract = async (e: React.FormEvent) => {
     e.preventDefault()
     const ok = await post('/api/admin/housing/contracts', {
-      code: c.code, title: c.title, design: c.design, size: c.size, projectName: c.projectName, state: c.state, lga: c.lga,
+      code: c.code, title: c.title, design: c.design, size: c.size, category: c.category, volume: c.volume, requirements: c.requirements, projectId: c.projectId, projectName: c.projectName, state: c.state, lga: c.lga,
       durationDays: parseInt(c.durationDays, 10), contractValue: parseInt(c.contractValue, 10),
       paymentDaysAfterCompletion: parseInt(c.paymentDays, 10), paymentTerms: c.paymentTerms, slots: parseInt(c.slots, 10),
       isPublished: c.isPublished, materialsText: c.materialsText,
@@ -54,13 +58,29 @@ export function HousingAdmin() {
     if (ok) setC({ ...EMPTY_C })
   }
   const editContract = (k: any) => {
-    const p = one(k.housing_projects)
+    const pr = one(k.housing_projects)
     setC({
-      code: k.code, title: k.title, design: k.design ?? '', size: k.size ?? '', projectName: p?.name ?? '', state: p?.state ?? '', lga: p?.lga ?? '',
+      code: k.code, title: k.title, design: k.design ?? '', size: k.size ?? '', category: k.category ?? '', volume: k.volume ?? '', requirements: k.requirements ?? '', projectId: k.project_id ?? '', projectName: pr?.name ?? '', state: pr?.state ?? '', lga: pr?.lga ?? '',
       durationDays: String(k.duration_days), contractValue: String(k.contract_value), paymentDays: String(k.payment_days_after_completion), slots: String(k.slots),
       paymentTerms: k.payment_terms ?? '', isPublished: k.is_published,
       materialsText: (k.contract_materials ?? []).map((x: any) => `${one(x.materials)?.name}, ${one(x.materials)?.unit}, ${x.quantity}`).join('\n'),
     })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const saveProject = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const ok = await post('/api/admin/housing/projects', {
+      name: p.name, state: p.state, lga: p.lga, description: p.description, status: p.status, landSize: p.landSize, designSummary: p.designSummary,
+      buildingsCount: p.buildingsCount ? parseInt(p.buildingsCount, 10) : undefined, constructionSize: p.constructionSize, purpose: p.purpose,
+      startDate: p.startDate, completionDate: p.completionDate, drawingsUrl: p.drawingsUrl, isPublished: p.isPublished,
+    }, p.isPublished ? 'Project saved and published' : 'Project saved (not published)')
+    if (ok) setP({ ...EMPTY_P })
+  }
+  const editProject = (x: any) => {
+    setP({ name: x.name, state: x.state, lga: x.lga ?? '', description: x.description ?? '', status: x.status, landSize: x.land_size ?? '', designSummary: x.design_summary ?? '',
+           buildingsCount: x.buildings_count ? String(x.buildings_count) : '', constructionSize: x.construction_size ?? '', purpose: x.purpose ?? '',
+           startDate: x.start_date ?? '', completionDate: x.completion_date ?? '', drawingsUrl: x.drawings_url ?? '', isPublished: x.is_published })
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -81,11 +101,11 @@ export function HousingAdmin() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  async function orderAction(o: any, action: 'confirm' | 'supply' | 'reject') {
+  async function orderAction(o: any, action: 'confirm' | 'preparing' | 'dispatched' | 'delivered' | 'reject') {
     const q = action === 'confirm' ? `Confirm ${o.ref}? Only do this after the contractor's payment of ${naira(o.total_cost)} has reached ${o.merchant?.name}.`
-      : action === 'supply' ? `Mark ${o.ref} as supplied (materials delivered to the site)?` : `Reject ${o.ref}? Use this when no payment was found.`
+      : action === 'reject' ? `Reject ${o.ref}? Use this when no payment was found.` : `Mark ${o.ref} as ${action}?`
     if (!confirm(q)) return
-    await post(`/api/admin/housing/orders/${o.id}`, { action }, action === 'confirm' ? 'Payment confirmed' : action === 'supply' ? 'Marked as supplied' : 'Order rejected')
+    await post(`/api/admin/housing/orders/${o.id}`, { action }, action === 'confirm' ? 'Payment confirmed' : action === 'reject' ? 'Order rejected' : `Marked as ${action}`)
   }
 
   const waiting = orders.filter(o => o.status === 'awaiting_confirmation').length
@@ -94,7 +114,7 @@ export function HousingAdmin() {
   return (
     <div className="space-y-6">
       <div className="flex gap-2">
-        {([['orders', `Orders${waiting ? ` (${waiting} waiting)` : ''}`], ['contracts', 'Contracts'], ['merchants', 'Merchants']] as const).map(([k, label]) => (
+        {([['orders', `Orders${waiting ? ` (${waiting} waiting)` : ''}`], ['projects', 'Projects'], ['contracts', 'Contracts'], ['merchants', 'Merchants']] as const).map(([k, label]) => (
           <Button key={k} size="sm" variant={tab === k ? 'default' : 'outline'} onClick={() => setTab(k)}>{label}</Button>
         ))}
       </div>
@@ -111,15 +131,53 @@ export function HousingAdmin() {
                 </div>
                 <Badge variant={o.status === 'awaiting_confirmation' ? 'default' : 'secondary'}>{o.status.replace('_', ' ')}</Badge>
               </div>
-              <p className="text-xs text-ink dark:text-white">Cost {naira(o.total_cost)} · Contract value {naira(o.contract_value)} · Expected gross profit {naira(o.expected_profit)}{o.due_date ? ` · Due ${o.due_date}` : ''}</p>
+              <p className="text-xs text-ink dark:text-white">Cost {naira(o.total_cost)} · Contract value {naira(o.contract_value)} · Expected gross profit {naira(o.expected_profit)}{o.due_date ? ` · Due ${o.due_date}` : ''}{['paid', 'supplied'].includes(o.status) ? ` · Delivery: ${o.delivery_status.replace('_', ' ')}` : ''}</p>
               <div className="flex gap-2">
                 {['pending_payment', 'awaiting_confirmation', 'expired'].includes(o.status) && <Button size="sm" disabled={busy} onClick={() => orderAction(o, 'confirm')}>Confirm payment</Button>}
-                {o.status === 'paid' && <Button size="sm" disabled={busy} onClick={() => orderAction(o, 'supply')}>Mark supplied</Button>}
+                {['paid', 'supplied'].includes(o.status) && (['preparing', 'dispatched', 'delivered'] as const).filter(s => ['not_started', 'preparing', 'dispatched', 'delivered', 'confirmed'].indexOf(s) > ['not_started', 'preparing', 'dispatched', 'delivered', 'confirmed'].indexOf(o.delivery_status)).map(s => (
+                  <Button key={s} size="sm" variant={s === 'delivered' ? 'default' : 'outline'} disabled={busy} onClick={() => orderAction(o, s)}>Mark {s}</Button>
+                ))}
                 {['pending_payment', 'awaiting_confirmation', 'expired'].includes(o.status) && <Button size="sm" variant="outline" disabled={busy} onClick={() => orderAction(o, 'reject')}>Reject</Button>}
               </div>
             </CardContent></Card>
           ))}
         </div>
+      )}
+
+      {tab === 'projects' && (
+        <>
+          <Card className={box}><CardContent className="p-4 space-y-3">
+            <h2 className="font-bold text-ink dark:text-white">Announce a housing project</h2>
+            <form onSubmit={saveProject} className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <input className={`${field} md:col-span-2`} placeholder="Project name" value={p.name} onChange={e => setP({ ...p, name: e.target.value })} />
+                <select className={field} value={p.state} onChange={e => setP({ ...p, state: e.target.value })}><option value="">State</option>{states.map(s => <option key={s}>{s}</option>)}</select>
+                <input className={field} placeholder="LGA" value={p.lga} onChange={e => setP({ ...p, lga: e.target.value })} />
+                <input className={field} placeholder="Land size (e.g. 12 hectares)" value={p.landSize} onChange={e => setP({ ...p, landSize: e.target.value })} />
+                <select className={field} value={p.status} onChange={e => setP({ ...p, status: e.target.value })}><option value="planned">Planned</option><option value="active">Active</option><option value="completed">Completed</option></select>
+                <input className={`${field} md:col-span-2`} placeholder="Design (e.g. 3-bedroom detached bungalows)" value={p.designSummary} onChange={e => setP({ ...p, designSummary: e.target.value })} />
+                <input className={field} type="number" min={1} placeholder="Number of buildings" value={p.buildingsCount} onChange={e => setP({ ...p, buildingsCount: e.target.value })} />
+                <input className={field} placeholder="Size of each building" value={p.constructionSize} onChange={e => setP({ ...p, constructionSize: e.target.value })} />
+                <input className={`${field} md:col-span-2`} placeholder="Purpose (residential sales, rental, estate...)" value={p.purpose} onChange={e => setP({ ...p, purpose: e.target.value })} />
+                <label className="text-xs text-muted space-y-1 block">Start date<input className={field} type="date" value={p.startDate} onChange={e => setP({ ...p, startDate: e.target.value })} /></label>
+                <label className="text-xs text-muted space-y-1 block">Expected completion<input className={field} type="date" value={p.completionDate} onChange={e => setP({ ...p, completionDate: e.target.value })} /></label>
+                <input className={field} placeholder="Link to plans / drawings (https://...)" value={p.drawingsUrl} onChange={e => setP({ ...p, drawingsUrl: e.target.value })} />
+              </div>
+              <textarea className={`${field} h-24 py-2`} placeholder="Description" value={p.description} onChange={e => setP({ ...p, description: e.target.value })} />
+              <label className="flex items-center gap-2 text-sm text-ink dark:text-white"><input type="checkbox" checked={p.isPublished} onChange={e => setP({ ...p, isPublished: e.target.checked })} /> Published (shown on the public Housing Projects page)</label>
+              <p className="text-[11px] text-red-600">Only publish a project once the land title, survey and development approvals have been verified.</p>
+              <div className="flex gap-2"><Button type="submit" disabled={busy}>Save project</Button>{p.name && <Button type="button" variant="outline" onClick={() => setP({ ...EMPTY_P })}>Clear</Button>}</div>
+            </form>
+          </CardContent></Card>
+          <div className="space-y-2">
+            {projects.map(x => (
+              <Card key={x.id} className={box}><CardContent className="p-3 flex items-start justify-between gap-3">
+                <div className="min-w-0"><p className="text-sm font-semibold text-ink dark:text-white">{x.name}</p><p className="text-xs text-muted">{[x.lga, x.state].filter(Boolean).join(', ')} · {x.status}{x.land_size ? ` · ${x.land_size}` : ''}</p></div>
+                <div className="flex items-center gap-2 shrink-0"><Badge variant={x.is_published ? 'default' : 'secondary'}>{x.is_published ? 'Published' : 'Draft'}</Badge><Button size="sm" variant="outline" onClick={() => editProject(x)}>Edit</Button></div>
+              </CardContent></Card>
+            ))}
+          </div>
+        </>
       )}
 
       {tab === 'contracts' && (
@@ -132,6 +190,10 @@ export function HousingAdmin() {
                 <input className={`${field} md:col-span-2`} placeholder="Title (e.g. 2-bedroom bungalow)" value={c.title} onChange={e => setC({ ...c, title: e.target.value })} />
                 <input className={field} placeholder="Design" value={c.design} onChange={e => setC({ ...c, design: e.target.value })} />
                 <input className={field} placeholder="Size (e.g. 80 sqm)" value={c.size} onChange={e => setC({ ...c, size: e.target.value })} />
+                <input className={field} placeholder="Category (e.g. Foundation and substructure)" value={c.category} onChange={e => setC({ ...c, category: e.target.value })} />
+                <input className={field} placeholder="Volume (e.g. Package 1 of 3)" value={c.volume} onChange={e => setC({ ...c, volume: e.target.value })} />
+                <input className={field} placeholder="Contractor requirements" value={c.requirements} onChange={e => setC({ ...c, requirements: e.target.value })} />
+                <select className={`${field} md:col-span-3`} value={c.projectId} onChange={e => setC({ ...c, projectId: e.target.value })}><option value="">Project: choose an announced project (or type a new name below)</option>{projects.map(x => <option key={x.id} value={x.id}>{x.name} · {x.state}</option>)}</select>
                 <input className={field} placeholder="Project name" value={c.projectName} onChange={e => setC({ ...c, projectName: e.target.value })} />
                 <select className={field} value={c.state} onChange={e => setC({ ...c, state: e.target.value })}><option value="">Project state</option>{states.map(s => <option key={s}>{s}</option>)}</select>
                 <input className={field} placeholder="Project LGA" value={c.lga} onChange={e => setC({ ...c, lga: e.target.value })} />

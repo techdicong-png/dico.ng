@@ -8,7 +8,7 @@ export async function GET(req: Request) {
   await supabaseAdmin.rpc('release_expired_contract_orders')
   const { data, error } = await supabaseAdmin
     .from('contract_orders')
-    .select('id, ref, status, materials_cost, logistics_fee, delivery_fee, total_cost, contract_value, expected_profit, due_date, created_at, paid_claimed_at, confirmed_at, supplied_at, service_access:access_id(phone), housing_contracts(code, title), merchants(name, phone)')
+    .select('id, ref, status, delivery_status, materials_cost, logistics_fee, delivery_fee, total_cost, contract_value, expected_profit, due_date, created_at, paid_claimed_at, confirmed_at, supplied_at, service_access:access_id(phone), housing_contracts(code, title), merchants(name, phone)')
     .order('created_at', { ascending: false }).limit(200)
   if (error) return NextResponse.json({ error: 'Failed to load orders' }, { status: 500 })
   const one = (x: any) => (Array.isArray(x) ? x[0] : x)

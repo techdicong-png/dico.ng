@@ -3,9 +3,9 @@ import { z } from 'zod'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getSession, rpcError } from '@/lib/voucher-auth'
 
-const schema = z.object({ action: z.enum(['confirm', 'supply', 'reject']) })
+const schema = z.object({ action: z.enum(['confirm', 'preparing', 'dispatched', 'delivered', 'reject']) })
 
-// confirm = the contractor's payment reached the merchant; supply = materials delivered; reject = no payment found.
+// confirm = the contractor's payment reached the merchant; preparing / dispatched / delivered = delivery steps; reject = no payment found.
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const s = await getSession(req)
@@ -16,9 +16,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   const { data, error } = parsed.data.action === 'confirm'
     ? await supabaseAdmin.rpc('confirm_contract_order', { p_order_id: id, p_admin: s.userId })
-    : parsed.data.action === 'supply'
-      ? await supabaseAdmin.rpc('supply_contract_order', { p_order_id: id })
-      : await supabaseAdmin.rpc('reject_contract_order', { p_order_id: id })
+    : parsed.data.action === 'reject'
+      ? await supabaseAdmin.rpc('reject_contract_order', { p_order_id: id })
+      : await supabaseAdmin.rpc('set_delivery_status', { p_order_id: id, p_status: parsed.data.action })
   if (error) return NextResponse.json({ error: rpcError(error.message) === 'Request failed' ? error.message : rpcError(error.message) }, { status: 400 })
   return NextResponse.json({ success: true, status: data.status })
 }

@@ -7,9 +7,9 @@ import { Button } from '@/components/ui/button'
 type Plan = { denomination: number; days: number; price: number | null }
 type Access = { active: boolean; expires_at: string | null; via: string | null; plans: Plan[] }
 type Project = { name: string; state: string; lga: string | null; description?: string | null } | null
-type Row = { code: string; title: string; design: string | null; size: string | null; duration_days: number; contract_value: number; payment_days_after_completion: number; slots_left: number; project: Project }
+type Row = { code: string; title: string; category: string | null; volume: string | null; design: string | null; size: string | null; duration_days: number; contract_value: number; payment_days_after_completion: number; slots_left: number; project: Project }
 type Detail = {
-  contract: { code: string; title: string; design: string | null; size: string | null; duration_days: number; contract_value: number; payment_days_after_completion: number; payment_terms: string | null; project: Project }
+  contract: { code: string; title: string; design: string | null; size: string | null; category: string | null; volume: string | null; requirements: string | null; duration_days: number; contract_value: number; payment_days_after_completion: number; payment_terms: string | null; project: Project }
   materials: { name: string; unit: string; quantity: number }[]
   merchants: { id: string; name: string; state: string; logistics_fee: number; delivery_percent: number }[]
 }
@@ -19,7 +19,7 @@ type Quote = {
   completion_days: number; payment_due_days: number; estimated_due_date: string
 }
 type Order = {
-  ref: string; status: string; materials_cost: number; logistics_fee: number; delivery_fee: number; total_cost: number; contract_value: number
+  ref: string; status: string; delivery_status: string; materials_cost: number; logistics_fee: number; delivery_fee: number; total_cost: number; contract_value: number
   expected_profit: number; completion_days: number; payment_due_days: number; due_date: string | null; created_at: string; expires_at: string
   contract: { code: string; title: string } | null
   pay_to: { name: string; phone: string | null; bank_name: string | null; account_number: string | null; account_name: string | null } | null
@@ -116,7 +116,7 @@ export function HousingContractor() {
     } catch (err: any) { setError(err.message) } finally { setBusy(false) }
   }
 
-  async function act(ref: string, action: 'claim' | 'cancel') {
+  async function act(ref: string, action: 'claim' | 'cancel' | 'confirm_delivery') {
     setBusy(true); setError('')
     try {
       const res = await fetch(`/api/housing/orders/${ref}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }) })
@@ -135,7 +135,7 @@ export function HousingContractor() {
     return (
       <form onSubmit={unlock} className="bg-white border border-gold/40 rounded-xl p-5 space-y-3">
         <h2 className="font-bold text-ink">Become a DICO Contractor</h2>
-        <p className="text-xs text-muted">A DICO voucher gives you access to the available housing contracts. No account needed.</p>
+        <p className="text-xs text-muted">A DICO voucher gives you access to the available housing contracts. No account needed. A voucher gives access to the contractor platform only: it does not give you professional construction qualifications or guarantee that you will be awarded a contract.</p>
         {access.plans.length > 0 && (
           <div className="grid grid-cols-2 gap-2">
             {access.plans.map(p => (
@@ -164,13 +164,14 @@ export function HousingContractor() {
         <div className={`${card} space-y-2`}>
           <p className="text-xs text-muted">{c.code}{c.project ? ` · ${c.project.name}, ${c.project.lga ? c.project.lga + ', ' : ''}${c.project.state}` : ''}</p>
           <h2 className="font-serif text-xl font-black text-ink">{c.title}</h2>
-          <p className="text-sm text-ink">{[c.design, c.size].filter(Boolean).join(' · ')}</p>
+          <p className="text-sm text-ink">{[c.category, c.volume, c.design, c.size].filter(Boolean).join(' · ')}</p>
           <div className="grid grid-cols-3 gap-2 text-center text-xs">
             <div className="rounded-lg bg-mint/50 py-2"><p className="text-muted">Contract value</p><p className="font-bold text-ink">{naira(c.contract_value)}</p></div>
             <div className="rounded-lg bg-mint/50 py-2"><p className="text-muted">Build time</p><p className="font-bold text-ink">{days(c.duration_days)}</p></div>
             <div className="rounded-lg bg-mint/50 py-2"><p className="text-muted">Paid after</p><p className="font-bold text-ink">{days(c.payment_days_after_completion)}</p></div>
           </div>
           {c.payment_terms && <p className="text-xs text-muted">Payment terms: {c.payment_terms}</p>}
+          {c.requirements && <p className="text-xs text-muted">Contractor requirements: {c.requirements}</p>}
         </div>
 
         <div className={`${card} space-y-2`}>
@@ -181,7 +182,7 @@ export function HousingContractor() {
         </div>
 
         <div className={`${card} space-y-3`}>
-          <h3 className="font-bold text-ink text-sm">Choose a merchant</h3>
+          <h3 className="font-bold text-ink text-sm">DICO Merchant&apos;s Contract Cart: choose a merchant</h3>
           <select className={field} value={merchant} onChange={e => pickMerchant(e.target.value)}>
             <option value="">Select a merchant…</option>
             {detail.merchants.map(m => <option key={m.id} value={m.id}>{m.name} · {m.state}</option>)}
@@ -200,18 +201,18 @@ export function HousingContractor() {
                 <div className="flex justify-between"><span>Materials</span><span>{naira(quote.materials_cost)}</span></div>
                 <div className="flex justify-between"><span>Logistics</span><span>{naira(quote.logistics_fee)}</span></div>
                 <div className="flex justify-between"><span>Delivery</span><span>{naira(quote.delivery_fee)}</span></div>
-                <div className="flex justify-between font-bold border-t border-mint-line pt-1"><span>Actual cost to you</span><span>{naira(quote.total_cost)}</span></div>
+                <div className="flex justify-between font-bold border-t border-mint-line pt-1"><span>Total purchase amount payable by you</span><span>{naira(quote.total_cost)}</span></div>
                 <div className="flex justify-between"><span>Total contract value</span><span>{naira(quote.contract_value)}</span></div>
                 <div className={`flex justify-between font-bold ${quote.expected_profit < 0 ? 'text-red-600' : 'text-forest'}`}><span>Expected gross profit</span><span>{naira(quote.expected_profit)}</span></div>
                 <div className="flex justify-between"><span>Estimated payment due date</span><span>{fmtDate(quote.estimated_due_date)}</span></div>
               </div>
               {quote.expected_profit < 0 && <p className="text-xs text-red-600">At this merchant&apos;s prices the cost is more than the contract value. Consider another merchant.</p>}
               <p className="text-[11px] text-muted">
-                These figures are estimates under the contract terms, not a guarantee. The due date counts from the day your payment is confirmed: build time plus the payment period.
-                Read the full contract before you pay.
+                Expected gross profit is before labour, equipment, taxes, financing costs and other expenses not included in the materials cart. These figures are estimates under the contract terms, not a guarantee.
+                The due date counts from the day your payment is confirmed: build time plus the payment period. Prices are held for 24 hours once you continue. Read the full contract before you pay.
               </p>
               <div className="flex gap-2">
-                <Button className="flex-1 h-11" disabled={busy} onClick={proceed}>{busy ? 'Please wait…' : 'Proceed to payment'}</Button>
+                <Button className="flex-1 h-11" disabled={busy} onClick={proceed}>{busy ? 'Please wait…' : 'Continue to payment'}</Button>
                 <Button variant="outline" className="h-11" onClick={() => { setQuote(null); setMerchant('') }}>Cancel</Button>
               </div>
             </div>
@@ -250,7 +251,7 @@ export function HousingContractor() {
                 <div><p className="text-[11px] text-muted">{r.code}{r.project ? ` · ${r.project.state}` : ''}</p><p className="font-semibold text-ink">{r.title}</p></div>
                 <p className="font-bold text-ink shrink-0">{naira(r.contract_value)}</p>
               </div>
-              <p className="text-xs text-muted">{[r.design, r.size].filter(Boolean).join(' · ')} · {days(r.duration_days)} build · {r.slots_left === 0 ? 'fully taken' : `${r.slots_left} available`}</p>
+              <p className="text-xs text-muted">{[r.category, r.volume, r.design, r.size].filter(Boolean).join(' · ')} · {days(r.duration_days)} build · {r.slots_left === 0 ? 'fully taken' : `${r.slots_left} available`}</p>
             </button>
           ))}
         </div>
@@ -296,9 +297,27 @@ export function HousingContractor() {
               {o.status === 'awaiting_confirmation' && <p className="text-sm text-muted">DICO is confirming your payment with the merchant. This page updates by itself.</p>}
               {(o.status === 'paid' || o.status === 'supplied') && (
                 <p className="text-sm text-ink">
-                  {o.status === 'paid' ? 'Payment confirmed. The merchant will supply the materials through DICO Logistics to your site.' : 'Materials have been supplied to your site.'}
+                  {o.status === 'paid' ? 'Payment confirmed. The merchant will supply the materials through DICO Logistics to your site.' : 'Your materials have been delivered to your site.'}
                   {o.due_date && <> Your payment is due on <b>{fmtDate(o.due_date)}</b>.</>}
                 </p>
+              )}
+              {(o.status === 'paid' || o.status === 'supplied') && (
+                <div className="space-y-2">
+                  <div className="flex gap-1">
+                    {(['preparing', 'dispatched', 'delivered', 'confirmed'] as const).map((s, i) => {
+                      const order = ['not_started', 'preparing', 'dispatched', 'delivered', 'confirmed']
+                      const done = order.indexOf(o.delivery_status) >= i + 1
+                      return <div key={s} className={`flex-1 text-center text-[10px] font-semibold rounded py-1 ${done ? 'bg-forest text-white' : 'bg-mint/60 text-muted'}`}>{s === 'confirmed' ? 'received' : s}</div>
+                    })}
+                  </div>
+                  {o.delivery_status === 'delivered' && (
+                    <div className="space-y-1">
+                      <p className="text-xs text-ink">Your materials were marked as delivered to your site. Please confirm once you have received them.</p>
+                      <Button disabled={busy} onClick={() => act(o.ref, 'confirm_delivery')}>Confirm delivery</Button>
+                    </div>
+                  )}
+                  {o.delivery_status === 'confirmed' && <p className="text-xs text-forest font-semibold">You confirmed delivery. Next is the construction work, verified before payment.</p>}
+                </div>
               )}
               {o.status === 'expired' && <p className="text-sm text-muted">This order expired before it was paid. If you did pay, contact DICO with {o.ref}.</p>}
               {o.status === 'rejected' && <p className="text-sm text-muted">The payment could not be found. Contact DICO with {o.ref} if you believe this is a mistake.</p>}

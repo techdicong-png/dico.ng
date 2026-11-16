@@ -89,6 +89,7 @@ export default async function ServicesPage() {
             )}
             <div className="flex flex-wrap gap-2">
               <Link href="/housing" className={`${btn} bg-forest text-white`}>Open the service</Link>
+              <Link href="/housing/projects" className={`${btn} border border-forest text-forest`}>See announced projects</Link>
               <Link href="/buy-voucher" className={`${btn} border border-forest text-forest`}>Buy a voucher</Link>
             </div>
             <p className="text-[11px] text-muted">Profit figures shown are estimates under each contract&apos;s terms, not guarantees.</p>

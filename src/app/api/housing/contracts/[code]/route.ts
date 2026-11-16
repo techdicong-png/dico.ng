@@ -8,7 +8,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ code: st
   const { code } = await params
   const { data: c } = await supabaseAdmin
     .from('housing_contracts')
-    .select('code, title, design, size, duration_days, contract_value, payment_days_after_completion, payment_terms, slots, housing_projects(name, state, lga, description), contract_materials(quantity, materials(name, unit))')
+    .select('code, title, design, size, category, volume, requirements, duration_days, contract_value, payment_days_after_completion, payment_terms, slots, housing_projects(name, state, lga, description), contract_materials(quantity, materials(name, unit))')
     .eq('code', code.toUpperCase().trim()).eq('is_published', true).maybeSingle()
   if (!c) return NextResponse.json({ error: 'Contract not found' }, { status: 404 })
 
@@ -21,7 +21,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ code: st
   }).sort((a: any, b: any) => String(a.name).localeCompare(String(b.name)))
 
   return NextResponse.json({
-    contract: { code: c.code, title: c.title, design: c.design, size: c.size, duration_days: c.duration_days, contract_value: c.contract_value,
+    contract: { code: c.code, title: c.title, design: c.design, size: c.size, category: c.category, volume: c.volume, requirements: c.requirements, duration_days: c.duration_days, contract_value: c.contract_value,
                 payment_days_after_completion: c.payment_days_after_completion, payment_terms: c.payment_terms, project: p ?? null },
     materials: mats, merchants: merchants ?? [],
   })
